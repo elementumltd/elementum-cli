@@ -1,0 +1,146 @@
+# Stored Snowflake Function queries
+# These queries are used to fetch stored functions (procedures and UDFs) from CloudLinks
+# Note: Only CloudLinkSnowflake implements CloudLinkInfo which has storedSnowflakeFunctions
+
+# Get a single stored function by ID from a CloudLink
+query GetStoredFunction($cloudLinkId: ID!, $functionId: ID!) {
+  organization {
+    cloudLink(id: $cloudLinkId) {
+      id
+      name
+      __typename
+      ... on CloudLinkSnowflake {
+        storedSnowflakeFunction(id: $functionId) {
+          id
+          name
+          displayName
+          description
+          databaseName
+          schemaName
+          type
+          configured
+          cloudLink {
+            id
+            name
+          }
+          inputArgs {
+            id
+            name
+            type
+          }
+          outputArg {
+            id
+            ... on StoredSnowflakeFunctionSimpleOutput {
+              returnType
+              nullable
+            }
+            ... on StoredSnowflakeFunctionTableOutput {
+              columns {
+                name
+                columnType
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# List all stored functions for a CloudLink
+query ListStoredFunctions($cloudLinkId: ID!) {
+  organization {
+    cloudLink(id: $cloudLinkId) {
+      id
+      name
+      __typename
+      ... on CloudLinkSnowflake {
+        storedSnowflakeFunctions {
+          edges {
+            node {
+              id
+              name
+              displayName
+              description
+              databaseName
+              schemaName
+              type
+              configured
+              cloudLink {
+                id
+                name
+              }
+              inputArgs {
+                id
+                name
+                type
+              }
+              outputArg {
+                id
+                ... on StoredSnowflakeFunctionSimpleOutput {
+                  returnType
+                  nullable
+                }
+                ... on StoredSnowflakeFunctionTableOutput {
+                  columns {
+                    name
+                    columnType
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# List all stored functions across all CloudLinks (Snowflake only)
+query ListAllStoredFunctions {
+  organization {
+    cloudLinks {
+      edges {
+        node {
+          id
+          name
+          __typename
+          ... on CloudLinkSnowflake {
+            storedSnowflakeFunctions {
+              edges {
+                node {
+                  id
+                  name
+                  displayName
+                  description
+                  databaseName
+                  schemaName
+                  type
+                  configured
+                  inputArgs {
+                    id
+                    name
+                    type
+                  }
+                  outputArg {
+                    id
+                    ... on StoredSnowflakeFunctionSimpleOutput {
+                      returnType
+                      nullable
+                    }
+                    ... on StoredSnowflakeFunctionTableOutput {
+                      columns {
+                        name
+                        columnType
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

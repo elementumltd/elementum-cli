@@ -1,0 +1,106 @@
+// Copyright (c) ElementumAI, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
+package cmd
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/elementumltd/elementum-cli/auth"
+	"github.com/elementumltd/elementum-cli/ui"
+	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/spf13/cobra"
+)
+
+var fileReadersDeleteCmd = &cobra.Command{
+	Use:   "delete <app-namespace> <name-or-id>",
+	Short: "Delete a file reader",
+	Long: `Delete a file reader by name or ID.
+
+WARNING: This permanently deletes the file reader.
+
+Examples:
+  ei file-readers delete support-tickets "Invoice Parser"
+  ei file-readers delete support-tickets "Invoice Parser" --force
+  ei file-readers delete support-tickets 794e1e48-73af-4760-... --force`,
+	Args: cobra.ExactArgs(2),
+	RunE: runFileReadersDeleteCmd,
+}
+
+func init() {
+	fileReadersDeleteCmd.Flags().BoolP("force", "f", false, "Skip confirmation prompt")
+}
+
+func runFileReadersDeleteCmd(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+
+	apiClient, err := auth.GetClientFromCmd(cmd)
+	if err != nil {
+		return err
+	}
+
+	appNamespace := args[0]
+	nameOrID := args[1]
+
+	aspectID, _, err := resolveAspectByNamespace(ctx, apiClient, appNamespace)
+	if err != nil {
+		return fmt.Errorf("failed to find app %q: %w", appNamespace, err)
+	}
+
+	fileReaderID, typeName, err := resolveFileReaderID(ctx, apiClient, aspectID, nameOrID)
+	if err != nil {
+		return err
+	}
+
+	force, _ := cmd.Flags().GetBool("force")
+
+	// Get file reader name for display
+	displayName := nameOrID
+	if !looksLikeUUID(nameOrID) {
+		displayName = nameOrID
+	} else {
+		// Try to get the name from the API
+		detail, err := getFileReaderDetail(ctx, apiClient, aspectID, fileReaderID, typeName)
+		if err == nil && detail.Name != "" {
+			displayName = detail.Name
+		}
+	}
+
+	cliType := graphQLTypeToCliType(typeName)
+
+	if !force {
+		confirmed, err := ui.Confirm(
+			fmt.Sprintf("Delete %s file reader %q?", cliType, displayName),
+			fmt.Sprintf("ID: %s\nThis will permanently delete the file reader.", fileReaderID),
+		)
+		if err != nil {
+			return err
+		}
+		if !confirmed {
+			fmt.Println(ui.MutedStyle.Render("Cancelled."))
+			return nil
+		}
+	}
+
+	if !isJSONOutput(cmd) {
+		fmt.Println(ui.InfoStyle.Render(fmt.Sprintf("Deleting file reader %q...", displayName)))
+	}
+
+	_, err = client.DeleteDocumentModel(ctx, apiClient.Genqlient(), fileReaderID)
+	if err != nil {
+		return fmt.Errorf("failed to delete file reader: %w", err)
+	}
+
+	if isJSONOutput(cmd) {
+		return outputJSON(map[string]string{
+			"id":      fileReaderID,
+			"name":    displayName,
+			"type":    cliType,
+			"deleted": "true",
+		})
+	}
+
+	fmt.Println(ui.SuccessStyle.Render("Deleted file reader:") + fmt.Sprintf(" %s (%s)", displayName, fileReaderID))
+	return nil
+}

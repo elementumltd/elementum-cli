@@ -1,0 +1,11 @@
+{
+  "__typename": "WorkflowSaveAttachmentTask",
+  "id": "save-attachment-1111-111111111111",
+  "name": "Save File",
+  "recordId": {
+    "triggerReference": {
+      "name": "record.id"
+    }
+  },
+  "tag": "uploaded"
+}

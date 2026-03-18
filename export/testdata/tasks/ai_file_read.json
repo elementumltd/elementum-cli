@@ -1,0 +1,14 @@
+{
+  "__typename": "WorkflowAiFileAnalysisTask",
+  "id": "ai-file-read-1111-111111111111",
+  "name": "Analyze Document",
+  "documentModel": {
+    "id": "doc-model-aaaa-aaaa-aaaaaaaaaaaa",
+    "name": "Invoice Model"
+  },
+  "attachmentReference": {
+    "triggerReference": {
+      "name": "Attachments"
+    }
+  }
+}

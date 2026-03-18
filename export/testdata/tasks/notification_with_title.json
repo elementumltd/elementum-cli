@@ -1,0 +1,14 @@
+{
+  "__typename": "WorkflowNotificationTask",
+  "id": "notification-2222-222222222222",
+  "name": "Send Priority Notification",
+  "message": {
+    "staticValue": "Urgent: Please review immediately."
+  },
+  "title": {
+    "staticValue": "URGENT"
+  },
+  "notifyWatchers": true,
+  "userValueReferences": [],
+  "groupValueReferences": []
+}

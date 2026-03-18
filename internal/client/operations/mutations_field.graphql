@@ -1,0 +1,61 @@
+# Field mutations
+
+mutation CreateField($aspectId: ID!, $input: AspectFieldCreateInput!) {
+  aspectFieldCreate(aspectId: $aspectId, input: $input) {
+    id
+    name
+    description
+    required
+    requiredOnClose
+    showOnCreate
+    lockOnCreate
+    tags
+  }
+}
+
+mutation UpdateField($id: ID!, $input: AspectFieldUpdateInput!) {
+  aspectFieldUpdate(id: $id, input: $input) {
+    id
+    name
+    description
+    required
+    requiredOnClose
+    showOnCreate
+    lockOnCreate
+    tags
+  }
+}
+
+mutation DeleteField($fieldId: ID!) {
+  aspectFieldDeleteV2(id: $fieldId) {
+    __typename
+    id
+  }
+}
+
+mutation BulkCreateFields($aspectId: ID!, $input: [AspectFieldCreateInput!]!) {
+  aspectFieldBulkCreate(aspectId: $aspectId, input: $input)
+}
+
+mutation UpsertPicklistValues($aspectFieldId: ID!, $input: [AspectPicklistValueUpsertInput]!) {
+  aspectPicklistValueUpsert(aspectFieldId: $aspectFieldId, input: $input) {
+    id
+    label
+    color
+    active
+    icon
+    tags
+    __typename
+  }
+}
+
+mutation ValidateCalculation($aspectId: ID, $text: String!, $includeTypes: [AspectFieldCalculationIncludeTypeInput!]!) {
+  aspectFieldCalculationValidateV3(
+    aspectId: $aspectId
+    text: $text
+    includeTypes: $includeTypes
+  ) {
+    calculationType
+    multiple
+  }
+}

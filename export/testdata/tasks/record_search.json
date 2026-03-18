@@ -1,0 +1,11 @@
+{
+  "__typename": "WorkflowRecordSearchTask",
+  "id": "record-search-1111-111111111111",
+  "name": "Search Records",
+  "aspect": {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "name": "Test App"
+  },
+  "filter": null,
+  "limit": null
+}

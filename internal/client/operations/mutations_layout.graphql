@@ -1,0 +1,157 @@
+# Layout and Stage mutations
+
+mutation CreateAspectStage($aspectId: ID!, $input: AspectStageCreateInput!) {
+  aspectStageCreate(aspectId: $aspectId, input: $input) {
+    id
+    name
+  }
+}
+
+mutation UpdateAspectStage($id: ID!, $input: AspectStageUpdateInput!) {
+  aspectStageUpdate(id: $id, input: $input) {
+    id
+    name
+    displayOrder
+  }
+}
+
+mutation CreateAspectStageDisplayBlock($aspectId: ID!, $stageId: ID!, $input: AspectDisplayBlockCreateInput!) {
+  aspectStageDisplayBlockCreate(aspectId: $aspectId, stageId: $stageId, input: $input) {
+    id
+  }
+}
+
+mutation CreateDisplayWidget($aspectId: ID!, $input: DisplayWidgetCreateInput!) {
+  displayWidgetCreate(aspectId: $aspectId, input: $input) {
+    id
+    name
+    __typename
+    ... on DisplayWidgetRelatedAspect {
+      aspect {
+        __typename
+        id
+      }
+      columns
+      filter
+      rows
+      sort
+    }
+    ... on DisplayWidgetRelatedLinkAction {
+      aspect {
+        __typename
+        id
+      }
+      buttonType
+      color
+      icon
+      fullWidth
+      columns
+      filter
+      rows
+      sort
+    }
+    ... on DisplayWidgetRelatedCreateAction {
+      aspect {
+        __typename
+        id
+      }
+      buttonType
+      color
+      icon
+      fullWidth
+    }
+  }
+}
+
+mutation UpdateDisplayWidget($id: ID!, $input: DisplayWidgetUpdateInput!) {
+  displayWidgetUpdate(id: $id, input: $input) {
+    id
+    name
+    __typename
+    ... on DisplayWidgetRelatedAspect {
+      aspect {
+        __typename
+        id
+      }
+      columns
+      filter
+      rows
+      sort
+    }
+    ... on DisplayWidgetRelatedLinkAction {
+      aspect {
+        __typename
+        id
+      }
+      buttonType
+      color
+      icon
+      fullWidth
+      columns
+      filter
+      rows
+      sort
+    }
+    ... on DisplayWidgetRelatedCreateAction {
+      aspect {
+        __typename
+        id
+      }
+      buttonType
+      color
+      icon
+      fullWidth
+    }
+  }
+}
+
+mutation DeleteDisplayWidget($id: ID!) {
+  displayWidgetDelete(id: $id) {
+    __typename
+    id
+  }
+}
+
+mutation DeleteAspectStage($stageId: ID!) {
+  aspectStageDeleteV2(id: $stageId) {
+    id
+  }
+}
+
+mutation DeleteAspectStageDisplayBlock($blockId: ID!) {
+  aspectStageDisplayBlockDeleteV2(id: $blockId) {
+    __typename
+    id
+  }
+}
+
+# Flow mutations
+
+mutation CreateFlowNode($blockId: ID!, $input: FlowNodeInput!) {
+  flowNodeCreate(blockId: $blockId, input: $input) {
+    id
+    __typename
+  }
+}
+
+mutation CreateFlowNodeAction($nodeId: ID!, $input: FlowActionInput!) {
+  flowNodeActionCreate(nodeId: $nodeId, input: $input) {
+    id
+    __typename
+  }
+}
+
+mutation CreateFlowEdge($blockId: ID!, $input: FlowEdgeInput!) {
+  flowEdgeCreate(blockId: $blockId, input: $input) {
+    id
+    __typename
+  }
+}
+
+mutation DeleteFlowNode($nodeId: ID!) {
+  flowNodeDelete(nodeId: $nodeId)
+}
+
+mutation DeleteFlowEdge($edgeId: ID!) {
+  flowEdgeDelete(edgeId: $edgeId)
+}

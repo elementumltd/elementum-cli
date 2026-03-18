@@ -1,0 +1,15 @@
+{
+  "__typename": "WorkflowAiAgentTask",
+  "id": "run-agent-2222-222222222222",
+  "name": "Run AI Agent with Context",
+  "agent": {
+    "id": "agent-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    "name": "Analysis Agent"
+  },
+  "prompt": {
+    "triggerReference": {
+      "name": "record.description"
+    }
+  },
+  "outputType": "JSON"
+}

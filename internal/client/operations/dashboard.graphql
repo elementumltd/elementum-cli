@@ -1,0 +1,252 @@
+# Dashboard and Widget queries and mutations
+
+# Dashboard fragments
+fragment DashboardInfo on Dashboard {
+  id
+  name
+  favorite
+  tags
+  ownerId
+  createdAt
+  updatedAt
+}
+
+fragment WidgetInfo on Widget {
+  id
+  name
+  size
+  color
+  icon
+  displayOrder
+  ... on DashboardChartWidget {
+    chart {
+      id
+      name
+    }
+  }
+  ... on DashboardAspectWidget {
+    aspect {
+      id
+      name
+    }
+    filter
+    sort
+  }
+  ... on DashboardApprovalWidget {
+    approvalType
+    filter
+  }
+  ... on DashboardNotificationWidget {
+    filter
+  }
+}
+
+# Dashboard Queries - Dashboards must be queried through their owner
+query GetDashboardByAspect($aspectId: ID!, $dashboardId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        dashboard(id: $dashboardId) {
+          ...DashboardInfo
+        }
+      }
+      ... on AspectElement {
+        dashboard(id: $dashboardId) {
+          ...DashboardInfo
+        }
+      }
+      ... on AspectTask {
+        dashboard(id: $dashboardId) {
+          ...DashboardInfo
+        }
+      }
+    }
+  }
+}
+
+query GetDashboardByUser($userId: ID!, $dashboardId: ID!) {
+  user(id: $userId) {
+    dashboard(id: $dashboardId) {
+      ...DashboardInfo
+    }
+  }
+}
+
+query GetDashboardWithWidgetsByAspect($aspectId: ID!, $dashboardId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        dashboard(id: $dashboardId) {
+          ...DashboardInfo
+          widgets {
+            edges {
+              node {
+                ...WidgetInfo
+              }
+            }
+          }
+        }
+      }
+      ... on AspectElement {
+        dashboard(id: $dashboardId) {
+          ...DashboardInfo
+          widgets {
+            edges {
+              node {
+                ...WidgetInfo
+              }
+            }
+          }
+        }
+      }
+      ... on AspectTask {
+        dashboard(id: $dashboardId) {
+          ...DashboardInfo
+          widgets {
+            edges {
+              node {
+                ...WidgetInfo
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetDashboardsByAspect($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        dashboards {
+          edges {
+            node {
+              ...DashboardInfo
+            }
+          }
+        }
+      }
+      ... on AspectElement {
+        dashboards {
+          edges {
+            node {
+              ...DashboardInfo
+            }
+          }
+        }
+      }
+      ... on AspectTask {
+        dashboards {
+          edges {
+            node {
+              ...DashboardInfo
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetUserDashboards($userId: ID!, $dashboardType: DashboardUserType) {
+  user(id: $userId) {
+    dashboards(type: $dashboardType) {
+      edges {
+        node {
+          ...DashboardInfo
+        }
+      }
+    }
+  }
+}
+
+# List all dashboards with widgets for an aspect
+query GetDashboardsWithWidgetsByAspect($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        dashboards {
+          edges {
+            node {
+              ...DashboardInfo
+              widgets {
+                edges {
+                  node {
+                    ...WidgetInfo
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      ... on AspectElement {
+        dashboards {
+          edges {
+            node {
+              ...DashboardInfo
+              widgets {
+                edges {
+                  node {
+                    ...WidgetInfo
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      ... on AspectTask {
+        dashboards {
+          edges {
+            node {
+              ...DashboardInfo
+              widgets {
+                edges {
+                  node {
+                    ...WidgetInfo
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Dashboard Mutations
+mutation CreateDashboard($input: DashboardInput!, $owner: EntityIdentifierInput!) {
+  dashboardCreate(input: $input, owner: $owner) {
+    ...DashboardInfo
+  }
+}
+
+mutation UpdateDashboard($id: ID!, $input: DashboardInput!) {
+  dashboardUpdate(id: $id, input: $input) {
+    ...DashboardInfo
+  }
+}
+
+mutation DeleteDashboard($id: ID!) {
+  dashboardDelete(id: $id)
+}
+
+# Widget Mutations (unified API - not deprecated)
+mutation CreateDashboardWidget($dashboardId: ID!, $input: DashboardWidgetCreateInput!) {
+  dashboardWidgetCreate(dashboardId: $dashboardId, input: $input) {
+    ...WidgetInfo
+  }
+}
+
+mutation UpdateDashboardWidget($id: ID!, $input: DashboardWidgetUpdateInput!) {
+  dashboardWidgetUpdate(id: $id, input: $input) {
+    ...WidgetInfo
+  }
+}
+
+mutation DeleteDashboardWidget($id: ID!) {
+  dashboardWidgetDelete(id: $id)
+}

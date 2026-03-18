@@ -1,0 +1,9 @@
+{
+  "__typename": "WorkflowAiTransformTask",
+  "id": "ai-transform-1111-111111111111",
+  "name": "Transform Text",
+  "prompt": {
+    "staticValue": "Translate to formal business English"
+  },
+  "fieldType": "TEXT"
+}

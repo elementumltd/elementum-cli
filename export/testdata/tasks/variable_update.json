@@ -1,0 +1,12 @@
+{
+  "__typename": "WorkflowVariableTask",
+  "id": "variable-task-2222-222222222222",
+  "name": "Increment Counter",
+  "variableName": "counter",
+  "variableType": "NUMBER",
+  "valueReference": {
+    "calculationReference": {
+      "calculation": "counter + 1"
+    }
+  }
+}

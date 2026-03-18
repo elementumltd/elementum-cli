@@ -1,0 +1,195 @@
+# Table and Datamine mutations
+
+mutation CreateTable($input: TableCreateV2Input!) {
+  tableCreateV2(input: $input) {
+    id
+    name
+    handle
+    type
+    configured
+    editable
+    cloudManaged
+    fields {
+      id
+      name
+      fieldType
+    }
+    joins {
+      id
+      type
+      filter
+      source {
+        id
+        name
+      }
+      onFields {
+        id
+        leftField {
+          id
+          name
+          __typename
+        }
+        rightField {
+          id
+          name
+          __typename
+        }
+      }
+    }
+  }
+}
+
+mutation UpdateTable($id: ID!, $input: TableUpdateInput!) {
+  tableUpdateV2(id: $id, input: $input) {
+    id
+    name
+    handle
+    type
+    configured
+    editable
+    cloudManaged
+  }
+}
+
+mutation DeleteTable($id: ID!) {
+  tableDelete(id: $id)
+}
+
+# Join CRUD mutations (used for table update since TableUpdateInput has no joins field)
+mutation TableJoinAdd($tableId: ID!, $inputs: [TableJoinInput!]!) {
+  tableJoinAdd(tableId: $tableId, inputs: $inputs) {
+    id
+    joins {
+      id
+      type
+      filter
+      source {
+        id
+        name
+      }
+      onFields {
+        id
+        leftField {
+          id
+          name
+          __typename
+        }
+        rightField {
+          id
+          name
+          __typename
+        }
+      }
+    }
+  }
+}
+
+mutation TableJoinDelete($tableId: ID!, $joinId: ID) {
+  tableJoinDelete(tableId: $tableId, joinId: $joinId)
+}
+
+mutation TableJoinUpdateById(
+  $tableId: ID!
+  $joinId: ID!
+  $input: TableJoinUpdateInput!
+) {
+  tableJoinUpdateById(tableId: $tableId, joinId: $joinId, input: $input) {
+    id
+    joins {
+      id
+      type
+      filter
+      source {
+        id
+        name
+      }
+      onFields {
+        id
+        leftField {
+          id
+          name
+          __typename
+        }
+        rightField {
+          id
+          name
+          __typename
+        }
+      }
+    }
+  }
+}
+
+mutation CreateDatamine($input: DatamineInput!) {
+  datamineCreate(input: $input) {
+    id
+    name
+    description
+    active
+    filter
+    limit
+    app {
+      id
+      name
+    }
+    table {
+      id
+      name
+    }
+    primaryColumns {
+      id
+      name
+    }
+    schedule {
+      __typename
+      concurrency
+      description
+      ... on DatamineScheduleFixed {
+        timeUnit
+        value
+      }
+      ... on DatamineScheduleCron {
+        cronExpression
+      }
+    }
+  }
+}
+
+mutation UpdateDatamine($id: ID!, $input: DatamineInput!) {
+  datamineUpdate(id: $id, input: $input) {
+    id
+    name
+    description
+    active
+    filter
+    limit
+    app {
+      id
+      name
+    }
+    table {
+      id
+      name
+    }
+    primaryColumns {
+      id
+      name
+    }
+    schedule {
+      __typename
+      concurrency
+      description
+      ... on DatamineScheduleFixed {
+        timeUnit
+        value
+      }
+      ... on DatamineScheduleCron {
+        cronExpression
+      }
+    }
+  }
+}
+
+mutation DeleteDatamine($id: ID!) {
+  datamineDelete(id: $id)
+}

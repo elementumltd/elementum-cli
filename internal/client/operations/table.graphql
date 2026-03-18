@@ -1,0 +1,434 @@
+# Table and Datamine queries
+
+# Fragment for table field data (used by fieldsV2)
+fragment TableFieldData on TableField {
+  __typename
+  name
+  id
+  fieldType
+  tags
+  semanticTags
+  isAggregated
+  ... on TableFieldReference {
+    aggregation
+    expanded
+    field {
+      id
+      name
+      __typename
+    }
+    table: source {
+      id
+      __typename
+    }
+    __typename
+  }
+  ... on TableFieldPicklist {
+    aggregation
+    expanded
+    field {
+      id
+      name
+      __typename
+    }
+    table: source {
+      id
+      __typename
+    }
+    __typename
+  }
+  ... on TableFieldMultiPicklist {
+    aggregation
+    expanded
+    field {
+      id
+      name
+      __typename
+    }
+    table: source {
+      id
+      __typename
+    }
+    __typename
+  }
+  ... on TableFieldCloud {
+    columnName
+    __typename
+  }
+  ... on TableFieldCalculation {
+    calculation {
+      text
+    }
+    __typename
+  }
+}
+
+query GetTable($id: ID!) {
+  organization {
+    table(id: $id) {
+      id
+      name
+      handle
+      type
+      configured
+      editable
+      cloudManaged
+      filter
+      limit
+      orderBy
+      category {
+        id
+        name
+      }
+      source {
+        id
+        name
+      }
+      cloudLink {
+        __typename
+        id
+        name
+      }
+      cloudConnection {
+        __typename
+        readOnly
+        ... on SnowflakeConnection {
+          databaseName
+          schemaName
+          tableName
+        }
+      }
+      dataView {
+        __typename
+        ... on TableDataViewSnowflake {
+          id
+          name
+          databaseName
+          schemaName
+        }
+      }
+      joins {
+        id
+        type
+        filter
+        source {
+          id
+          name
+        }
+        onFields {
+          id
+          leftField {
+            id
+            name
+            __typename
+          }
+          rightField {
+            id
+            name
+            __typename
+          }
+        }
+      }
+      fields {
+        __typename
+        id
+        name
+        fieldType
+        configured
+        isAggregated
+        semanticTags
+        tags
+        ... on TableFieldCloud {
+          columnName
+        }
+        ... on TableFieldCalculation {
+          calculation {
+            text
+          }
+        }
+        ... on TableFieldReference {
+          aggregation
+          expanded
+          field {
+            id
+            name
+          }
+          source {
+            id
+          }
+        }
+        ... on TableFieldPicklist {
+          aggregation
+          expanded
+          field {
+            id
+            name
+          }
+          source {
+            id
+          }
+        }
+        ... on TableFieldMultiPicklist {
+          aggregation
+          expanded
+          field {
+            id
+            name
+          }
+          source {
+            id
+          }
+        }
+      }
+      fieldsV2 {
+        edges {
+          node {
+            ...TableFieldData
+          }
+          __typename
+        }
+        __typename
+      }
+      groupBy {
+        __typename
+        ... on TableGroupByField {
+          field {
+            id
+            name
+            __typename
+          }
+          __typename
+        }
+      }
+      __typename
+    }
+    __typename
+  }
+}
+
+query GetTables($filter: Filter) {
+  organization {
+    tables(filter: $filter, first: 100) {
+      edges {
+        node {
+          id
+          name
+          handle
+          type
+          configured
+          editable
+          cloudManaged
+        }
+      }
+    }
+  }
+}
+
+query GetDatamine($tableId: ID!, $datamineId: ID!) {
+  organization {
+    table(id: $tableId) {
+      datamine(id: $datamineId) {
+        ... on Datamine {
+          id
+          name
+          description
+          active
+          filter
+          limit
+          app {
+            id
+            name
+          }
+          table {
+            id
+            name
+          }
+          primaryColumns {
+            id
+            name
+          }
+          schedule {
+            __typename
+            concurrency
+            description
+            ... on DatamineScheduleFixed {
+              timeUnit
+              value
+            }
+            ... on DatamineScheduleCron {
+              cronExpression
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetDatamines($tableId: ID!, $filter: Filter) {
+  organization {
+    table(id: $tableId) {
+      datamines(filter: $filter, first: 100) {
+        edges {
+          node {
+            ... on Datamine {
+              id
+              name
+              description
+              active
+              filter
+              limit
+              app {
+                id
+                name
+              }
+              table {
+                id
+                name
+              }
+              primaryColumns {
+                id
+                name
+              }
+              schedule {
+                __typename
+                concurrency
+                description
+                ... on DatamineScheduleFixed {
+                  timeUnit
+                  value
+                }
+                ... on DatamineScheduleCron {
+                  cronExpression
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Query a datamine directly by ID (without needing to know the table ID first)
+query GetDatamineDirectly($datamineId: ID!) {
+  organization {
+    datamine(id: $datamineId) {
+      id
+      name
+      description
+      active
+      filter
+      schedule {
+        __typename
+        ... on DatamineScheduleFixed {
+          timeUnit
+          value
+        }
+        ... on DatamineScheduleCron {
+          cronExpression
+        }
+      }
+      table {
+        id
+        name
+        handle
+        type
+        configured
+        cloudManaged
+        category {
+          id
+        }
+        source {
+          id
+        }
+        cloudLink {
+          id
+          name
+        }
+        cloudConnection {
+          ... on SnowflakeConnection {
+            databaseName
+            schemaName
+            tableName
+          }
+        }
+        fields {
+          id
+          name
+        }
+      }
+      primaryColumns {
+        id
+      }
+    }
+  }
+}
+
+query GetAspectSearchTables($aspectId: ID!) {
+  organization {
+    id
+    aspect(id: $aspectId) {
+      id
+      name
+      ... on AspectApp {
+        searchTables {
+          edges {
+            node {
+              __typename
+              id
+              status
+              errorMessage
+              field {
+                id
+                name
+              }
+              aiProviderConnector {
+                id
+                model {
+                  name
+                }
+              }
+              attributeFields {
+                id
+                name
+              }
+              duration
+              targetLag
+              warehouse
+            }
+          }
+        }
+      }
+      ... on AspectElement {
+        searchTables {
+          edges {
+            node {
+              __typename
+              id
+              status
+              errorMessage
+              field {
+                id
+                name
+              }
+              aiProviderConnector {
+                id
+                model {
+                  name
+                }
+              }
+              attributeFields {
+                id
+                name
+              }
+              duration
+              targetLag
+              warehouse
+            }
+          }
+        }
+      }
+    }
+  }
+}

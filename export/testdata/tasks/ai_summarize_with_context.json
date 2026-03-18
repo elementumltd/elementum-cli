@@ -1,0 +1,14 @@
+{
+  "__typename": "WorkflowAiSummarizeTask",
+  "id": "ai-summarize-2222-222222222222",
+  "name": "Summarize with Context",
+  "textToSummarize": {
+    "triggerReference": {
+      "name": "record.description"
+    }
+  },
+  "context": {
+    "staticValue": "Focus on key action items and decisions."
+  },
+  "length": "SHORT"
+}

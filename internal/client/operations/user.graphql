@@ -1,0 +1,109 @@
+# User and Group queries
+
+query GetUsers($filter: Filter) {
+  organization {
+    users(filter: $filter, first: 1000) {
+      edges {
+        node {
+          id
+          email
+          name
+          firstName
+          lastName
+          status
+          jobTitle
+        }
+      }
+    }
+  }
+}
+
+query SearchUsers($first: Int, $after: String, $filter: Filter) {
+  organization {
+    users(first: $first, after: $after, filter: $filter) {
+      edges {
+        node {
+          id
+          email
+          name
+          firstName
+          lastName
+          status
+          jobTitle
+        }
+        cursor
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      total
+    }
+  }
+}
+
+query GetUserByID($userId: ID!) {
+  organization {
+    user(id: $userId) {
+      id
+      email
+      name
+      firstName
+      lastName
+      status
+      jobTitle
+    }
+  }
+}
+
+query GetGroups($filter: Filter) {
+  organization {
+    groups(filter: $filter, first: 100) {
+      edges {
+        node {
+          id
+          name
+          approver
+          assignable
+          mentionable
+          watchable
+          dynamic
+          tags
+          users(first: 1000) {
+            total
+            edges {
+              node {
+                id
+                email
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetGroupByID($groupId: ID!) {
+  organization {
+    group(id: $groupId) {
+      id
+      name
+      approver
+      assignable
+      mentionable
+      watchable
+      dynamic
+      tags
+      users(first: 1000) {
+        total
+        edges {
+          node {
+            id
+            email
+          }
+        }
+      }
+    }
+  }
+}

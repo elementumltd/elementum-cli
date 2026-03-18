@@ -1,0 +1,109 @@
+{
+  "id": "auto-refs-6666-666666666666",
+  "name": "Value Reference Chain Workflow",
+  "status": "ACTIVE",
+  "workflowId": "workflow-refs-6666-666666",
+  "hasPublished": true,
+  "triggers": [
+    {
+      "id": "trigger-6666-6666-6666-666666666666",
+      "type": "record_created",
+      "name": "When Record Created",
+      "fieldRefs": {
+        "record.title": "Title",
+        "record.ffffffff-ffff-ffff-ffff-ffffffffffff": "Status",
+        "record.eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee": "Priority"
+      },
+      "rawData": {
+        "__typename": "WorkflowRecordCreateTrigger",
+        "id": "trigger-6666-6666-6666-666666666666",
+        "name": "When Record Created",
+        "aspect": {
+          "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "name": "Test App"
+        }
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task-var1-6666-666666666666",
+      "type": "variable",
+      "name": "Extract Title",
+      "parentId": "trigger-6666-6666-6666-666666666666",
+      "rawData": {
+        "__typename": "WorkflowVariableTask",
+        "id": "task-var1-6666-666666666666",
+        "name": "Extract Title",
+        "variableName": "recordTitle",
+        "variableType": "TEXT",
+        "valueReference": {
+          "triggerReference": {
+            "name": "record.title"
+          }
+        }
+      }
+    },
+    {
+      "id": "task-calc-6666-666666666666",
+      "type": "calculation",
+      "name": "Calculate Score",
+      "parentId": "task-var1-6666-666666666666",
+      "rawData": {
+        "__typename": "WorkflowCalculationTask",
+        "id": "task-calc-6666-666666666666",
+        "name": "Calculate Score",
+        "calculations": [
+          {
+            "name": "score",
+            "calculationReference": {
+              "calculationReference": {
+                "calculation": "10 * 5"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "task-message-6666-666666666666",
+      "type": "message",
+      "name": "Post Result",
+      "parentId": "task-calc-6666-666666666666",
+      "rawData": {
+        "__typename": "WorkflowMessageTask",
+        "id": "task-message-6666-666666666666",
+        "name": "Post Result",
+        "contentsReference": {
+          "templateReference": {
+            "template": "Record {{recordTitle}} has score {{score}}",
+            "parameters": [
+              {
+                "key": "recordTitle",
+                "value": {
+                  "variableReference": {
+                    "name": "recordTitle"
+                  }
+                }
+              },
+              {
+                "key": "score",
+                "value": {
+                  "taskReference": {
+                    "taskId": "task-calc-6666-666666666666",
+                    "propertyPath": "score"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "recordReference": {
+          "triggerReference": {
+            "name": "record.id"
+          }
+        }
+      }
+    }
+  ]
+}

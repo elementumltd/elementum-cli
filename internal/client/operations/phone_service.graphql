@@ -1,0 +1,98 @@
+# Phone Service queries and mutations
+
+# Fragment for phone registration properties
+fragment PhoneRegistrationPropertiesInfo on PhoneRegistrationProperties {
+  generateFirstMessage
+  expandLanguages
+  defaultLanguage
+  enableLanguageRouting
+  preferredLanguages
+}
+
+# Fragment for phone service information
+fragment PhoneServiceInfo on PhoneService {
+  id
+  phoneNumber
+  provider {
+    id
+    name
+    system
+  }
+  agent {
+    id
+    name
+  }
+  aspect {
+    id
+  }
+  registrationProperties {
+    ...PhoneRegistrationPropertiesInfo
+  }
+}
+
+# Get all phone services for an aspect (app)
+query GetPhoneServices($aspectId: ID!, $first: Int) {
+  organization {
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        phoneServices(first: $first) {
+          edges {
+            node {
+              ...PhoneServiceInfo
+            }
+          }
+          total
+        }
+      }
+      ... on AspectElement {
+        phoneServices(first: $first) {
+          edges {
+            node {
+              ...PhoneServiceInfo
+            }
+          }
+          total
+        }
+      }
+    }
+  }
+}
+
+# Get a specific phone service by ID
+query GetPhoneService($aspectId: ID!, $id: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        phoneService(id: $id) {
+          ...PhoneServiceInfo
+        }
+      }
+      ... on AspectElement {
+        phoneService(id: $id) {
+          ...PhoneServiceInfo
+        }
+      }
+    }
+  }
+}
+
+# Create a new phone service
+mutation CreatePhoneService($aspectId: ID!, $providerId: ID!, $input: PhoneServiceCreateInput!) {
+  phoneServiceCreate(aspectId: $aspectId, providerId: $providerId, input: $input) {
+    ...PhoneServiceInfo
+  }
+}
+
+# Update an existing phone service
+mutation UpdatePhoneService($id: ID!, $input: PhoneServiceUpdateInput!) {
+  phoneServiceUpdate(id: $id, input: $input) {
+    ...PhoneServiceInfo
+  }
+}
+
+# Delete a phone service
+mutation DeletePhoneService($id: ID!) {
+  phoneServiceDelete(id: $id) {
+    id
+  }
+}

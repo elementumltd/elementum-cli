@@ -1,0 +1,11 @@
+{
+  "__typename": "WorkflowUserSearchTask",
+  "id": "user-search-2222-222222222222",
+  "name": "Search Active Users",
+  "filter": {
+    "type": "equals",
+    "fieldId": "status",
+    "value": "ACTIVE"
+  },
+  "filterValueReferences": []
+}

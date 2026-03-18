@@ -1,0 +1,215 @@
+fragment RecordListItem on AspectRecord {
+  id
+  handle
+  title
+  createdAt
+  updatedAt
+  url(relative: false)
+  data(format: ALL_BY_NAME)
+  status {
+    id
+    label
+  }
+  createdBy {
+    id
+    name
+    email
+  }
+}
+
+fragment PicklistFieldInfo on AspectPicklistField {
+  id
+  name
+  values(first: 500) {
+    edges {
+      node {
+        id
+        label
+      }
+    }
+  }
+}
+
+fragment MultiPicklistFieldInfo on AspectMultiPicklistField {
+  id
+  name
+  values(first: 500) {
+    edges {
+      node {
+        id
+        label
+      }
+    }
+  }
+}
+
+query ListAspectRecords($aspectId: ID!, $first: Int, $after: String) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      name
+      __typename
+      ... on AspectApp {
+        namespace
+        records(first: $first, after: $after) {
+          edges {
+            node {
+              ...RecordListItem
+            }
+            cursor
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          total
+        }
+      }
+      ... on AspectElement {
+        namespace
+        records(first: $first, after: $after) {
+          edges {
+            node {
+              ...RecordListItem
+            }
+            cursor
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          total
+        }
+      }
+      ... on AspectTask {
+        namespace
+        records(first: $first, after: $after) {
+          edges {
+            node {
+              ...RecordListItem
+            }
+            cursor
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          total
+        }
+      }
+    }
+  }
+}
+
+# Query to fetch aspect fields with picklist values for resolving IDs to labels
+query GetAspectPicklistFields($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      fields(first: 200) {
+        edges {
+          node {
+            __typename
+            ... on AspectPicklistField {
+              ...PicklistFieldInfo
+            }
+            ... on AspectMultiPicklistField {
+              ...MultiPicklistFieldInfo
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Mutation to bulk delete records using a filter
+mutation BulkDeleteRecords($aspectId: ID!, $input: AspectRecordBulkDeleteInput!) {
+  aspectRecordBulkDelete(aspectId: $aspectId, input: $input)
+}
+
+# Mutation to bulk create records
+mutation BulkCreateRecords($aspectId: ID!, $input: AspectRecordBulkCreateInput!) {
+  aspectRecordBulkCreate(aspectId: $aspectId, input: $input)
+}
+
+# Mutation to bulk update records
+mutation BulkUpdateRecords($input: [AspectRecordUpdateInput!]!) {
+  aspectRecordsUpdate(input: $input) {
+    id
+    handle
+    title
+    updatedAt
+  }
+}
+
+# Query to fetch aspect fields with full details for record creation
+# Returns all field types with their IDs, names, and picklist values
+fragment RecordFieldInfo on AspectField {
+  id
+  name
+  __typename
+  required
+  system
+  semanticTags
+  ... on AspectPicklistField {
+    values(first: 500) {
+      edges {
+        node {
+          id
+          label
+        }
+      }
+    }
+  }
+  ... on AspectMultiPicklistField {
+    values(first: 500) {
+      edges {
+        node {
+          id
+          label
+        }
+      }
+    }
+  }
+}
+
+query GetAspectFieldsForRecord($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      name
+      __typename
+      ... on AspectApp {
+        namespace
+        fields(first: 500) {
+          edges {
+            node {
+              ...RecordFieldInfo
+            }
+          }
+        }
+      }
+      ... on AspectElement {
+        namespace
+        fields(first: 500) {
+          edges {
+            node {
+              ...RecordFieldInfo
+            }
+          }
+        }
+      }
+      ... on AspectTask {
+        namespace
+        fields(first: 500) {
+          edges {
+            node {
+              ...RecordFieldInfo
+            }
+          }
+        }
+      }
+    }
+  }
+}

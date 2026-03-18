@@ -1,0 +1,15 @@
+{
+  "__typename": "WorkflowMessageTask",
+  "id": "message-task-2222-222222222222",
+  "name": "Send Record Message",
+  "contentsReference": {
+    "triggerReference": {
+      "name": "record.title"
+    }
+  },
+  "recordReference": {
+    "triggerReference": {
+      "name": "record.id"
+    }
+  }
+}

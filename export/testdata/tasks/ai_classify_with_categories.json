@@ -1,0 +1,21 @@
+{
+  "__typename": "WorkflowAiClassifyTask",
+  "id": "ai-classify-2222-222222222222",
+  "name": "Classify Support Ticket",
+  "textToClassify": {
+    "triggerReference": {
+      "name": "record.description"
+    }
+  },
+  "categorySource": {
+    "__typename": "AiClassifyCategoryStaticSource",
+    "categories": [
+      {"name": {"staticValue": "Bug"}, "description": {"staticValue": "Software defect or error"}},
+      {"name": {"staticValue": "Feature Request"}, "description": {"staticValue": "Request for new functionality"}},
+      {"name": {"staticValue": "Question"}, "description": {"staticValue": "General inquiry"}}
+    ]
+  },
+  "context": {
+    "staticValue": "This is a support ticket from a customer."
+  }
+}

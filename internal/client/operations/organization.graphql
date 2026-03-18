@@ -1,0 +1,22 @@
+# Organization queries
+
+query GetOrganization {
+  organization {
+    id
+    name
+    snowflakeSigningPublicKey
+  }
+}
+
+query GetCategories {
+  organization {
+    categories(first: 100) {
+      edges {
+        node {
+          id
+          name
+        }
+      }
+    }
+  }
+}

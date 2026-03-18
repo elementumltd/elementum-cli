@@ -1,0 +1,94 @@
+# genqlient configuration
+# See: https://github.com/Khan/genqlient/blob/main/docs/genqlient.yaml
+
+schema:
+  - ../../schema.graphql
+
+operations:
+  - operations/*.graphql
+
+generated: generated.go
+package: client
+
+# Use pointers for optional fields
+optional: pointer
+
+# Custom scalar bindings for Elementum schema
+bindings:
+  # Date/Time scalars
+  DateTime:
+    type: string
+  LocalDate:
+    type: string
+  LocalDateTime:
+    type: string
+  LocalTime:
+    type: string
+  Duration:
+    type: string
+  ZoneId:
+    type: string
+
+  # JSON-like scalars
+  # These use json.RawMessage to handle polymorphic values that can be
+  # strings, numbers, objects, or arrays depending on context.
+  Filter:
+    type: encoding/json.RawMessage
+    unmarshaler: encoding/json.Unmarshal
+  Object:
+    type: encoding/json.RawMessage
+    unmarshaler: encoding/json.Unmarshal
+  JSON:
+    type: encoding/json.RawMessage
+    unmarshaler: encoding/json.Unmarshal
+  Sort:
+    type: encoding/json.RawMessage
+    unmarshaler: encoding/json.Unmarshal
+  AspectDisplayBlockProperties:
+    type: encoding/json.RawMessage
+    unmarshaler: encoding/json.Unmarshal
+  AspectRecordData:
+    type: encoding/json.RawMessage
+    unmarshaler: encoding/json.Unmarshal
+  AutoAssignmentRuleProperties:
+    type: encoding/json.RawMessage
+    unmarshaler: encoding/json.Unmarshal
+  ChartSubscriptionExpression:
+    type: encoding/json.RawMessage
+    unmarshaler: encoding/json.Unmarshal
+  ChartSubscriptionWith:
+    type: encoding/json.RawMessage
+    unmarshaler: encoding/json.Unmarshal
+  DatasourceQueryExpression:
+    type: encoding/json.RawMessage
+    unmarshaler: encoding/json.Unmarshal
+  ServiceData:
+    type: encoding/json.RawMessage
+    unmarshaler: encoding/json.Unmarshal
+  Value:
+    type: encoding/json.RawMessage
+    unmarshaler: encoding/json.Unmarshal
+  Map:
+    type: encoding/json.RawMessage
+    unmarshaler: encoding/json.Unmarshal
+
+  # String-based scalars
+  Html:
+    type: string
+  Base64:
+    type: string
+  Format:
+    type: string
+  Limit:
+    type: string
+  Locale:
+    type: string
+  SemVer:
+    type: string
+
+  # Numeric scalars
+  Long:
+    type: int64
+
+# Generate context-aware client methods
+context_type: context.Context

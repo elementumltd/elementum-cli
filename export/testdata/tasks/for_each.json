@@ -1,0 +1,12 @@
+{
+  "__typename": "WorkflowForEachTask",
+  "id": "for-each-task-1111-111111111111",
+  "name": "Process Each Record",
+  "forEach": {
+    "taskReference": {
+      "taskId": "record-search-1111-111111111111",
+      "propertyPath": "All found records"
+    }
+  },
+  "children": []
+}

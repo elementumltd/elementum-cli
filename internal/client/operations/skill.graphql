@@ -1,0 +1,39 @@
+# Agentic Skill queries
+
+# Get a single agentic skill by ID (via organization)
+query GetAgenticSkillByID($id: ID!) {
+  organization {
+    id
+    agenticSkill(id: $id) {
+      id
+      name
+      description
+      instructions
+      status
+      type
+      properties
+      createdAt
+      updatedAt
+    }
+  }
+}
+
+# List all agentic skills in the organization
+query GetAgenticSkills {
+  organization {
+    id
+    agenticSkills {
+      edges {
+        node {
+          id
+          name
+          description
+          instructions
+          status
+          type
+          properties
+        }
+      }
+    }
+  }
+}

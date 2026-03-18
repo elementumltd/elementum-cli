@@ -1,0 +1,11 @@
+{
+  "__typename": "WorkflowCreateRecordTask",
+  "id": "create-record-1111-111111111111",
+  "name": "Create New Record",
+  "aspect": {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "name": "Test App"
+  },
+  "recordReference": null,
+  "workflowFields": []
+}

@@ -1,0 +1,34 @@
+# Async Task polling queries for search table creation
+
+# Get an async task by ID for polling status
+# Used to wait for search table creation to complete
+# Note: asyncTask is accessed via the current user (me)
+query GetAsyncTask($id: ID!) {
+  me {
+    asyncTask(id: $id) {
+      id
+      status
+      errors
+      completedAt
+      name
+      ... on AsyncTaskSearchTableCreate {
+        searchTable {
+          id
+          field {
+            id
+            name
+          }
+        }
+      }
+      ... on AsyncTaskTableSearchTableCreate {
+        searchTable {
+          id
+          field {
+            id
+            name
+          }
+        }
+      }
+    }
+  }
+}

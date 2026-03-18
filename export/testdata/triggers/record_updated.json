@@ -1,0 +1,9 @@
+{
+  "__typename": "WorkflowRecordUpdateTrigger",
+  "id": "22222222-2222-2222-2222-222222222222",
+  "name": "When Record Updated",
+  "aspect": {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "name": "Test App"
+  }
+}

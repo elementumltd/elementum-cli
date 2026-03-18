@@ -1,0 +1,105 @@
+# Role and Access Policy mutations
+
+mutation CreateRole($role: RoleInputV2!) {
+  roleCreateV2(role: $role) {
+    id
+    name
+    description
+    autoShare
+    managed
+    tags
+  }
+}
+
+mutation UpdateRole($id: ID!, $role: RoleInput!) {
+  roleUpdate(id: $id, role: $role) {
+    id
+    name
+    description
+    autoShare
+    managed
+    tags
+  }
+}
+
+mutation DeleteRole($id: ID!) {
+  roleDeleteV2(id: $id) {
+    id
+  }
+}
+
+mutation AddRoleUsers($id: ID!, $userIds: [ID!]!) {
+  roleAddUsersV2(id: $id, userIds: $userIds) {
+    id
+  }
+}
+
+mutation RemoveRoleUsers($id: ID!, $userIds: [ID!]!) {
+  roleRemoveUsersV2(id: $id, userIds: $userIds) {
+    id
+  }
+}
+
+mutation AddRoleGroups($id: ID!, $groupIds: [ID!]!) {
+  roleGroupAddV2(id: $id, groupIds: $groupIds) {
+    id
+  }
+}
+
+mutation RemoveRoleGroups($id: ID!, $groupIds: [ID!]!) {
+  roleGroupDeleteV2(id: $id, groupIds: $groupIds) {
+    id
+  }
+}
+
+mutation UpsertRolePermissions($id: ID!, $input: RolePermissionUpsertInput!) {
+  roleUpsertPermissionsV2(id: $id, input: $input) {
+    id
+  }
+}
+
+mutation CreateAccessPolicy($aspectId: ID!, $input: AspectAccessPolicyInput!) {
+  aspectAccessPolicyCreate(aspectId: $aspectId, input: $input) {
+    id
+    filter
+    users(first: 1000) {
+      edges {
+        node {
+          id
+        }
+      }
+    }
+    groups(first: 1000) {
+      edges {
+        node {
+          id
+        }
+      }
+    }
+  }
+}
+
+mutation UpdateAccessPolicy($id: ID!, $input: AspectAccessPolicyInput!) {
+  aspectAccessPolicyUpdate(id: $id, input: $input) {
+    id
+    filter
+    users(first: 1000) {
+      edges {
+        node {
+          id
+        }
+      }
+    }
+    groups(first: 1000) {
+      edges {
+        node {
+          id
+        }
+      }
+    }
+  }
+}
+
+mutation DeleteAccessPolicy($id: ID!) {
+  aspectAccessPolicyDelete(id: $id)
+}
