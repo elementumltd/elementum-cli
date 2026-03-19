@@ -1,0 +1,21 @@
+{
+  "__typename": "WorkflowApiTask",
+  "id": "api-task-bearer-ref-333333",
+  "name": "Bearer Auth Reference Request",
+  "method": "GET",
+  "urlReference": {
+    "value": "https://api.example.com/secure"
+  },
+  "authorization": {
+    "__typename": "ApiBearerAuthorization",
+    "token": null,
+    "referenceToken": {
+      "triggerReference": {
+        "name": "record.api_token"
+      }
+    }
+  },
+  "headers": [],
+  "responseType": "JSON",
+  "continueOnError": false
+}

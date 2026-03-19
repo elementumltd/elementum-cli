@@ -1,0 +1,9 @@
+{
+  "__typename": "WorkflowConversationEndTrigger",
+  "id": "10101010-1010-1010-1010-101010101010",
+  "name": "Agent Conversation Ended",
+  "aspect": {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "name": "Test App"
+  }
+}

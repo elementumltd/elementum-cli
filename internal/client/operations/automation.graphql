@@ -1,0 +1,1180 @@
+# Automation and Workflow queries
+
+query GetAspectAutomations($aspectId: ID!, $filter: Filter) {
+  organization {
+    id
+    aspect(id: $aspectId) {
+      id
+      name
+      ... on AspectApp {
+        automations(filter: $filter) {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+      }
+      ... on AspectElement {
+        automations(filter: $filter) {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetAutomationDetails($automationId: ID!) {
+  organization {
+    id
+    automation(id: $automationId) {
+      id
+      name
+      status
+      entity {
+        ... on AspectApp {
+          id
+          name
+        }
+        ... on AspectElement {
+          id
+          name
+        }
+        ... on AspectTask {
+          id
+          name
+        }
+      }
+      current {
+        id
+        version
+        status
+        terminal
+        triggers {
+          __typename
+          ... on WorkflowRecordCreateTrigger {
+            filter
+            changedFields {
+              id
+              name
+            }
+          }
+          ... on WorkflowRecordUpdateTrigger {
+            filter
+            changedFields {
+              id
+              name
+            }
+          }
+          ... on WorkflowOnDemandTrigger {
+            showTriggeredBy
+            parameters {
+              id
+              name
+              fieldType
+              required
+              defaultValue
+              multiple
+            }
+          }
+          ... on WorkflowWebhookTrigger {
+            authenticated
+            url
+            customResponse {
+              success {
+                body
+                enabled
+                format
+                statusCode
+              }
+              failure {
+                body
+                enabled
+                format
+                statusCode
+              }
+            }
+          }
+        }
+      }
+      draft {
+        id
+        version
+        status
+      }
+    }
+  }
+}
+
+fragment WorkflowVariableTaskFields on WorkflowVariableTask {
+  variables {
+    __typename
+    ... on WorkflowVariableTaskParameterCreate {
+      id
+      name
+      type
+      createValue: value {
+        id
+        label
+        # Note: 'value' field omitted -- the Object scalar can be a string or map,
+        # but genqlient generates *map[string]interface{} which fails to deserialize
+        # plain string values. This field is not needed for provider operations.
+      }
+    }
+    ... on WorkflowVariableTaskParameterUpdate {
+      updateValue: value {
+        id
+        label
+      }
+      variable {
+        id
+        label
+      }
+    }
+  }
+}
+
+query GetWorkflowDetails($workflowId: ID!) {
+  organization {
+    workflow(id: $workflowId) {
+      id
+      name
+      version
+      status
+      terminal
+      automation {
+        id
+        name
+      }
+      entity {
+        __typename
+        ... on AspectApp {
+          id
+          name
+        }
+        ... on AspectElement {
+          id
+          name
+        }
+        ... on AspectTask {
+          id
+          name
+        }
+      }
+      triggers {
+        id
+        __typename
+        ... on WorkflowRecordCreateTrigger {
+          changedFields {
+            id
+            name
+          }
+        }
+        ... on WorkflowRecordUpdateTrigger {
+          changedFields {
+            id
+            name
+          }
+        }
+        ... on WorkflowOnDemandTrigger {
+          showTriggeredBy
+          parameters {
+            id
+            name
+            required
+            fieldType
+            defaultValue
+            multiple
+          }
+        }
+        ... on WorkflowWebhookTrigger {
+          authenticated
+          url
+          customResponse {
+            success {
+              body
+              enabled
+              format
+              statusCode
+            }
+            failure {
+              body
+              enabled
+              format
+              statusCode
+            }
+          }
+        }
+        ... on WorkflowApprovalChainTrigger {
+          approvalChainTemplate {
+            id
+            name
+          }
+          status
+        }
+      }
+      tasks {
+        id
+        __typename
+        name
+        next {
+          id
+        }
+        ...WorkflowVariableTaskFields
+      }
+      outputs {
+        name
+      }
+    }
+  }
+}
+
+query GetWorkflowValueReferences($automationId: ID!) {
+  organization {
+    automation(id: $automationId) {
+      id
+      name
+      current {
+        id
+        triggers {
+          __typename
+          id
+          ... on WorkflowOnDemandTrigger {
+            showTriggeredBy
+            parameters {
+              id
+              name
+              fieldType
+              required
+            }
+          }
+        }
+        tasks {
+          id
+          name
+          __typename
+          ... on WorkflowRecordSearchTask {
+            aspect {
+              id
+              name
+            }
+            filterValueReferences {
+              valueReferences {
+                id
+                label
+                value
+              }
+            }
+          }
+          ... on WorkflowUserSearchTask {
+            filterValueReferences {
+              valueReferences {
+                id
+                label
+                value
+              }
+            }
+          }
+          ...WorkflowVariableTaskFields
+          ... on WorkflowCalculationTask {
+            calculations {
+              id
+              name
+              calculationReference {
+                id
+                label
+                value
+              }
+            }
+          }
+        }
+      }
+      entity {
+        __typename
+        ... on AspectApp {
+          id
+          fields {
+            edges {
+              node {
+                id
+                name
+                __typename
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetWorkflowAvailableReferences(
+  $workflowId: ID!
+  $parentTaskId: ID
+  $aspectId: ID!
+  $fieldTypes: [WorkflowFieldType!]
+  $isOperatorChild: Boolean
+) {
+  organization {
+    aspect(id: $aspectId) {
+      __typename
+      workflow(id: $workflowId) {
+        id
+        availableReferences(
+          parentTaskId: $parentTaskId
+          fieldTypes: $fieldTypes
+          isChild: $isOperatorChild
+        ) {
+          name
+          properties {
+            fieldType
+            name
+            multiple
+            deprecated
+            entity {
+              __typename
+              ... on AspectApp {
+                id
+                name
+              }
+              ... on AspectTask {
+                id
+                name
+              }
+              ... on AspectElement {
+                id
+                name
+              }
+              ... on AspectTransaction {
+                id
+                name
+              }
+              ... on Datamine {
+                id
+                name
+              }
+              ... on DocumentModelExcel {
+                id
+                name
+              }
+              ... on SurveyTemplate {
+                id
+                name
+              }
+              ... on Node {
+                __isNode: __typename
+                id
+              }
+              ... on DocumentModelAi {
+                id
+              }
+              ... on DocumentModelExcelCell {
+                id
+              }
+              ... on DocumentModelInvoice {
+                id
+              }
+              ... on DocumentModelJson {
+                id
+              }
+              ... on DocumentModelOCR {
+                id
+              }
+            }
+            reference {
+              id
+              value
+              taskReference {
+                name
+                task {
+                  __typename
+                  id
+                }
+              }
+              triggerReference {
+                name
+              }
+              forEachReference {
+                name
+                forEachTask {
+                  id
+                }
+              }
+              variableReference {
+                variableId
+                name
+                type
+              }
+            }
+          }
+        }
+      }
+      id
+    }
+    id
+  }
+}
+
+# Lightweight version of GetWorkflowAvailableReferences for refs beautification.
+# Skips the expensive 'entity' field (large union type with many fragments).
+# For beautification we only need: name, reference value, and reference source.
+query GetWorkflowAvailableReferencesLightweight(
+  $workflowId: ID!
+  $parentTaskId: ID
+  $aspectId: ID!
+  $isOperatorChild: Boolean
+) {
+  organization {
+    aspect(id: $aspectId) {
+      __typename
+      workflow(id: $workflowId) {
+        id
+        availableReferences(
+          parentTaskId: $parentTaskId
+          isChild: $isOperatorChild
+        ) {
+          name
+          properties {
+            name
+            deprecated
+            reference {
+              id
+              value
+              taskReference {
+                name
+                task {
+                  id
+                }
+              }
+              triggerReference {
+                name
+              }
+              forEachReference {
+                name
+                forEachTask {
+                  id
+                }
+              }
+              variableReference {
+                variableId
+                name
+                type
+              }
+            }
+          }
+        }
+      }
+      id
+    }
+    id
+  }
+}
+
+query GetForEachTaskChildren($workflowId: ID!) {
+  organization {
+    workflow(id: $workflowId) {
+      id
+      tasks {
+        id
+        __typename
+        ... on WorkflowForEachTask {
+          children {
+            id
+            label
+          }
+        }
+        ... on WorkflowSwitchTask {
+          children {
+            id
+            label
+          }
+        }
+      }
+    }
+  }
+}
+
+# Note: GetForEachTaskOperatorChild requires knowing the workflow ID first
+# Use GetForEachTaskChildren query to get all task children for a workflow
+
+query GetEmailAlias($id: ID!) {
+  organization {
+    emailAlias(id: $id) {
+      id
+      alias
+    }
+  }
+}
+
+# Lightweight query to check workflow status (for immutability detection)
+query GetWorkflowStatus($workflowId: ID!) {
+  organization {
+    workflow(id: $workflowId) {
+      id
+      status
+    }
+  }
+}
+
+# Fragment for task fields needed during discovery (aspect references)
+fragment DiscoveryTaskFields on WorkflowTask {
+  id
+  __typename
+  name
+  previous { id }
+  ... on WorkflowCreateRecordTask {
+    aspect { id name }
+  }
+  ... on WorkflowUpdateFieldTask {
+    aspect { id name }
+  }
+  ... on WorkflowRecordSearchTask {
+    aspect { id name }
+  }
+  ... on WorkflowFindRelatedRecordsTask {
+    relatedAspect { id name }
+  }
+  ... on WorkflowAspectRecordFieldLockingTask {
+    aspect { id name }
+  }
+  ... on WorkflowBulkExcelTask {
+    aspect { id name }
+  }
+}
+
+# Fragment for trigger fields needed during discovery (datamine references)
+fragment DiscoveryTriggerFields on WorkflowTrigger {
+  id
+  __typename
+  ... on WorkflowDatamineTrigger {
+    datamine { id name }
+  }
+}
+
+# Query to get automations with workflow details for discovery
+# This fetches the aspect/relatedAspect references needed for recursive discovery
+# ==============================================================================
+# Automation Execution Queries
+# ==============================================================================
+# All execution queries route through aspect(id) for proper permission enforcement.
+# This prepares for future CLI restructuring where commands will be:
+#   ei app <name> automation status <automation-name> [execution-id]
+# ==============================================================================
+
+# Legacy query - kept for backwards compatibility but prefer aspect-routed version
+query GetAutomationExecutions($automationId: ID!, $filter: AutomationExecutionFilter!, $first: Int, $sort: AutomationExecutionSort) {
+  organization {
+    automation(id: $automationId) {
+      id
+      name
+      status
+      entity {
+        ... on AspectApp {
+          id
+        }
+        ... on AspectElement {
+          id
+        }
+        ... on AspectTask {
+          id
+        }
+      }
+      executions(filter: $filter, first: $first, sort: $sort) {
+        total
+        edges {
+          node {
+            id
+            status
+            startedAt
+            completedAt
+            duration
+            version
+            errors
+          }
+        }
+      }
+    }
+  }
+}
+
+# Legacy query - kept for backwards compatibility but prefer aspect-routed version
+query GetAutomationExecution($automationId: ID!, $executionId: ID!) {
+  organization {
+    automation(id: $automationId) {
+      id
+      name
+      execution(id: $executionId) {
+        id
+        status
+        startedAt
+        completedAt
+        duration
+        version
+        errors
+        actions(first: 100) {
+          total
+          edges {
+            node {
+              id
+              type
+              status
+              duration
+              startedAt
+              completedAt
+              error {
+                reason
+              }
+              action {
+                id
+                name
+                __typename
+              }
+            }
+          }
+        }
+        failedAction {
+          id
+          type
+          status
+          error {
+            reason
+          }
+          action {
+            id
+            name
+          }
+        }
+      }
+    }
+  }
+}
+
+# ==============================================================================
+# Aspect-Routed Execution Queries (Preferred)
+# ==============================================================================
+# These queries route through aspect for proper permission enforcement.
+# Use getAspectIDForAutomation() helper to get the aspect ID first.
+# ==============================================================================
+
+# List executions via aspect path - preferred for permission enforcement
+query GetAutomationExecutionsViaAspect(
+  $aspectId: ID!
+  $automationId: ID!
+  $filter: AutomationExecutionFilter!
+  $first: Int
+  $sort: AutomationExecutionSort
+) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      automation(id: $automationId) {
+        id
+        name
+        status
+        executions(filter: $filter, first: $first, sort: $sort) {
+          total
+          edges {
+            node {
+              id
+              status
+              startedAt
+              completedAt
+              duration
+              version
+              errors
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Get execution detail via aspect path - preferred for permission enforcement
+query GetAutomationExecutionViaAspect(
+  $aspectId: ID!
+  $automationId: ID!
+  $executionId: ID!
+) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      automation(id: $automationId) {
+        id
+        name
+        execution(id: $executionId) {
+          id
+          status
+          startedAt
+          completedAt
+          duration
+          version
+          errors
+          actions(first: 100) {
+            total
+            edges {
+              node {
+                id
+                type
+                status
+                duration
+                startedAt
+                completedAt
+                error {
+                  reason
+                }
+                action {
+                  id
+                  name
+                  __typename
+                }
+              }
+            }
+          }
+          failedAction {
+            id
+            type
+            status
+            error {
+              reason
+            }
+            action {
+              id
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Fragment for action execution with inputs/outputs
+fragment ActionExecutionWithIO on ActionExecution {
+  id
+  type
+  status
+  duration
+  startedAt
+  completedAt
+  error {
+    reason
+  }
+  action {
+    id
+    name
+    __typename
+  }
+  inputsOutputs {
+    inputs
+    outputs
+  }
+}
+
+# Query for execution with detailed action I/O - routes through aspect for permissions
+query GetAutomationExecutionWithActionIO(
+  $aspectId: ID!
+  $automationId: ID!
+  $executionId: ID!
+  $first: Int
+  $after: String
+) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      automation(id: $automationId) {
+        id
+        name
+        execution(id: $executionId) {
+          id
+          status
+          startedAt
+          completedAt
+          duration
+          version
+          errors
+          actions(first: $first, after: $after) {
+            total
+            pageInfo {
+              endCursor
+              hasNextPage
+            }
+            edges {
+              node {
+                ...ActionExecutionWithIO
+              }
+            }
+          }
+          failedAction {
+            ...ActionExecutionWithIO
+          }
+        }
+      }
+    }
+  }
+}
+
+# ==============================================================================
+# Two-Phase Automation Discovery Queries
+# ==============================================================================
+# Phase 1: Get lightweight automation list with just workflow IDs
+# Phase 2: Fetch each workflow's details individually to avoid timeouts
+# ==============================================================================
+
+# Phase 1: Lightweight query to get automations with just workflow IDs
+# This query is fast because it doesn't fetch triggers/tasks
+query GetAutomationsList($aspectId: ID!, $filter: Filter) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      ... on AspectApp {
+        automations(filter: $filter) {
+          edges {
+            node {
+              id
+              name
+              status
+              current {
+                id
+              }
+              draft {
+                id
+              }
+            }
+          }
+        }
+      }
+      ... on AspectElement {
+        automations(filter: $filter) {
+          edges {
+            node {
+              id
+              name
+              status
+              current {
+                id
+              }
+              draft {
+                id
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Phase 2: Fetch a single workflow's full details via aspect.workflow(id)
+# This is called once per workflow to spread the load
+query GetWorkflowDetailsForDiscovery($aspectId: ID!, $workflowId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      workflow(id: $workflowId) {
+        id
+        triggers {
+          ...DiscoveryTriggerFields
+        }
+        tasks {
+          ...DiscoveryTaskFields
+        }
+      }
+    }
+  }
+}
+
+# ==============================================================================
+# CLI Visualization Queries
+# ==============================================================================
+# Query for rendering automation flow in CLI/HTML with nested switch/for_each
+# ==============================================================================
+
+# Fragment for basic task info (used in nested children)
+fragment CLITaskBasic on WorkflowTask {
+  id
+  __typename
+  name
+  previous { id }
+  next { id }
+}
+
+# Query for CLI automation visualization - fetches workflow structure with nested children
+query GetWorkflowForVisualization($workflowId: ID!) {
+  organization {
+    workflow(id: $workflowId) {
+      id
+      name
+      version
+      status
+      terminal
+      triggers {
+        id
+        __typename
+        ... on WorkflowRecordCreateTrigger {
+          filter
+        }
+        ... on WorkflowRecordUpdateTrigger {
+          filter
+          changedFields { id name }
+        }
+        ... on WorkflowOnDemandTrigger {
+          showTriggeredBy
+          parameters { id name fieldType required }
+        }
+        ... on WorkflowWebhookTrigger {
+          authenticated
+          url
+        }
+        ... on WorkflowTemporalTrigger {
+          temporalUnit
+          value
+        }
+      }
+      tasks {
+        ...CLITaskBasic
+        ... on WorkflowSwitchTask {
+          children {
+            id
+            label
+            filter
+            tasks {
+              ...CLITaskBasic
+              ... on WorkflowSwitchTask {
+                children {
+                  id
+                  label
+                  tasks { ...CLITaskBasic }
+                }
+              }
+              ... on WorkflowForEachTask {
+                forEach { id label value }
+                children {
+                  id
+                  tasks { ...CLITaskBasic }
+                }
+              }
+            }
+          }
+        }
+        ... on WorkflowForEachTask {
+          forEach { id label value }
+          children {
+            id
+            tasks {
+              ...CLITaskBasic
+              ... on WorkflowSwitchTask {
+                children {
+                  id
+                  label
+                  tasks { ...CLITaskBasic }
+                }
+              }
+              ... on WorkflowForEachTask {
+                forEach { id label value }
+                children {
+                  id
+                  tasks { ...CLITaskBasic }
+                }
+              }
+            }
+          }
+        }
+      }
+      outputs {
+        name
+      }
+    }
+  }
+}
+
+# ==============================================================================
+# Progressive Disclosure Execution Queries (Two-Phase)
+# ==============================================================================
+# Fast query for execution metadata without I/O (default)
+# Separate query for fetching individual action I/O on demand
+# ==============================================================================
+
+# Fragment for action execution metadata without inputs/outputs (fast)
+fragment ActionExecutionMetadata on ActionExecution {
+  id
+  type
+  status
+  duration
+  startedAt
+  completedAt
+  error {
+    reason
+  }
+  action {
+    id
+    name
+    __typename
+  }
+}
+
+# Fast query for execution metadata - no I/O data (default for CLI)
+query GetAutomationExecutionMetadata(
+  $aspectId: ID!
+  $automationId: ID!
+  $executionId: ID!
+  $first: Int
+  $after: String
+) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      automation(id: $automationId) {
+        id
+        name
+        execution(id: $executionId) {
+          id
+          status
+          startedAt
+          completedAt
+          duration
+          version
+          errors
+          actions(first: $first, after: $after) {
+            total
+            pageInfo {
+              endCursor
+              hasNextPage
+            }
+            edges {
+              node {
+                ...ActionExecutionMetadata
+              }
+            }
+          }
+          failedAction {
+            ...ActionExecutionMetadata
+          }
+        }
+      }
+    }
+  }
+}
+
+# Query for fetching a single action's I/O data on demand
+query GetActionExecutionIO(
+  $aspectId: ID!
+  $automationId: ID!
+  $executionId: ID!
+  $actionId: ID!
+) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      automation(id: $automationId) {
+        id
+        execution(id: $executionId) {
+          action(id: $actionId) {
+            id
+            inputsOutputs {
+              inputs
+              outputs
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Discovery query - uses first: 1000 to match frontend behavior
+query GetAspectAutomationsForDiscovery($aspectId: ID!, $filter: Filter) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      ... on AspectApp {
+        automations(filter: $filter, first: 1000) {
+          edges {
+            node {
+              id
+              name
+              status
+              current {
+                id
+                triggers {
+                  ...DiscoveryTriggerFields
+                }
+                tasks {
+                  ...DiscoveryTaskFields
+                }
+              }
+              draft {
+                id
+              }
+            }
+          }
+        }
+      }
+      ... on AspectElement {
+        automations(filter: $filter, first: 1000) {
+          edges {
+            node {
+              id
+              name
+              status
+              current {
+                id
+                triggers {
+                  ...DiscoveryTriggerFields
+                }
+                tasks {
+                  ...DiscoveryTaskFields
+                }
+              }
+              draft {
+                id
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Get automations and agents that depend on this automation
+query GetAutomationDependencies($automationId: ID!) {
+  organization {
+    automation(id: $automationId) {
+      id
+      name
+      usage {
+        automations {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+        agents {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+        agentTools {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "__typename": "WorkflowOnDemandTrigger",
+  "id": "77777777-7777-7777-7777-777777777777",
+  "name": "Manual Trigger With Parameters",
+  "aspect": {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "name": "Test App"
+  },
+  "showTriggeredBy": true,
+  "parameters": [
+    {
+      "name": "reason",
+      "fieldType": "TEXT",
+      "required": true,
+      "multiple": false,
+      "defaultValue": null
+    },
+    {
+      "name": "priority",
+      "fieldType": "PICKLIST",
+      "required": false,
+      "multiple": false,
+      "defaultValue": "MEDIUM"
+    }
+  ]
+}

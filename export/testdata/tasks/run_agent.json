@@ -1,0 +1,13 @@
+{
+  "__typename": "WorkflowAiAgentTask",
+  "id": "run-agent-1111-111111111111",
+  "name": "Run AI Agent",
+  "agent": {
+    "id": "agent-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "name": "Support Agent"
+  },
+  "prompt": {
+    "staticValue": "Analyze this ticket and provide a summary."
+  },
+  "outputType": "TEXT"
+}

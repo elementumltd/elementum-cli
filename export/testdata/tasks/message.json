@@ -1,0 +1,9 @@
+{
+  "__typename": "WorkflowMessageTask",
+  "id": "message-task-1111-111111111111",
+  "name": "Send Notification",
+  "contentsReference": {
+    "staticValue": "Hello, this is a notification message."
+  },
+  "recordReference": null
+}

@@ -1,0 +1,44 @@
+{
+  "id": "auto-simple-1111-111111111111",
+  "name": "Simple Notification Workflow",
+  "status": "ACTIVE",
+  "workflowId": "workflow-simple-1111-111111",
+  "hasPublished": true,
+  "triggers": [
+    {
+      "id": "trigger-1111-1111-1111-111111111111",
+      "type": "record_created",
+      "name": "When Record Created",
+      "rawData": {
+        "__typename": "WorkflowRecordCreateTrigger",
+        "id": "trigger-1111-1111-1111-111111111111",
+        "name": "When Record Created",
+        "aspect": {
+          "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "name": "Test App"
+        }
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task-message-1111-111111111111",
+      "type": "message",
+      "name": "Send Welcome Message",
+      "parentId": "trigger-1111-1111-1111-111111111111",
+      "rawData": {
+        "__typename": "WorkflowMessageTask",
+        "id": "task-message-1111-111111111111",
+        "name": "Send Welcome Message",
+        "contentsReference": {
+          "staticValue": "Welcome! A new record has been created."
+        },
+        "recordReference": {
+          "triggerReference": {
+            "name": "record.id"
+          }
+        }
+      }
+    }
+  ]
+}

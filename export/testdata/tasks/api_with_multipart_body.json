@@ -1,0 +1,37 @@
+{
+  "__typename": "WorkflowApiTask",
+  "id": "api-task-multipart-7777777",
+  "name": "Multipart Upload Request",
+  "method": "POST",
+  "urlReference": {
+    "value": "https://api.example.com/upload"
+  },
+  "body": {
+    "__typename": "ApiMultipartFormBody",
+    "parts": [
+      {
+        "__typename": "ApiMultipartFile",
+        "name": "document",
+        "attachment": {
+          "triggerReference": {
+            "name": "record.attachments"
+          }
+        },
+        "attachmentId": null,
+        "file": null
+      },
+      {
+        "__typename": "ApiMultipartFile",
+        "name": "profile_pic",
+        "attachment": null,
+        "attachmentId": {
+          "value": "attachment-id-123"
+        },
+        "file": null
+      }
+    ]
+  },
+  "headers": [],
+  "responseType": "FILE",
+  "continueOnError": true
+}

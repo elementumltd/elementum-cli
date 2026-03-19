@@ -1,0 +1,31 @@
+# CloudLink mutations
+
+mutation CreateCloudLink($input: CloudInput!) {
+  cloudLinkCreate(input: $input) {
+    id
+    name
+    cache
+    encryptCache
+    system
+    usageType
+    valid
+    __typename
+  }
+}
+
+mutation UpdateCloudLink($id: ID!, $input: CloudLinkUpdateInput!) {
+  cloudLinkUpdate(id: $id, input: $input) {
+    id
+    name
+    cache
+    encryptCache
+    system
+    usageType
+    valid
+    __typename
+  }
+}
+
+mutation DeleteCloudLink($id: ID!, $usageType: CloudLinkUsageType) {
+  cloudLinkDelete(id: $id, usageType: $usageType)
+}

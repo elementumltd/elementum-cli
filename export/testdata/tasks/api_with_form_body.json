@@ -1,0 +1,29 @@
+{
+  "__typename": "WorkflowApiTask",
+  "id": "api-task-form-111111111111",
+  "name": "Form Body Request",
+  "method": "POST",
+  "urlReference": {
+    "value": "https://api.example.com/form"
+  },
+  "body": {
+    "__typename": "ApiFormBody",
+    "values": [
+      {
+        "key": "username",
+        "value": {
+          "value": "testuser"
+        }
+      },
+      {
+        "key": "email",
+        "value": {
+          "value": "test@example.com"
+        }
+      }
+    ]
+  },
+  "headers": [],
+  "responseType": "JSON",
+  "continueOnError": false
+}

@@ -1,0 +1,15 @@
+{
+  "__typename": "WorkflowAiClassifyTask",
+  "id": "ai-classify-1111-111111111111",
+  "name": "Classify Text",
+  "textToClassify": {
+    "triggerReference": {
+      "name": "record.description"
+    }
+  },
+  "categorySource": {
+    "__typename": "AiClassifyCategoryStaticSource",
+    "categories": []
+  },
+  "context": null
+}

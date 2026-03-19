@@ -1,0 +1,45 @@
+# Aspect Comments - Display Block Operations
+# These operations manage the comments feature on aspects (Apps, Elements, Tasks).
+#
+# State Machine:
+# - No display block = comments OFF
+# - Display block with empty channels = regular comments ON
+# - Display block with CONSUMER channel = external chat (not supported here)
+
+# EnableAspectComments creates a comments display block on an aspect.
+# Returns the created block ID for tracking in Terraform state.
+mutation EnableAspectComments($aspectId: ID!) {
+  aspectDisplayBlockCreate(aspectId: $aspectId, input: {
+    comments: {
+      channels: []
+      channelNames: []
+    }
+  }) {
+    id
+  }
+}
+
+# DisableAspectComments removes the comments display block from an aspect.
+mutation DisableAspectComments($blockId: ID!) {
+  aspectDisplayBlockDeleteV2(id: $blockId) {
+    id
+  }
+}
+
+# GetAspectCommentsStatus checks if comments are enabled on an aspect.
+# Returns the display blocks so we can find the AspectCommentsDisplayBlock by __typename.
+query GetAspectCommentsStatus($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      displayBlocks(first: 100) {
+        edges {
+          node {
+            id
+            __typename
+          }
+        }
+      }
+    }
+  }
+}

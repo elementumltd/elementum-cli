@@ -1,0 +1,233 @@
+# Agent Conversation Operations
+# Used by the ei chat command for interactive agent conversations
+
+mutation CreateAgentConversation($input: AgentConversationCreateInput!) {
+  agentConversationCreateV2(input: $input) {
+    id
+    title
+    conversation {
+      id
+    }
+  }
+}
+
+query GetAgentConversation($agentId: ID!, $conversationId: ID!) {
+  organization {
+    agent(id: $agentId) {
+      id
+      name
+      conversationV2(id: $conversationId) {
+        id
+        title
+        messages(first: 250) {
+          edges {
+            node {
+              __typename
+              ... on AgentConversationUserMessageEvent {
+                id
+                content
+                createdAt
+              }
+              ... on AgentConversationAssistantMessageEvent {
+                id
+                content
+                createdAt
+                toolCalls {
+                  toolCallId
+                  name
+                  displayName
+                  arguments {
+                    ... on ValidToolCallArguments {
+                      jsonValues {
+                        name
+                        value
+                      }
+                    }
+                    ... on InvalidToolCallArguments {
+                      invalidJson
+                    }
+                  }
+                }
+              }
+              ... on AgentConversationToolMessageEvent {
+                id
+                createdAt
+                toolResponses {
+                  toolCallId
+                  name
+                  displayName
+                  responseData
+                }
+              }
+              ... on AgentConversationToolStartMessageEvent {
+                id
+                message
+                createdAt
+                toolCallId
+              }
+              ... on AgentConversationToolCompleteMessageEvent {
+                id
+                createdAt
+                toolCallId
+              }
+              ... on AgentConversationToolErrorMessageEvent {
+                id
+                createdAt
+                toolCallId
+                errorMessage
+              }
+              ... on AgentConversationSystemMessageEvent {
+                id
+                content
+                createdAt
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query ListAgentConversations($agentId: ID!) {
+  organization {
+    agent(id: $agentId) {
+      id
+      name
+      conversationsV2(first: 20) {
+        edges {
+          node {
+            id
+            title
+            updatedAt
+          }
+        }
+      }
+    }
+  }
+}
+
+# Detailed conversation query for performance analysis (ei conversation command)
+# Fetches tool call arguments, tool response data, and pagination support
+query GetConversationAnalysis($agentId: ID!, $conversationId: ID!, $first: Int!, $after: String) {
+  organization {
+    agent(id: $agentId) {
+      id
+      name
+      conversationV2(id: $conversationId) {
+        id
+        title
+        messages(first: $first, after: $after) {
+          total
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          edges {
+            cursor
+            node {
+              __typename
+              ... on AgentConversationUserMessageEvent {
+                id
+                content
+                createdAt
+              }
+              ... on AgentConversationAssistantMessageEvent {
+                id
+                content
+                createdAt
+                toolCalls {
+                  toolCallId
+                  name
+                  displayName
+                  arguments {
+                    __typename
+                    ... on ValidToolCallArguments {
+                      jsonValues {
+                        name
+                        value
+                      }
+                    }
+                    ... on InvalidToolCallArguments {
+                      invalidJson
+                    }
+                  }
+                }
+              }
+              ... on AgentConversationToolStartMessageEvent {
+                id
+                message
+                createdAt
+                toolCallId
+              }
+              ... on AgentConversationToolCompleteMessageEvent {
+                id
+                createdAt
+                toolCallId
+              }
+              ... on AgentConversationToolErrorMessageEvent {
+                id
+                createdAt
+                toolCallId
+                errorMessage
+              }
+              ... on AgentConversationToolMessageEvent {
+                id
+                createdAt
+                toolResponses {
+                  toolCallId
+                  name
+                  displayName
+                  responseData
+                }
+              }
+              ... on AgentConversationSystemMessageEvent {
+                id
+                content
+                createdAt
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Get agent by ID directly - works across permissions
+query GetAgentById($agentId: ID!) {
+  organization {
+    agent(id: $agentId) {
+      id
+      name
+      description
+      ... on AgentElementum {
+        firstMessage
+      }
+    }
+  }
+}
+
+# List agents for a specific app by app ID
+query ListAppAgents($appId: ID!) {
+  organization {
+    aspect(id: $appId) {
+      ... on AspectApp {
+        id
+        name
+        agentsV2(first: 100) {
+          edges {
+            node {
+              id
+              name
+              description
+              ... on AgentElementum {
+                firstMessage
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

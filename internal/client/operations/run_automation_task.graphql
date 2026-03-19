@@ -1,0 +1,53 @@
+# Run Automation Task operations
+# This task allows automations to trigger other automations (sub-workflows)
+
+# Fragment for WorkflowRunAutomationTask fields
+fragment WorkflowRunAutomationTaskFields on WorkflowRunAutomationTask {
+  id
+  name
+  synchronous
+  automation {
+    id
+    name
+  }
+  automationRef {
+    id
+    label
+    value
+  }
+  inputMappings {
+    parameter {
+      id
+      name
+    }
+    value {
+      id
+      label
+      value
+    }
+  }
+  dynamicInputMappings {
+    name
+    value {
+      id
+      label
+      value
+    }
+  }
+  outputMappings {
+    name
+  }
+}
+
+# Query to get a run_automation task by ID
+query GetRunAutomationTask($workflowId: ID!, $taskId: ID!) {
+  organization {
+    workflow(id: $workflowId) {
+      task(id: $taskId) {
+        ... on WorkflowRunAutomationTask {
+          ...WorkflowRunAutomationTaskFields
+        }
+      }
+    }
+  }
+}

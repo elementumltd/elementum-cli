@@ -1,0 +1,67 @@
+{
+  "id": "auto-switch-4444-444444444444",
+  "name": "Branching Switch Workflow",
+  "status": "ACTIVE",
+  "workflowId": "workflow-switch-4444-444444",
+  "hasPublished": true,
+  "triggers": [
+    {
+      "id": "trigger-4444-4444-4444-444444444444",
+      "type": "record_updated",
+      "name": "When Status Changed",
+      "rawData": {
+        "__typename": "WorkflowRecordUpdateTrigger",
+        "id": "trigger-4444-4444-4444-444444444444",
+        "name": "When Status Changed",
+        "aspect": {
+          "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "name": "Test App"
+        },
+        "changedFields": [
+          {"id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"}
+        ]
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task-switch-4444-444444444444",
+      "type": "switch",
+      "name": "Route By Status",
+      "parentId": "trigger-4444-4444-4444-444444444444",
+      "rawData": {
+        "__typename": "WorkflowSwitchTask",
+        "id": "task-switch-4444-444444444444",
+        "name": "Route By Status",
+        "children": [
+          {
+            "__typename": "WorkflowSwitchCase",
+            "id": "case-approved-4444-444444444444",
+            "name": "Approved",
+            "filter": {
+              "type": "equals",
+              "fieldId": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+              "value": "APPROVED"
+            }
+          },
+          {
+            "__typename": "WorkflowSwitchCase",
+            "id": "case-rejected-4444-444444444444",
+            "name": "Rejected",
+            "filter": {
+              "type": "equals",
+              "fieldId": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+              "value": "REJECTED"
+            }
+          },
+          {
+            "__typename": "WorkflowSwitchCase",
+            "id": "case-default-4444-444444444444",
+            "name": "Default",
+            "filter": null
+          }
+        ]
+      }
+    }
+  ]
+}

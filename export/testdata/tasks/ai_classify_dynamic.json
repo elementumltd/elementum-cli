@@ -1,0 +1,29 @@
+{
+  "__typename": "WorkflowAiClassifyTask",
+  "id": "ai-classify-3333-333333333333",
+  "name": "Classify by Product",
+  "textToClassify": {
+    "triggerReference": {
+      "name": "record.description"
+    }
+  },
+  "categorySource": {
+    "__typename": "AiClassifyCategoryDynamicSource",
+    "aspect": {
+      "id": "aspect-products-id",
+      "name": "Products"
+    },
+    "labelField": {
+      "id": "field-product-name-id",
+      "name": "Product Name"
+    },
+    "descriptionField": {
+      "id": "field-product-desc-id",
+      "name": "Description"
+    },
+    "filter": null,
+    "filterValueReferences": null,
+    "limit": 100
+  },
+  "context": null
+}

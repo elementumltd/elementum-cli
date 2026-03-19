@@ -1,0 +1,28 @@
+{
+  "__typename": "WorkflowApiTask",
+  "id": "api-task-2222-222222222222",
+  "name": "POST JSON Request",
+  "method": "POST",
+  "url": {
+    "staticValue": "https://api.example.com/records"
+  },
+  "body": {
+    "__typename": "ApiJsonBody",
+    "json": {
+      "name": {
+        "staticValue": "New Record"
+      },
+      "status": {
+        "staticValue": "active"
+      }
+    }
+  },
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": {
+        "staticValue": "application/json"
+      }
+    }
+  ]
+}

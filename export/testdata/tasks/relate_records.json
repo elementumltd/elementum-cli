@@ -1,0 +1,16 @@
+{
+  "__typename": "WorkflowRelateRecordsTask",
+  "id": "relate-records-1111-111111111111",
+  "name": "Link Records",
+  "sourceRecordIds": {
+    "triggerReference": {
+      "name": "record.id"
+    }
+  },
+  "targetRecordId": {
+    "taskReference": {
+      "taskId": "create-record-1111-111111111111",
+      "propertyPath": "id"
+    }
+  }
+}

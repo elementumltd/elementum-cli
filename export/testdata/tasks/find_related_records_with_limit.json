@@ -1,0 +1,15 @@
+{
+  "__typename": "WorkflowFindRelatedRecordsTask",
+  "id": "find-related-2222-222222222222",
+  "name": "Find Top 5 Related",
+  "recordReference": {
+    "triggerReference": {
+      "name": "record.id"
+    }
+  },
+  "relatedAspect": {
+    "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    "name": "Related App"
+  },
+  "limit": 5
+}

@@ -1,0 +1,211 @@
+# Workflow and Automation mutations
+
+mutation CreateWorkflow($owner: EntityIdentifierInput!, $input: WorkflowInput!) {
+  workflowCreate(owner: $owner, input: $input) {
+    id
+    automation {
+      id
+      name
+      status
+      entity {
+        __typename
+        ... on AspectApp { id }
+        ... on AspectElement { id }
+        ... on AspectTask { id }
+      }
+    }
+  }
+}
+
+mutation UpdateAutomation($id: ID!, $name: String!) {
+  automationUpdate(id: $id, name: $name) {
+    id
+    name
+    status
+  }
+}
+
+mutation UpdateWorkflowName($id: ID!, $input: WorkflowInput!) {
+  workflowUpdate(id: $id, input: $input) {
+    id
+    name
+    status
+    automation {
+      id
+      name
+      status
+      current {
+        id
+        version
+        name
+        status
+      }
+      draft {
+        id
+        version
+        name
+        status
+      }
+    }
+  }
+}
+
+mutation DeleteAutomation($id: ID!) {
+  automationDelete(id: $id) {
+    id
+  }
+}
+
+mutation CreateWorkflowTrigger($workflowId: ID!, $input: WorkflowTriggerInput!) {
+  workflowTriggerCreate(workflowId: $workflowId, input: $input) {
+    id
+    __typename
+    ... on WorkflowWebhookTrigger {
+      url
+      authenticated
+      customResponse {
+        success {
+          body
+          enabled
+          format
+          statusCode
+        }
+        failure {
+          body
+          enabled
+          format
+          statusCode
+        }
+      }
+    }
+  }
+}
+
+mutation CreateWorkflowTask($workflowId: ID!, $input: WorkflowTaskInput!) {
+  workflowTaskCreate(workflowId: $workflowId, input: $input) {
+    id
+    __typename
+    name
+  }
+}
+
+mutation InsertWorkflowTask($workflowId: ID!, $input: WorkflowTaskInput!) {
+  workflowTaskInsert(workflowId: $workflowId, input: $input) {
+    id
+    __typename
+    name
+  }
+}
+
+mutation DeleteWorkflowTask($id: ID!) {
+  workflowTaskDeleteV2(id: $id) {
+    id
+  }
+}
+
+mutation UpdateWorkflowTask($id: ID!, $input: WorkflowTaskUpdateInput!) {
+  workflowTaskUpdate(id: $id, input: $input) {
+    id
+    __typename
+    name
+  }
+}
+
+mutation PublishWorkflow($workflowId: ID!) {
+  workflowUpdate(id: $workflowId, input: { status: ACTIVE }) {
+    id
+    status
+    version
+    automation {
+      id
+      status
+      current {
+        id
+        version
+      }
+      draft {
+        id
+        version
+      }
+    }
+  }
+}
+
+mutation CreateWorkflowVersion($workflowId: ID!) {
+  workflowCreateVersion(id: $workflowId) {
+    id
+    status
+    version
+    automation {
+      id
+      current {
+        id
+        version
+      }
+      draft {
+        id
+        version
+      }
+    }
+  }
+}
+
+mutation UpdateWorkflowOutputs($id: ID!, $input: WorkflowInput!) {
+  workflowUpdate(id: $id, input: $input) {
+    id
+    outputs {
+      name
+      value {
+        id
+        value
+      }
+    }
+  }
+}
+
+mutation DeactivateWorkflow($id: ID!, $input: WorkflowInput!) {
+  workflowUpdate(id: $id, input: $input) {
+    id
+    status
+  }
+}
+
+mutation DeleteWorkflow($id: ID!) {
+  workflowDeleteV2(id: $id) {
+    id
+  }
+}
+
+mutation CreateWorkflowTaskOperatorChild($operatorTaskId: ID!, $input: WorkflowTaskOperatorInput!) {
+  workflowTaskOperatorChildCreate(operatorTaskId: $operatorTaskId, input: $input) {
+    id
+    label
+  }
+}
+
+mutation UpdateWorkflowTaskOperatorChild($id: ID!, $operatorTaskId: ID!, $input: WorkflowTaskOperatorUpdateInput!) {
+  workflowTaskOperatorChildUpdate(operatorChildId: $id, operatorTaskId: $operatorTaskId, input: $input) {
+    id
+    label
+    filter
+  }
+}
+
+mutation CreateWorkflowTaskChild($operatorTaskId: ID!, $input: WorkflowTaskInput!) {
+  workflowTaskChildCreate(operatorTaskId: $operatorTaskId, input: $input) {
+    id
+    __typename
+    name
+  }
+}
+
+mutation DeleteWorkflowTaskOperatorChild($operatorChildId: ID!) {
+  workflowTaskOperatorChildDelete(operatorChildId: $operatorChildId)
+}
+
+mutation UpsertEmailAlias($input: EmailAliasInput!) {
+  emailAliasUpsert(input: $input) {
+    id
+    alias
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "__typename": "WorkflowApprovalChainTrigger",
+  "id": "11111111-aaaa-bbbb-cccc-dddddddddddd",
+  "name": "Approval Chain Trigger",
+  "approvalChainTemplate": {
+    "id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+    "name": "Standard Approval"
+  }
+}

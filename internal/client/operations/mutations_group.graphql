@@ -1,0 +1,39 @@
+# Group mutations
+
+mutation CreateGroup($input: GroupInput!) {
+  groupCreate(group: $input) {
+    id
+    name
+    approver
+    assignable
+    mentionable
+    watchable
+    dynamic
+    tags
+  }
+}
+
+mutation UpdateGroup($id: ID!, $input: GroupInput!) {
+  groupUpdate(id: $id, group: $input) {
+    id
+    name
+    approver
+    assignable
+    mentionable
+    watchable
+    dynamic
+    tags
+  }
+}
+
+mutation DeleteGroup($id: ID!) {
+  groupDelete(id: $id)
+}
+
+mutation AddGroupUsers($id: ID!, $userIds: [ID!]!) {
+  groupAddUsers(id: $id, userIds: $userIds)
+}
+
+mutation RemoveGroupUsers($id: ID!, $userIds: [ID!]!) {
+  groupRemoveUsers(id: $id, userIds: $userIds)
+}

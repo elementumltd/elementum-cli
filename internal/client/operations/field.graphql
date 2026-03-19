@@ -1,0 +1,447 @@
+# Field queries
+
+query GetFieldDependencies($aspectId: ID!, $fieldId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      field(id: $fieldId) {
+        id
+        name
+        semanticTags
+        tags
+        usage {
+          automations {
+            edges {
+              node {
+                id
+                name
+              }
+            }
+          }
+          agentTools {
+            edges {
+              node {
+                id
+                name
+              }
+            }
+          }
+          fields {
+            edges {
+              node {
+                id
+                name
+              }
+            }
+          }
+          relations {
+            edges {
+              node {
+                id
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+fragment FieldDetails on AspectField {
+  id
+  name
+  __typename
+  required
+  requiredOnClose
+  showOnCreate
+  lockOnCreate
+  description
+  semanticTags
+  system
+  calculation {
+    text
+  }
+  ... on AspectTextField {
+    textDefaultValue: defaultValue
+  }
+  ... on AspectHtmlField {
+    htmlDefaultValue: defaultValue
+  }
+  ... on AspectNumberField {
+    numberDefaultValue: defaultValue
+    format {
+      currency
+      decimalPlaces
+      delimiter
+      percentage
+    }
+  }
+  ... on AspectDecimalField {
+    decimalDefaultValue: defaultValue
+    format {
+      currency
+      decimalPlaces
+      delimiter
+      percentage
+    }
+  }
+  ... on AspectBooleanField {
+    booleanDefaultValue: defaultValue
+  }
+  ... on AspectDateField {
+    dateDefaultValue: defaultValue
+  }
+  ... on AspectDateTimeField {
+    datetimeDefaultValue: defaultValue
+  }
+  ... on AspectPicklistField {
+    picklistDefaultValue: defaultValue {
+      id
+      label
+      color
+    }
+    config {
+      ... on AspectStaticPicklistConfig {
+        parentField {
+          id
+          name
+        }
+      }
+      ... on AspectDynamicPicklistConfig {
+        relatedAspect {
+          id
+          name
+        }
+        relatedLabelField {
+          id
+          name
+        }
+        autoRelate
+      }
+    }
+    values(first: 100) {
+      edges {
+        node {
+          id
+          label
+          color
+          tags
+          active
+        }
+      }
+    }
+  }
+  ... on AspectMultiPicklistField {
+    multiPicklistDefaultValue: defaultValue {
+      id
+      label
+      color
+    }
+    config {
+      ... on AspectStaticPicklistConfig {
+        parentField {
+          id
+          name
+        }
+      }
+      ... on AspectDynamicPicklistConfig {
+        relatedAspect {
+          id
+          name
+        }
+        relatedLabelField {
+          id
+          name
+        }
+        autoRelate
+      }
+    }
+    values(first: 100) {
+      edges {
+        node {
+          id
+          label
+          color
+          tags
+          active
+        }
+      }
+    }
+  }
+  ... on AspectUserField {
+    userDefaultValue: defaultValue {
+      id
+      name
+    }
+  }
+  ... on AspectGroupField {
+    groupDefaultValue: defaultValue {
+      id
+      name
+    }
+  }
+  ... on AspectJsonField {
+    jsonDefaultValue: defaultValue
+  }
+  ... on AspectAttachmentField {
+    mediaTypes
+  }
+}
+
+query GetField($aspectId: ID!, $fieldId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      field(id: $fieldId) {
+        ...FieldDetails
+      }
+    }
+  }
+}
+
+query GetAspectFields($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      __typename
+      id
+      name
+      ... on AspectApp {
+        fields {
+          edges {
+            node {
+              __typename
+              ...FieldDetails
+            }
+          }
+        }
+      }
+      ... on AspectElement {
+        fields {
+          edges {
+            node {
+              __typename
+              ...FieldDetails
+            }
+          }
+        }
+      }
+      ... on AspectTask {
+        fields {
+          edges {
+            node {
+              __typename
+              ...FieldDetails
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# ==============================================================================
+# Three-Phase Fields Discovery (for large apps to avoid timeouts)
+# ==============================================================================
+# Phase 1: Get all fields with config but NO values
+# Phase 2: Fetch values for static picklist fields only (GetFieldValues)
+# Phase 3: Fetch aspect names for dynamic picklist configs (GetAspectName in aspect.graphql)
+# ==============================================================================
+
+# Lightweight field details - NO values for picklist fields
+# For picklist fields, only includes config (to determine static vs dynamic)
+fragment FieldDetailsNoValues on AspectField {
+  id
+  name
+  __typename
+  required
+  requiredOnClose
+  showOnCreate
+  lockOnCreate
+  description
+  semanticTags
+  system
+  calculation {
+    text
+  }
+  ... on AspectTextField {
+    textDefaultValue: defaultValue
+  }
+  ... on AspectHtmlField {
+    htmlDefaultValue: defaultValue
+  }
+  ... on AspectNumberField {
+    numberDefaultValue: defaultValue
+    format {
+      currency
+      decimalPlaces
+      delimiter
+      percentage
+    }
+  }
+  ... on AspectDecimalField {
+    decimalDefaultValue: defaultValue
+    format {
+      currency
+      decimalPlaces
+      delimiter
+      percentage
+    }
+  }
+  ... on AspectBooleanField {
+    booleanDefaultValue: defaultValue
+  }
+  ... on AspectDateField {
+    dateDefaultValue: defaultValue
+  }
+  ... on AspectDateTimeField {
+    datetimeDefaultValue: defaultValue
+  }
+  ... on AspectPicklistField {
+    picklistDefaultValue: defaultValue {
+      id
+      label
+      color
+    }
+    config {
+      __typename
+      ... on AspectStaticPicklistConfig {
+        parentField {
+          id
+          name
+        }
+      }
+      ... on AspectDynamicPicklistConfig {
+        relatedAspect {
+          id
+          # Note: name intentionally omitted to avoid expensive resolution
+          # Fetch separately with GetAspectName if needed
+        }
+        relatedLabelField {
+          id
+          name
+        }
+        autoRelate
+      }
+    }
+    # NO values here - fetch separately for static picklists only
+  }
+  ... on AspectMultiPicklistField {
+    multiPicklistDefaultValue: defaultValue {
+      id
+      label
+      color
+    }
+    config {
+      __typename
+      ... on AspectStaticPicklistConfig {
+        parentField {
+          id
+          name
+        }
+      }
+      ... on AspectDynamicPicklistConfig {
+        relatedAspect {
+          id
+          # Note: name intentionally omitted to avoid expensive resolution
+          # Fetch separately with GetAspectName if needed
+        }
+        relatedLabelField {
+          id
+          name
+        }
+        autoRelate
+      }
+    }
+    # NO values here - fetch separately for static picklists only
+  }
+  ... on AspectUserField {
+    userDefaultValue: defaultValue {
+      id
+      name
+    }
+  }
+  ... on AspectGroupField {
+    groupDefaultValue: defaultValue {
+      id
+      name
+    }
+  }
+  ... on AspectJsonField {
+    jsonDefaultValue: defaultValue
+  }
+  ... on AspectAttachmentField {
+    mediaTypes
+  }
+}
+
+# Phase 1: Lightweight query - fields with config but NO values
+query GetAspectFieldsNoValues($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      name
+      ... on AspectApp {
+        fields {
+          edges {
+            node {
+              ...FieldDetailsNoValues
+            }
+          }
+        }
+      }
+      ... on AspectElement {
+        fields {
+          edges {
+            node {
+              ...FieldDetailsNoValues
+            }
+          }
+        }
+      }
+      ... on AspectTask {
+        fields {
+          edges {
+            node {
+              ...FieldDetailsNoValues
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Phase 2: Fetch values for a specific field (for static picklists only)
+query GetFieldValues($aspectId: ID!, $fieldId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      field(id: $fieldId) {
+        id
+        ... on AspectPicklistField {
+          values(first: 100) {
+            edges {
+              node {
+                id
+                label
+                color
+                tags
+                active
+              }
+            }
+          }
+        }
+        ... on AspectMultiPicklistField {
+          values(first: 100) {
+            edges {
+              node {
+                id
+                label
+                color
+                tags
+                active
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

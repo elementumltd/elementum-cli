@@ -1,0 +1,12 @@
+{
+  "__typename": "WorkflowApprovalChainTask",
+  "id": "approval-chain-task-2222-222222",
+  "name": "Request Approval with Reason",
+  "approvers": [
+    {"id": "user-1111-1111-1111-111111111111", "displayName": "Manager"},
+    {"id": "user-2222-2222-2222-222222222222", "displayName": "Director"}
+  ],
+  "reason": {
+    "staticValue": "Budget approval required for expenses over $5000"
+  }
+}

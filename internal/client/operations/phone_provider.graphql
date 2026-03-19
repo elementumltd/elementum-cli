@@ -1,0 +1,52 @@
+# Phone Provider queries and mutations
+
+# Fragment for phone provider information
+fragment PhoneProviderInfo on PhoneProvider {
+  id
+  name
+  system
+}
+
+# Get all phone providers in the organization
+query GetPhoneProviders($first: Int) {
+  organization {
+    phoneProviders(first: $first) {
+      edges {
+        node {
+          ...PhoneProviderInfo
+        }
+      }
+      total
+    }
+  }
+}
+
+# Get a specific phone provider by ID
+query GetPhoneProvider($id: ID!) {
+  organization {
+    phoneProvider(id: $id) {
+      ...PhoneProviderInfo
+    }
+  }
+}
+
+# Create a new phone provider
+mutation CreatePhoneProvider($input: PhoneProviderCreateInput!) {
+  phoneProviderCreate(input: $input) {
+    ...PhoneProviderInfo
+  }
+}
+
+# Update an existing phone provider
+mutation UpdatePhoneProvider($id: ID!, $input: PhoneProviderUpdateInput!) {
+  phoneProviderUpdate(id: $id, input: $input) {
+    ...PhoneProviderInfo
+  }
+}
+
+# Delete a phone provider
+mutation DeletePhoneProvider($id: ID!) {
+  phoneProviderDelete(id: $id) {
+    id
+  }
+}

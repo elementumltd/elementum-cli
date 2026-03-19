@@ -1,0 +1,15 @@
+{
+  "__typename": "WorkflowFindRelatedRecordsTask",
+  "id": "find-related-1111-111111111111",
+  "name": "Find Related Records",
+  "recordReference": {
+    "triggerReference": {
+      "name": "record.id"
+    }
+  },
+  "relatedAspect": {
+    "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    "name": "Related App"
+  },
+  "limit": null
+}

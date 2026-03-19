@@ -1,0 +1,15 @@
+{
+  "__typename": "WorkflowSendEmailTask",
+  "id": "send-email-2222-222222222222",
+  "name": "Send Email to Users",
+  "subject": "Team Update",
+  "messageBody": {
+    "staticValue": "Hello Team, please review this update."
+  },
+  "users": [
+    {"id": "user-1111-1111-1111-111111111111", "displayName": "John Doe"},
+    {"id": "user-2222-2222-2222-222222222222", "displayName": "Jane Smith"}
+  ],
+  "groups": [],
+  "externalEmails": []
+}

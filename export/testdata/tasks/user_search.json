@@ -1,0 +1,7 @@
+{
+  "__typename": "WorkflowUserSearchTask",
+  "id": "user-search-1111-111111111111",
+  "name": "Search Users",
+  "filter": null,
+  "filterValueReferences": []
+}

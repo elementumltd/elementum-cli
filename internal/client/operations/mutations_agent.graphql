@@ -1,0 +1,45 @@
+# Agent mutations
+
+mutation CreateAgent($input: AgentCreateV3Input!) {
+  agentCreateV3(input: $input) {
+    id
+    name
+    description
+  }
+}
+
+mutation UpdateAgent($id: ID!, $input: AgentUpdateV2Input!) {
+  agentUpdateV2(id: $id, input: $input) {
+    id
+    name
+    description
+  }
+}
+
+mutation DeleteAgent($id: ID!) {
+  agentDelete(id: $id) {
+    id
+  }
+}
+
+mutation CreateAgentTool($agentId: ID!, $input: AgentToolCreateInput!) {
+  agentToolCreate(agentId: $agentId, input: $input) {
+    id
+    name
+    description
+  }
+}
+
+mutation UpdateAgentTool($id: ID!, $input: AgentToolUpdateInput!) {
+  agentToolUpdate(id: $id, input: $input) {
+    id
+    name
+    description
+  }
+}
+
+mutation DeleteAgentTool($id: ID!) {
+  agentToolDelete(id: $id) {
+    id
+  }
+}

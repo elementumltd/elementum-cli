@@ -1,0 +1,12 @@
+{
+  "__typename": "WorkflowAddWatcherTask",
+  "id": "add-watcher-1111-111111111111",
+  "name": "Add Watchers",
+  "recordReference": {
+    "triggerReference": {
+      "name": "record.id"
+    }
+  },
+  "users": [],
+  "groups": []
+}

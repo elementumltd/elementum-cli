@@ -1,0 +1,15 @@
+{
+  "__typename": "WorkflowCalculationTask",
+  "id": "calculation-1111-111111111111",
+  "name": "Calculate Total",
+  "calculations": [
+    {
+      "name": "total",
+      "calculationReference": {
+        "calculationReference": {
+          "calculation": "quantity * price"
+        }
+      }
+    }
+  ]
+}

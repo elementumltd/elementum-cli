@@ -1,0 +1,27 @@
+{
+  "__typename": "WorkflowApiTask",
+  "id": "api-task-oauth-666666666666",
+  "name": "OAuth Request",
+  "method": "GET",
+  "urlReference": {
+    "value": "https://api.example.com/oauth-secure"
+  },
+  "authorization": {
+    "__typename": "ApiOauthAuthorization",
+    "clientId": "my-client-id",
+    "clientSecret": "my-client-secret",
+    "url": "https://auth.example.com/token",
+    "requestType": "FORM",
+    "headers": [
+      {
+        "header": "X-Custom-Header",
+        "value": {
+          "value": "custom-value"
+        }
+      }
+    ]
+  },
+  "headers": [],
+  "responseType": "JSON",
+  "continueOnError": false
+}
