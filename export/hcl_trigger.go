@@ -151,11 +151,19 @@ func (g *TriggerHCLGenerator) addTriggerFieldIR(b *HCLBlock, trigger *discovery.
 			ref := g.resolveRef(trigger.DatamineID, "datamine")
 			b.SetAttr("datamine_id", refOrStr(ref))
 		}
+		// If field is required and we have no raw data, emit a placeholder
+		if field.Required {
+			g.emitRequiredFieldPlaceholder(b, field)
+		}
 		return
 	}
 
 	value := extractValueFromPath(trigger.RawData, field.GraphQLPath)
 	if value == nil {
+		// If the field is required but nil, emit a placeholder with TODO comment
+		if field.Required {
+			g.emitRequiredFieldPlaceholder(b, field)
+		}
 		return
 	}
 
@@ -272,6 +280,21 @@ func (g *TriggerHCLGenerator) addTriggerFieldIR(b *HCLBlock, trigger *discovery.
 		case bool:
 			b.SetAttr(field.Name, Bool(v))
 		}
+	}
+}
+
+// emitRequiredFieldPlaceholder emits a placeholder value for a required field that is missing.
+// This ensures the generated HCL is syntactically valid (with a TODO comment indicating it needs attention).
+func (g *TriggerHCLGenerator) emitRequiredFieldPlaceholder(b *HCLBlock, field client.TriggerFieldConfig) {
+	// Generate a placeholder value based on the field name
+	placeholder := fmt.Sprintf("TODO_MISSING_%s", strings.ToUpper(field.Name))
+
+	// If it's a reference type, emit as a string that needs to be replaced
+	if field.IsReference {
+		b.SetAttr(field.Name, Str(placeholder))
+	} else {
+		// For non-reference required fields, emit a lowercase placeholder
+		b.SetAttr(field.Name, Str(strings.ToLower(placeholder)))
 	}
 }
 

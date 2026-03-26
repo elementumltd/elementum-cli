@@ -189,8 +189,8 @@ var TriggerTypeRegistry = map[string]TriggerTypeConfig{
 			}
 		`,
 		Fields: []TriggerFieldConfig{
-			{Name: "approval_chain_template_id", GraphQLPath: "approvalChainTemplate.id", Required: false, IsReference: true, ReferenceType: "approval_template"},
-			{Name: "status", GraphQLPath: "status", Required: false},
+			{Name: "approval_chain_template_id", GraphQLPath: "approvalChainTemplate.id", Required: true, IsReference: true, ReferenceType: "approval_template"},
+			{Name: "status", GraphQLPath: "status", Required: true},
 		},
 		IsRecordBased: false,
 	},

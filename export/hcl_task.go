@@ -1541,7 +1541,11 @@ func (g *TaskHCLGenerator) generateCalculationsIR(b *HCLBlock, data map[string]i
 
 		variableName := getStringValue(calc, "name")
 		formula := ""
-		if calcRef, ok := calc["calculationReference"].(map[string]interface{}); ok {
+		// First try the direct calculation field (deprecated but still populated)
+		if calcStr, ok := calc["calculation"].(string); ok && calcStr != "" {
+			formula = calcStr
+		} else if calcRef, ok := calc["calculationReference"].(map[string]interface{}); ok {
+			// Fall back to calculationReference for dynamic/templated formulas
 			formula = decodeValueReference(calcRef)
 		}
 

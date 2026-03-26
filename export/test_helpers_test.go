@@ -497,8 +497,9 @@ func buildMinimalTaskRawData(taskType string) map[string]interface{} {
 	case "calculation":
 		baseData["calculations"] = []interface{}{
 			map[string]interface{}{
-				"id":   "calc-1",
-				"name": "result",
+				"id":          "calc-1",
+				"name":        "result",
+				"calculation": "1 + 1",
 				"calculationReference": map[string]interface{}{
 					"id":    "ref-1",
 					"label": "1 + 1",
@@ -590,13 +591,7 @@ func buildMinimalTaskRawData(taskType string) map[string]interface{} {
 		}
 	case "approval_status_update":
 		baseData["approvalChainTemplate"] = map[string]interface{}{
-			"id":   TestApprovalTemplateID,
-			"name": "Test Template",
-		}
-		baseData["recordId"] = map[string]interface{}{
-			"id":    "ref-1",
-			"label": "Record",
-			"value": "Record",
+			"id": "act-123",
 		}
 		baseData["status"] = "APPROVED"
 	case "aspect_record_field_locking":

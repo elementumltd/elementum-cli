@@ -113,8 +113,16 @@ func (g *AccessPolicyHCLGenerator) GenerateAccessPolicyIR(policy *discovery.Acce
 	b := NewResourceBlock("elementum_access_policy", resourceName)
 	b.SetAttr("object_id", Ref("elementum_app."+appResourceName+".id"))
 
-	// TODO(ir): Convert filter to IR blocks (Phase 2 - filter conversion)
-	// For now, filters are handled by the string-based GenerateAll() path.
+	// Generate filter - if policy has a filter, convert it; otherwise use default "true" filter
+	if policy.Filter != nil && len(policy.Filter) > 0 {
+		filterVal := GenerateFilterIR(policy.Filter, g.uuidMap)
+		if filterVal != nil {
+			b.SetAttr("filter", filterVal)
+		}
+	} else {
+		// Default filter when none is specified - allows all rows
+		b.SetAttr("filter", Obj(Attr("type", Str("true"))))
+	}
 
 	// user_ids
 	if len(policy.UserIDs) > 0 {

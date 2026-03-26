@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/elementumltd/elementum-cli/auth"
@@ -71,7 +72,8 @@ func init() {
 	appsCmd.AddCommand(appUpdateCmd)
 
 	// Export flags
-	appsExportCmd.Flags().StringP("output", "o", "generated.tf", "Output file for generated Terraform configuration")
+	appsExportCmd.Flags().StringP("output", "o", "generated.tf", "Output file for generated Terraform configuration (single-file mode)")
+	appsExportCmd.Flags().StringP("directory", "d", "", "Output directory for multi-file export (splits into app-*.tf, automation-*.tf, etc.)")
 	appsExportCmd.Flags().Bool("all", true, "Export all resources without prompting")
 	appsExportCmd.Flags().Bool("beautify", true, "Resolve UUIDs to references and strip null attributes")
 	appsExportCmd.Flags().Bool("recursive", true, "Recursively discover and export related apps/elements through automations and relationships")
@@ -319,11 +321,15 @@ func runAppsExport(cmd *cobra.Command, args []string) error {
 
 	// Get flags
 	outputFile, _ := cmd.Flags().GetString("output")
+	outputDir, _ := cmd.Flags().GetString("directory")
 	exportAll, _ := cmd.Flags().GetBool("all")
 	beautify, _ := cmd.Flags().GetBool("beautify")
 	recursive, _ := cmd.Flags().GetBool("recursive")
 	lenient, _ := cmd.Flags().GetBool("lenient")
 	maxConcurrency, _ := cmd.Flags().GetInt64("max-concurrency")
+
+	// Multi-file mode if directory is specified
+	multiFileMode := outputDir != ""
 
 	// Create parallel config (nil means sequential mode, used when maxConcurrency <= 1)
 	var parallelConfig *discovery.ParallelConfig
@@ -668,10 +674,91 @@ func runAppsExport(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to read generated config: %w", err)
 	}
 
-	// Beautify the generated config if enabled
+	// Multi-file mode: use IR pipeline to organize into separate files
+	if multiFileMode {
+		fmt.Println(ui.InfoStyle.Render("Organizing configuration into multiple files..."))
+
+		// Create and run the IR pipeline
+		pipeline := export.NewExportPipeline(app, blocks)
+		if err := pipeline.AddTofuOutput(content); err != nil {
+			return fmt.Errorf("failed to parse generated config: %w", err)
+		}
+		pipeline.AddCLIBlocks()
+
+		// Execute multi-file export (IR transforms run during Execute)
+		blockExport := pipeline.ExecuteMultiFile()
+		multiExport := blockExport.ToMultiFileExport()
+
+		// Add provider config
+		multiExport.ProviderFile = export.RenderProviderConfig(creds.Organization, creds.Instance, creds.Environment, creds.ClientID, creds.ClientSecret)
+
+		// Generate locals.tf (stage lookups, system field IDs, option lookups)
+		appResourceName := export.AppResourceName(app)
+		multiExport.LocalsFile = export.GenerateLocals(app, appResourceName, blocks)
+
+		// Generate data.tf (category, cloudlink, and relationship data sources)
+		// Append to existing DataSourcesFile (which may contain user/group data sources from access policies)
+		var dataSources strings.Builder
+		if multiExport.DataSourcesFile != "" {
+			dataSources.WriteString(multiExport.DataSourcesFile)
+			dataSources.WriteString("\n")
+		}
+		dataSources.WriteString(export.GenerateCategoryCloudLinkDataSources(app))
+		dataSources.WriteString(export.GenerateRelationshipDataSources(app))
+		if dataSources.Len() > 0 {
+			multiExport.DataSourcesFile = dataSources.String()
+		}
+
+		// Apply post-processing to all files (flow injection, cloud mappings, etc.)
+		if beautify {
+			fmt.Println(ui.InfoStyle.Render("Beautifying configuration..."))
+			uuidMap := pipeline.GetUUIDMap()
+			multiExport.PostProcessAll(func(s string) string {
+				return export.PostProcessHCLWithUUIDMap(s, blocks, app, uuidMap)
+			})
+			fmt.Println(ui.SuccessStyle.Render("Configuration beautified"))
+		}
+
+		// Write to directory
+		if err := export.WriteMultipleFiles(multiExport, outputDir); err != nil {
+			return fmt.Errorf("failed to write output files: %w", err)
+		}
+
+		fileCount := multiExport.GetFileCount()
+		fmt.Println(ui.SuccessStyle.Render(fmt.Sprintf("Generated %d files in %s", fileCount, outputDir)))
+
+		// Display any warnings/errors that occurred
+		if len(ec.All()) > 0 {
+			fmt.Println()
+			fmt.Println(ec.Summary())
+		}
+
+		fmt.Println()
+		fmt.Println(ui.SubtitleStyle.Render("Next steps:"))
+		fmt.Printf("  %s Review files in %s\n", ui.RenderBullet(), outputDir)
+		fmt.Printf("  %s cd %s && terraform plan\n", ui.RenderBullet(), outputDir)
+		fmt.Println()
+
+		return nil
+	}
+
+	// Single-file mode: use IR pipeline for beautification
 	if beautify {
 		fmt.Println(ui.InfoStyle.Render("Beautifying configuration (resolving UUIDs, stripping nulls)..."))
-		content = export.PostProcessHCL(content, blocks, app)
+
+		// Create and run the IR pipeline for single-file output
+		pipeline := export.NewExportPipeline(app, blocks)
+		if err := pipeline.AddTofuOutput(content); err != nil {
+			return fmt.Errorf("failed to parse generated config: %w", err)
+		}
+		pipeline.AddCLIBlocks()
+
+		// Execute returns beautified HCL (runs IR transforms: null stripping, UUID resolution, etc.)
+		content = pipeline.Execute()
+
+		// Apply remaining string-based post-processing (flow injection, cloud mappings, etc.)
+		content = export.PostProcessHCLWithUUIDMap(content, blocks, app, pipeline.GetUUIDMap())
+
 		fmt.Println(ui.SuccessStyle.Render("Configuration beautified"))
 	}
 

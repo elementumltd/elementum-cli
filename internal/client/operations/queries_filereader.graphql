@@ -125,3 +125,38 @@ query GetXmlDocumentModel($aspectId: ID!, $documentModelId: ID!) {
     }
   }
 }
+
+# Query to get file reader dependencies (automations using this file reader)
+query GetDocumentModelDependencies($aspectId: ID!, $documentModelId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        documentModel(id: $documentModelId) {
+          id
+          ... on DocumentModelAi {
+            name
+          }
+          ... on DocumentModelOCR {
+            name
+          }
+          ... on DocumentModelJson {
+            name
+          }
+          ... on DocumentModelXml {
+            name
+          }
+          usage {
+            automations {
+              edges {
+                node {
+                  id
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

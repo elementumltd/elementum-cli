@@ -58589,6 +58589,24 @@ func (v *DeleteAccessPolicyResponse) GetAspectAccessPolicyDelete() bool {
 	return v.AspectAccessPolicyDelete
 }
 
+// DeleteAgentA2ASkillAgentSkillDeleteAgentSkill includes the requested fields of the GraphQL type AgentSkill.
+type DeleteAgentA2ASkillAgentSkillDeleteAgentSkill struct {
+	Id string `json:"id"`
+}
+
+// GetId returns DeleteAgentA2ASkillAgentSkillDeleteAgentSkill.Id, and is useful for accessing the field via an interface.
+func (v *DeleteAgentA2ASkillAgentSkillDeleteAgentSkill) GetId() string { return v.Id }
+
+// DeleteAgentA2ASkillResponse is returned by DeleteAgentA2ASkill on success.
+type DeleteAgentA2ASkillResponse struct {
+	AgentSkillDelete *DeleteAgentA2ASkillAgentSkillDeleteAgentSkill `json:"agentSkillDelete"`
+}
+
+// GetAgentSkillDelete returns DeleteAgentA2ASkillResponse.AgentSkillDelete, and is useful for accessing the field via an interface.
+func (v *DeleteAgentA2ASkillResponse) GetAgentSkillDelete() *DeleteAgentA2ASkillAgentSkillDeleteAgentSkill {
+	return v.AgentSkillDelete
+}
+
 // DeleteAgentAgentDeleteAgent includes the requested fields of the GraphQL type Agent.
 type DeleteAgentAgentDeleteAgent struct {
 	Id string `json:"id"`
@@ -62170,6 +62188,16 @@ type DeleteRoleRoleDeleteV2Role struct {
 
 // GetId returns DeleteRoleRoleDeleteV2Role.Id, and is useful for accessing the field via an interface.
 func (v *DeleteRoleRoleDeleteV2Role) GetId() string { return v.Id }
+
+// DeleteStoredSnowflakeFunctionResponse is returned by DeleteStoredSnowflakeFunction on success.
+type DeleteStoredSnowflakeFunctionResponse struct {
+	StoredSnowflakeFunctionDelete bool `json:"storedSnowflakeFunctionDelete"`
+}
+
+// GetStoredSnowflakeFunctionDelete returns DeleteStoredSnowflakeFunctionResponse.StoredSnowflakeFunctionDelete, and is useful for accessing the field via an interface.
+func (v *DeleteStoredSnowflakeFunctionResponse) GetStoredSnowflakeFunctionDelete() bool {
+	return v.StoredSnowflakeFunctionDelete
+}
 
 // DeleteTableResponse is returned by DeleteTable on success.
 type DeleteTableResponse struct {
@@ -84415,6 +84443,433 @@ func (v *GetActionExecutionIOResponse) GetOrganization() GetActionExecutionIOOrg
 	return v.Organization
 }
 
+// GetAgentA2ASkillsOrganization includes the requested fields of the GraphQL type Organization.
+type GetAgentA2ASkillsOrganization struct {
+	Agent *GetAgentA2ASkillsOrganizationAgentAgentV2 `json:"-"`
+}
+
+// GetAgent returns GetAgentA2ASkillsOrganization.Agent, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganization) GetAgent() *GetAgentA2ASkillsOrganizationAgentAgentV2 {
+	return v.Agent
+}
+
+func (v *GetAgentA2ASkillsOrganization) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*GetAgentA2ASkillsOrganization
+		Agent json.RawMessage `json:"agent"`
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.GetAgentA2ASkillsOrganization = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	{
+		dst := &v.Agent
+		src := firstPass.Agent
+		if len(src) != 0 && string(src) != "null" {
+			*dst = new(GetAgentA2ASkillsOrganizationAgentAgentV2)
+			err = __unmarshalGetAgentA2ASkillsOrganizationAgentAgentV2(
+				src, *dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal GetAgentA2ASkillsOrganization.Agent: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+type __premarshalGetAgentA2ASkillsOrganization struct {
+	Agent json.RawMessage `json:"agent"`
+}
+
+func (v *GetAgentA2ASkillsOrganization) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *GetAgentA2ASkillsOrganization) __premarshalJSON() (*__premarshalGetAgentA2ASkillsOrganization, error) {
+	var retval __premarshalGetAgentA2ASkillsOrganization
+
+	{
+
+		dst := &retval.Agent
+		src := v.Agent
+		if src != nil {
+			var err error
+			*dst, err = __marshalGetAgentA2ASkillsOrganizationAgentAgentV2(
+				src)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"unable to marshal GetAgentA2ASkillsOrganization.Agent: %w", err)
+			}
+		}
+	}
+	return &retval, nil
+}
+
+// GetAgentA2ASkillsOrganizationAgentAgentBedrock includes the requested fields of the GraphQL type AgentBedrock.
+type GetAgentA2ASkillsOrganizationAgentAgentBedrock struct {
+	Typename *string `json:"__typename"`
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+}
+
+// GetTypename returns GetAgentA2ASkillsOrganizationAgentAgentBedrock.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentBedrock) GetTypename() *string { return v.Typename }
+
+// GetId returns GetAgentA2ASkillsOrganizationAgentAgentBedrock.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentBedrock) GetId() string { return v.Id }
+
+// GetName returns GetAgentA2ASkillsOrganizationAgentAgentBedrock.Name, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentBedrock) GetName() string { return v.Name }
+
+// GetAgentA2ASkillsOrganizationAgentAgentBrowserUse includes the requested fields of the GraphQL type AgentBrowserUse.
+type GetAgentA2ASkillsOrganizationAgentAgentBrowserUse struct {
+	Typename *string `json:"__typename"`
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+}
+
+// GetTypename returns GetAgentA2ASkillsOrganizationAgentAgentBrowserUse.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentBrowserUse) GetTypename() *string { return v.Typename }
+
+// GetId returns GetAgentA2ASkillsOrganizationAgentAgentBrowserUse.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentBrowserUse) GetId() string { return v.Id }
+
+// GetName returns GetAgentA2ASkillsOrganizationAgentAgentBrowserUse.Name, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentBrowserUse) GetName() string { return v.Name }
+
+// GetAgentA2ASkillsOrganizationAgentAgentComputerUse includes the requested fields of the GraphQL type AgentComputerUse.
+type GetAgentA2ASkillsOrganizationAgentAgentComputerUse struct {
+	Typename *string `json:"__typename"`
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+}
+
+// GetTypename returns GetAgentA2ASkillsOrganizationAgentAgentComputerUse.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentComputerUse) GetTypename() *string { return v.Typename }
+
+// GetId returns GetAgentA2ASkillsOrganizationAgentAgentComputerUse.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentComputerUse) GetId() string { return v.Id }
+
+// GetName returns GetAgentA2ASkillsOrganizationAgentAgentComputerUse.Name, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentComputerUse) GetName() string { return v.Name }
+
+// GetAgentA2ASkillsOrganizationAgentAgentElementum includes the requested fields of the GraphQL type AgentElementum.
+type GetAgentA2ASkillsOrganizationAgentAgentElementum struct {
+	Typename *string                                                        `json:"__typename"`
+	Id       string                                                         `json:"id"`
+	Name     string                                                         `json:"name"`
+	Card     *GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCard `json:"card"`
+}
+
+// GetTypename returns GetAgentA2ASkillsOrganizationAgentAgentElementum.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentElementum) GetTypename() *string { return v.Typename }
+
+// GetId returns GetAgentA2ASkillsOrganizationAgentAgentElementum.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentElementum) GetId() string { return v.Id }
+
+// GetName returns GetAgentA2ASkillsOrganizationAgentAgentElementum.Name, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentElementum) GetName() string { return v.Name }
+
+// GetCard returns GetAgentA2ASkillsOrganizationAgentAgentElementum.Card, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentElementum) GetCard() *GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCard {
+	return v.Card
+}
+
+// GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCard includes the requested fields of the GraphQL type AgentCard.
+type GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCard struct {
+	Skills GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnection `json:"skills"`
+}
+
+// GetSkills returns GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCard.Skills, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCard) GetSkills() GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnection {
+	return v.Skills
+}
+
+// GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnection includes the requested fields of the GraphQL type AgentSkillConnection.
+type GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnection struct {
+	Edges []GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdge `json:"edges"`
+}
+
+// GetEdges returns GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnection.Edges, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnection) GetEdges() []GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdge {
+	return v.Edges
+}
+
+// GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdge includes the requested fields of the GraphQL type AgentSkillEdge.
+type GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdge struct {
+	Node GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdgeNodeAgentSkill `json:"node"`
+}
+
+// GetNode returns GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdge.Node, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdge) GetNode() GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdgeNodeAgentSkill {
+	return v.Node
+}
+
+// GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdgeNodeAgentSkill includes the requested fields of the GraphQL type AgentSkill.
+type GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdgeNodeAgentSkill struct {
+	Id          string   `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Tags        []string `json:"tags"`
+	Examples    []string `json:"examples"`
+	InputModes  []string `json:"inputModes"`
+	OutputModes []string `json:"outputModes"`
+}
+
+// GetId returns GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdgeNodeAgentSkill.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdgeNodeAgentSkill) GetId() string {
+	return v.Id
+}
+
+// GetName returns GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdgeNodeAgentSkill.Name, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdgeNodeAgentSkill) GetName() string {
+	return v.Name
+}
+
+// GetDescription returns GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdgeNodeAgentSkill.Description, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdgeNodeAgentSkill) GetDescription() string {
+	return v.Description
+}
+
+// GetTags returns GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdgeNodeAgentSkill.Tags, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdgeNodeAgentSkill) GetTags() []string {
+	return v.Tags
+}
+
+// GetExamples returns GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdgeNodeAgentSkill.Examples, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdgeNodeAgentSkill) GetExamples() []string {
+	return v.Examples
+}
+
+// GetInputModes returns GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdgeNodeAgentSkill.InputModes, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdgeNodeAgentSkill) GetInputModes() []string {
+	return v.InputModes
+}
+
+// GetOutputModes returns GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdgeNodeAgentSkill.OutputModes, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentElementumCardAgentCardSkillsAgentSkillConnectionEdgesAgentSkillEdgeNodeAgentSkill) GetOutputModes() []string {
+	return v.OutputModes
+}
+
+// GetAgentA2ASkillsOrganizationAgentAgentExternal includes the requested fields of the GraphQL type AgentExternal.
+type GetAgentA2ASkillsOrganizationAgentAgentExternal struct {
+	Typename *string `json:"__typename"`
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+}
+
+// GetTypename returns GetAgentA2ASkillsOrganizationAgentAgentExternal.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentExternal) GetTypename() *string { return v.Typename }
+
+// GetId returns GetAgentA2ASkillsOrganizationAgentAgentExternal.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentExternal) GetId() string { return v.Id }
+
+// GetName returns GetAgentA2ASkillsOrganizationAgentAgentExternal.Name, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentExternal) GetName() string { return v.Name }
+
+// GetAgentA2ASkillsOrganizationAgentAgentSnowflake includes the requested fields of the GraphQL type AgentSnowflake.
+type GetAgentA2ASkillsOrganizationAgentAgentSnowflake struct {
+	Typename *string `json:"__typename"`
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+}
+
+// GetTypename returns GetAgentA2ASkillsOrganizationAgentAgentSnowflake.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentSnowflake) GetTypename() *string { return v.Typename }
+
+// GetId returns GetAgentA2ASkillsOrganizationAgentAgentSnowflake.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentSnowflake) GetId() string { return v.Id }
+
+// GetName returns GetAgentA2ASkillsOrganizationAgentAgentSnowflake.Name, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentSnowflake) GetName() string { return v.Name }
+
+// GetAgentA2ASkillsOrganizationAgentAgentSystem includes the requested fields of the GraphQL type AgentSystem.
+type GetAgentA2ASkillsOrganizationAgentAgentSystem struct {
+	Typename *string `json:"__typename"`
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+}
+
+// GetTypename returns GetAgentA2ASkillsOrganizationAgentAgentSystem.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentSystem) GetTypename() *string { return v.Typename }
+
+// GetId returns GetAgentA2ASkillsOrganizationAgentAgentSystem.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentSystem) GetId() string { return v.Id }
+
+// GetName returns GetAgentA2ASkillsOrganizationAgentAgentSystem.Name, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsOrganizationAgentAgentSystem) GetName() string { return v.Name }
+
+// GetAgentA2ASkillsOrganizationAgentAgentV2 includes the requested fields of the GraphQL interface AgentV2.
+//
+// GetAgentA2ASkillsOrganizationAgentAgentV2 is implemented by the following types:
+// GetAgentA2ASkillsOrganizationAgentAgentBedrock
+// GetAgentA2ASkillsOrganizationAgentAgentBrowserUse
+// GetAgentA2ASkillsOrganizationAgentAgentComputerUse
+// GetAgentA2ASkillsOrganizationAgentAgentElementum
+// GetAgentA2ASkillsOrganizationAgentAgentExternal
+// GetAgentA2ASkillsOrganizationAgentAgentSnowflake
+// GetAgentA2ASkillsOrganizationAgentAgentSystem
+type GetAgentA2ASkillsOrganizationAgentAgentV2 interface {
+	implementsGraphQLInterfaceGetAgentA2ASkillsOrganizationAgentAgentV2()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() *string
+	// GetId returns the interface-field "id" from its implementation.
+	GetId() string
+	// GetName returns the interface-field "name" from its implementation.
+	GetName() string
+}
+
+func (v *GetAgentA2ASkillsOrganizationAgentAgentBedrock) implementsGraphQLInterfaceGetAgentA2ASkillsOrganizationAgentAgentV2() {
+}
+func (v *GetAgentA2ASkillsOrganizationAgentAgentBrowserUse) implementsGraphQLInterfaceGetAgentA2ASkillsOrganizationAgentAgentV2() {
+}
+func (v *GetAgentA2ASkillsOrganizationAgentAgentComputerUse) implementsGraphQLInterfaceGetAgentA2ASkillsOrganizationAgentAgentV2() {
+}
+func (v *GetAgentA2ASkillsOrganizationAgentAgentElementum) implementsGraphQLInterfaceGetAgentA2ASkillsOrganizationAgentAgentV2() {
+}
+func (v *GetAgentA2ASkillsOrganizationAgentAgentExternal) implementsGraphQLInterfaceGetAgentA2ASkillsOrganizationAgentAgentV2() {
+}
+func (v *GetAgentA2ASkillsOrganizationAgentAgentSnowflake) implementsGraphQLInterfaceGetAgentA2ASkillsOrganizationAgentAgentV2() {
+}
+func (v *GetAgentA2ASkillsOrganizationAgentAgentSystem) implementsGraphQLInterfaceGetAgentA2ASkillsOrganizationAgentAgentV2() {
+}
+
+func __unmarshalGetAgentA2ASkillsOrganizationAgentAgentV2(b []byte, v *GetAgentA2ASkillsOrganizationAgentAgentV2) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "AgentBedrock":
+		*v = new(GetAgentA2ASkillsOrganizationAgentAgentBedrock)
+		return json.Unmarshal(b, *v)
+	case "AgentBrowserUse":
+		*v = new(GetAgentA2ASkillsOrganizationAgentAgentBrowserUse)
+		return json.Unmarshal(b, *v)
+	case "AgentComputerUse":
+		*v = new(GetAgentA2ASkillsOrganizationAgentAgentComputerUse)
+		return json.Unmarshal(b, *v)
+	case "AgentElementum":
+		*v = new(GetAgentA2ASkillsOrganizationAgentAgentElementum)
+		return json.Unmarshal(b, *v)
+	case "AgentExternal":
+		*v = new(GetAgentA2ASkillsOrganizationAgentAgentExternal)
+		return json.Unmarshal(b, *v)
+	case "AgentSnowflake":
+		*v = new(GetAgentA2ASkillsOrganizationAgentAgentSnowflake)
+		return json.Unmarshal(b, *v)
+	case "AgentSystem":
+		*v = new(GetAgentA2ASkillsOrganizationAgentAgentSystem)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing AgentV2.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for GetAgentA2ASkillsOrganizationAgentAgentV2: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalGetAgentA2ASkillsOrganizationAgentAgentV2(v *GetAgentA2ASkillsOrganizationAgentAgentV2) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *GetAgentA2ASkillsOrganizationAgentAgentBedrock:
+		typename = "AgentBedrock"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentA2ASkillsOrganizationAgentAgentBedrock
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetAgentA2ASkillsOrganizationAgentAgentBrowserUse:
+		typename = "AgentBrowserUse"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentA2ASkillsOrganizationAgentAgentBrowserUse
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetAgentA2ASkillsOrganizationAgentAgentComputerUse:
+		typename = "AgentComputerUse"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentA2ASkillsOrganizationAgentAgentComputerUse
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetAgentA2ASkillsOrganizationAgentAgentElementum:
+		typename = "AgentElementum"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentA2ASkillsOrganizationAgentAgentElementum
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetAgentA2ASkillsOrganizationAgentAgentExternal:
+		typename = "AgentExternal"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentA2ASkillsOrganizationAgentAgentExternal
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetAgentA2ASkillsOrganizationAgentAgentSnowflake:
+		typename = "AgentSnowflake"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentA2ASkillsOrganizationAgentAgentSnowflake
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetAgentA2ASkillsOrganizationAgentAgentSystem:
+		typename = "AgentSystem"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentA2ASkillsOrganizationAgentAgentSystem
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for GetAgentA2ASkillsOrganizationAgentAgentV2: "%T"`, v)
+	}
+}
+
+// GetAgentA2ASkillsResponse is returned by GetAgentA2ASkills on success.
+type GetAgentA2ASkillsResponse struct {
+	Organization GetAgentA2ASkillsOrganization `json:"organization"`
+}
+
+// GetOrganization returns GetAgentA2ASkillsResponse.Organization, and is useful for accessing the field via an interface.
+func (v *GetAgentA2ASkillsResponse) GetOrganization() GetAgentA2ASkillsOrganization {
+	return v.Organization
+}
+
 // GetAgentByIDOrganization includes the requested fields of the GraphQL type Organization.
 type GetAgentByIDOrganization struct {
 	Id string `json:"id"`
@@ -84872,7 +85327,9 @@ type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrock struct {
 	AiProviderConnector *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockAiProviderConnector            `json:"-"`
 	SkillAccessConfig   *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockSkillAccessConfig              `json:"skillAccessConfig"`
 	StartingActions     []GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockStartingActionsStartingAction `json:"startingActions"`
-	App                 *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockAppAspectApp                   `json:"app"`
+	// deprecated using annotation breaks frontend
+	RunAs GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAs `json:"-"`
+	App   *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockAppAspectApp               `json:"app"`
 }
 
 // GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrock.Id, and is useful for accessing the field via an interface.
@@ -84926,6 +85383,11 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrock) GetStarting
 	return v.StartingActions
 }
 
+// GetRunAs returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrock.RunAs, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrock) GetRunAs() GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAs {
+	return v.RunAs
+}
+
 // GetApp returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrock.App, and is useful for accessing the field via an interface.
 func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrock) GetApp() *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockAppAspectApp {
 	return v.App
@@ -84940,6 +85402,7 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrock) UnmarshalJS
 	var firstPass struct {
 		*GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrock
 		AiProviderConnector json.RawMessage `json:"aiProviderConnector"`
+		RunAs               json.RawMessage `json:"runAs"`
 		graphql.NoUnmarshalJSON
 	}
 	firstPass.GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrock = v
@@ -84959,6 +85422,19 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrock) UnmarshalJS
 			if err != nil {
 				return fmt.Errorf(
 					"unable to unmarshal GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrock.AiProviderConnector: %w", err)
+			}
+		}
+	}
+
+	{
+		dst := &v.RunAs
+		src := firstPass.RunAs
+		if len(src) != 0 && string(src) != "null" {
+			err = __unmarshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAs(
+				src, dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrock.RunAs: %w", err)
 			}
 		}
 	}
@@ -84987,6 +85463,8 @@ type __premarshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrock stru
 	SkillAccessConfig *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockSkillAccessConfig `json:"skillAccessConfig"`
 
 	StartingActions []GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockStartingActionsStartingAction `json:"startingActions"`
+
+	RunAs json.RawMessage `json:"runAs"`
 
 	App *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockAppAspectApp `json:"app"`
 }
@@ -85026,6 +85504,18 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrock) __premarsha
 	}
 	retval.SkillAccessConfig = v.SkillAccessConfig
 	retval.StartingActions = v.StartingActions
+	{
+
+		dst := &retval.RunAs
+		src := v.RunAs
+		var err error
+		*dst, err = __marshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAs(
+			&src)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to marshal GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrock.RunAs: %w", err)
+		}
+	}
 	retval.App = v.App
 	return &retval, nil
 }
@@ -86056,6 +86546,173 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockAppAspectApp)
 	return v.Name
 }
 
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAs includes the requested fields of the GraphQL interface AgentConversationRunAs.
+//
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAs is implemented by the following types:
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsCurrentUser
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccount
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUser
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAs interface {
+	implementsGraphQLInterfaceGetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAs()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() *string
+}
+
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsCurrentUser) implementsGraphQLInterfaceGetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAs() {
+}
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccount) implementsGraphQLInterfaceGetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAs() {
+}
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUser) implementsGraphQLInterfaceGetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAs() {
+}
+
+func __unmarshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAs(b []byte, v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAs) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "AgentConversationRunAsCurrentUser":
+		*v = new(GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsCurrentUser)
+		return json.Unmarshal(b, *v)
+	case "AgentConversationRunAsServiceAccount":
+		*v = new(GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccount)
+		return json.Unmarshal(b, *v)
+	case "AgentConversationRunAsUser":
+		*v = new(GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUser)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing AgentConversationRunAs.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAs: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAs(v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAs) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsCurrentUser:
+		typename = "AgentConversationRunAsCurrentUser"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsCurrentUser
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccount:
+		typename = "AgentConversationRunAsServiceAccount"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccount
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUser:
+		typename = "AgentConversationRunAsUser"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUser
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAs: "%T"`, v)
+	}
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsCurrentUser includes the requested fields of the GraphQL type AgentConversationRunAsCurrentUser.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsCurrentUser struct {
+	Typename *string `json:"__typename"`
+	Id       string  `json:"id"`
+}
+
+// GetTypename returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsCurrentUser.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsCurrentUser) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsCurrentUser.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsCurrentUser) GetId() string {
+	return v.Id
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccount includes the requested fields of the GraphQL type AgentConversationRunAsServiceAccount.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccount struct {
+	Typename       *string                                                                                                           `json:"__typename"`
+	Id             string                                                                                                            `json:"id"`
+	ServiceAccount GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccountServiceAccount `json:"serviceAccount"`
+}
+
+// GetTypename returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccount.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccount) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccount.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccount) GetId() string {
+	return v.Id
+}
+
+// GetServiceAccount returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccount.ServiceAccount, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccount) GetServiceAccount() GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccountServiceAccount {
+	return v.ServiceAccount
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccountServiceAccount includes the requested fields of the GraphQL type ServiceAccount.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccountServiceAccount struct {
+	Id string `json:"id"`
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccountServiceAccount.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsServiceAccountServiceAccount) GetId() string {
+	return v.Id
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUser includes the requested fields of the GraphQL type AgentConversationRunAsUser.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUser struct {
+	Typename *string                                                                                       `json:"__typename"`
+	Id       string                                                                                        `json:"id"`
+	User     GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUserUser `json:"user"`
+}
+
+// GetTypename returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUser.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUser) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUser.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUser) GetId() string {
+	return v.Id
+}
+
+// GetUser returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUser.User, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUser) GetUser() GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUserUser {
+	return v.User
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUserUser includes the requested fields of the GraphQL type User.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUserUser struct {
+	Id string `json:"id"`
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUserUser.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockRunAsAgentConversationRunAsUserUser) GetId() string {
+	return v.Id
+}
+
 // GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockSkillAccessConfig includes the requested fields of the GraphQL type SkillAccessConfig.
 type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBedrockSkillAccessConfig struct {
 	Mode            SkillAccessMode                                                                                          `json:"mode"`
@@ -86217,7 +86874,9 @@ type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUse struct {
 	AiProviderConnector      *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseAiProviderConnector            `json:"-"`
 	SkillAccessConfig        *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseSkillAccessConfig              `json:"skillAccessConfig"`
 	StartingActions          []GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseStartingActionsStartingAction `json:"startingActions"`
-	App                      *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseAppAspectApp                   `json:"app"`
+	// deprecated using annotation breaks frontend
+	RunAs GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAs `json:"-"`
+	App   *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseAppAspectApp               `json:"app"`
 }
 
 // GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUse.Id, and is useful for accessing the field via an interface.
@@ -86293,6 +86952,11 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUse) GetStart
 	return v.StartingActions
 }
 
+// GetRunAs returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUse.RunAs, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUse) GetRunAs() GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAs {
+	return v.RunAs
+}
+
 // GetApp returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUse.App, and is useful for accessing the field via an interface.
 func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUse) GetApp() *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseAppAspectApp {
 	return v.App
@@ -86307,6 +86971,7 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUse) Unmarsha
 	var firstPass struct {
 		*GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUse
 		AiProviderConnector json.RawMessage `json:"aiProviderConnector"`
+		RunAs               json.RawMessage `json:"runAs"`
 		graphql.NoUnmarshalJSON
 	}
 	firstPass.GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUse = v
@@ -86326,6 +86991,19 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUse) Unmarsha
 			if err != nil {
 				return fmt.Errorf(
 					"unable to unmarshal GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUse.AiProviderConnector: %w", err)
+			}
+		}
+	}
+
+	{
+		dst := &v.RunAs
+		src := firstPass.RunAs
+		if len(src) != 0 && string(src) != "null" {
+			err = __unmarshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAs(
+				src, dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUse.RunAs: %w", err)
 			}
 		}
 	}
@@ -86362,6 +87040,8 @@ type __premarshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUse s
 	SkillAccessConfig *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseSkillAccessConfig `json:"skillAccessConfig"`
 
 	StartingActions []GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseStartingActionsStartingAction `json:"startingActions"`
+
+	RunAs json.RawMessage `json:"runAs"`
 
 	App *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseAppAspectApp `json:"app"`
 }
@@ -86405,6 +87085,18 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUse) __premar
 	}
 	retval.SkillAccessConfig = v.SkillAccessConfig
 	retval.StartingActions = v.StartingActions
+	{
+
+		dst := &retval.RunAs
+		src := v.RunAs
+		var err error
+		*dst, err = __marshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAs(
+			&src)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to marshal GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUse.RunAs: %w", err)
+		}
+	}
 	retval.App = v.App
 	return &retval, nil
 }
@@ -87425,6 +88117,173 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseAppAspectA
 	return v.Name
 }
 
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAs includes the requested fields of the GraphQL interface AgentConversationRunAs.
+//
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAs is implemented by the following types:
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsCurrentUser
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccount
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUser
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAs interface {
+	implementsGraphQLInterfaceGetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAs()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() *string
+}
+
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsCurrentUser) implementsGraphQLInterfaceGetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAs() {
+}
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccount) implementsGraphQLInterfaceGetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAs() {
+}
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUser) implementsGraphQLInterfaceGetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAs() {
+}
+
+func __unmarshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAs(b []byte, v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAs) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "AgentConversationRunAsCurrentUser":
+		*v = new(GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsCurrentUser)
+		return json.Unmarshal(b, *v)
+	case "AgentConversationRunAsServiceAccount":
+		*v = new(GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccount)
+		return json.Unmarshal(b, *v)
+	case "AgentConversationRunAsUser":
+		*v = new(GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUser)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing AgentConversationRunAs.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAs: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAs(v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAs) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsCurrentUser:
+		typename = "AgentConversationRunAsCurrentUser"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsCurrentUser
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccount:
+		typename = "AgentConversationRunAsServiceAccount"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccount
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUser:
+		typename = "AgentConversationRunAsUser"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUser
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAs: "%T"`, v)
+	}
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsCurrentUser includes the requested fields of the GraphQL type AgentConversationRunAsCurrentUser.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsCurrentUser struct {
+	Typename *string `json:"__typename"`
+	Id       string  `json:"id"`
+}
+
+// GetTypename returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsCurrentUser.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsCurrentUser) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsCurrentUser.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsCurrentUser) GetId() string {
+	return v.Id
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccount includes the requested fields of the GraphQL type AgentConversationRunAsServiceAccount.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccount struct {
+	Typename       *string                                                                                                              `json:"__typename"`
+	Id             string                                                                                                               `json:"id"`
+	ServiceAccount GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccountServiceAccount `json:"serviceAccount"`
+}
+
+// GetTypename returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccount.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccount) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccount.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccount) GetId() string {
+	return v.Id
+}
+
+// GetServiceAccount returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccount.ServiceAccount, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccount) GetServiceAccount() GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccountServiceAccount {
+	return v.ServiceAccount
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccountServiceAccount includes the requested fields of the GraphQL type ServiceAccount.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccountServiceAccount struct {
+	Id string `json:"id"`
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccountServiceAccount.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsServiceAccountServiceAccount) GetId() string {
+	return v.Id
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUser includes the requested fields of the GraphQL type AgentConversationRunAsUser.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUser struct {
+	Typename *string                                                                                          `json:"__typename"`
+	Id       string                                                                                           `json:"id"`
+	User     GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUserUser `json:"user"`
+}
+
+// GetTypename returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUser.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUser) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUser.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUser) GetId() string {
+	return v.Id
+}
+
+// GetUser returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUser.User, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUser) GetUser() GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUserUser {
+	return v.User
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUserUser includes the requested fields of the GraphQL type User.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUserUser struct {
+	Id string `json:"id"`
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUserUser.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseRunAsAgentConversationRunAsUserUser) GetId() string {
+	return v.Id
+}
+
 // GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseSkillAccessConfig includes the requested fields of the GraphQL type SkillAccessConfig.
 type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentBrowserUseSkillAccessConfig struct {
 	Mode            SkillAccessMode                                                                                             `json:"mode"`
@@ -87607,6 +88466,7 @@ type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementum struct {
 	AiProviderConnector *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumAiProviderConnector            `json:"-"`
 	SkillAccessConfig   *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumSkillAccessConfig              `json:"skillAccessConfig"`
 	StartingActions     []GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumStartingActionsStartingAction `json:"startingActions"`
+	RunAs               GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAs     `json:"-"`
 	App                 *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumAppAspectApp                   `json:"app"`
 }
 
@@ -87658,6 +88518,11 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementum) GetStarti
 	return v.StartingActions
 }
 
+// GetRunAs returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementum.RunAs, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementum) GetRunAs() GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAs {
+	return v.RunAs
+}
+
 // GetApp returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementum.App, and is useful for accessing the field via an interface.
 func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementum) GetApp() *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumAppAspectApp {
 	return v.App
@@ -87672,6 +88537,7 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementum) Unmarshal
 	var firstPass struct {
 		*GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementum
 		AiProviderConnector json.RawMessage `json:"aiProviderConnector"`
+		RunAs               json.RawMessage `json:"runAs"`
 		graphql.NoUnmarshalJSON
 	}
 	firstPass.GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementum = v
@@ -87691,6 +88557,19 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementum) Unmarshal
 			if err != nil {
 				return fmt.Errorf(
 					"unable to unmarshal GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementum.AiProviderConnector: %w", err)
+			}
+		}
+	}
+
+	{
+		dst := &v.RunAs
+		src := firstPass.RunAs
+		if len(src) != 0 && string(src) != "null" {
+			err = __unmarshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAs(
+				src, dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementum.RunAs: %w", err)
 			}
 		}
 	}
@@ -87717,6 +88596,8 @@ type __premarshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementum st
 	SkillAccessConfig *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumSkillAccessConfig `json:"skillAccessConfig"`
 
 	StartingActions []GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumStartingActionsStartingAction `json:"startingActions"`
+
+	RunAs json.RawMessage `json:"runAs"`
 
 	App *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumAppAspectApp `json:"app"`
 }
@@ -87755,6 +88636,18 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementum) __premars
 	}
 	retval.SkillAccessConfig = v.SkillAccessConfig
 	retval.StartingActions = v.StartingActions
+	{
+
+		dst := &retval.RunAs
+		src := v.RunAs
+		var err error
+		*dst, err = __marshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAs(
+			&src)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to marshal GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementum.RunAs: %w", err)
+		}
+	}
 	retval.App = v.App
 	return &retval, nil
 }
@@ -88775,6 +89668,173 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumAppAspectAp
 	return v.Name
 }
 
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAs includes the requested fields of the GraphQL interface AgentConversationRunAs.
+//
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAs is implemented by the following types:
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsCurrentUser
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccount
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUser
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAs interface {
+	implementsGraphQLInterfaceGetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAs()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() *string
+}
+
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsCurrentUser) implementsGraphQLInterfaceGetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAs() {
+}
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccount) implementsGraphQLInterfaceGetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAs() {
+}
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUser) implementsGraphQLInterfaceGetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAs() {
+}
+
+func __unmarshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAs(b []byte, v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAs) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "AgentConversationRunAsCurrentUser":
+		*v = new(GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsCurrentUser)
+		return json.Unmarshal(b, *v)
+	case "AgentConversationRunAsServiceAccount":
+		*v = new(GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccount)
+		return json.Unmarshal(b, *v)
+	case "AgentConversationRunAsUser":
+		*v = new(GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUser)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing AgentConversationRunAs.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAs: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAs(v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAs) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsCurrentUser:
+		typename = "AgentConversationRunAsCurrentUser"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsCurrentUser
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccount:
+		typename = "AgentConversationRunAsServiceAccount"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccount
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUser:
+		typename = "AgentConversationRunAsUser"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUser
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAs: "%T"`, v)
+	}
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsCurrentUser includes the requested fields of the GraphQL type AgentConversationRunAsCurrentUser.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsCurrentUser struct {
+	Typename *string `json:"__typename"`
+	Id       string  `json:"id"`
+}
+
+// GetTypename returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsCurrentUser.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsCurrentUser) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsCurrentUser.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsCurrentUser) GetId() string {
+	return v.Id
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccount includes the requested fields of the GraphQL type AgentConversationRunAsServiceAccount.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccount struct {
+	Typename       *string                                                                                                             `json:"__typename"`
+	Id             string                                                                                                              `json:"id"`
+	ServiceAccount GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccountServiceAccount `json:"serviceAccount"`
+}
+
+// GetTypename returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccount.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccount) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccount.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccount) GetId() string {
+	return v.Id
+}
+
+// GetServiceAccount returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccount.ServiceAccount, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccount) GetServiceAccount() GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccountServiceAccount {
+	return v.ServiceAccount
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccountServiceAccount includes the requested fields of the GraphQL type ServiceAccount.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccountServiceAccount struct {
+	Id string `json:"id"`
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccountServiceAccount.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsServiceAccountServiceAccount) GetId() string {
+	return v.Id
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUser includes the requested fields of the GraphQL type AgentConversationRunAsUser.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUser struct {
+	Typename *string                                                                                         `json:"__typename"`
+	Id       string                                                                                          `json:"id"`
+	User     GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUserUser `json:"user"`
+}
+
+// GetTypename returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUser.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUser) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUser.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUser) GetId() string {
+	return v.Id
+}
+
+// GetUser returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUser.User, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUser) GetUser() GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUserUser {
+	return v.User
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUserUser includes the requested fields of the GraphQL type User.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUserUser struct {
+	Id string `json:"id"`
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUserUser.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumRunAsAgentConversationRunAsUserUser) GetId() string {
+	return v.Id
+}
+
 // GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumSkillAccessConfig includes the requested fields of the GraphQL type SkillAccessConfig.
 type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentElementumSkillAccessConfig struct {
 	Mode            SkillAccessMode                                                                                            `json:"mode"`
@@ -88956,7 +90016,9 @@ type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflake struct {
 	AiProviderConnector  *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeAiProviderConnector            `json:"-"`
 	SkillAccessConfig    *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeSkillAccessConfig              `json:"skillAccessConfig"`
 	StartingActions      []GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeStartingActionsStartingAction `json:"startingActions"`
-	App                  *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeAppAspectApp                   `json:"app"`
+	// deprecated using annotation breaks frontend
+	RunAs GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAs `json:"-"`
+	App   *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeAppAspectApp               `json:"app"`
 }
 
 // GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflake.Id, and is useful for accessing the field via an interface.
@@ -89012,6 +90074,11 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflake) GetStarti
 	return v.StartingActions
 }
 
+// GetRunAs returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflake.RunAs, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflake) GetRunAs() GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAs {
+	return v.RunAs
+}
+
 // GetApp returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflake.App, and is useful for accessing the field via an interface.
 func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflake) GetApp() *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeAppAspectApp {
 	return v.App
@@ -89026,6 +90093,7 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflake) Unmarshal
 	var firstPass struct {
 		*GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflake
 		AiProviderConnector json.RawMessage `json:"aiProviderConnector"`
+		RunAs               json.RawMessage `json:"runAs"`
 		graphql.NoUnmarshalJSON
 	}
 	firstPass.GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflake = v
@@ -89045,6 +90113,19 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflake) Unmarshal
 			if err != nil {
 				return fmt.Errorf(
 					"unable to unmarshal GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflake.AiProviderConnector: %w", err)
+			}
+		}
+	}
+
+	{
+		dst := &v.RunAs
+		src := firstPass.RunAs
+		if len(src) != 0 && string(src) != "null" {
+			err = __unmarshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAs(
+				src, dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflake.RunAs: %w", err)
 			}
 		}
 	}
@@ -89073,6 +90154,8 @@ type __premarshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflake st
 	SkillAccessConfig *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeSkillAccessConfig `json:"skillAccessConfig"`
 
 	StartingActions []GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeStartingActionsStartingAction `json:"startingActions"`
+
+	RunAs json.RawMessage `json:"runAs"`
 
 	App *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeAppAspectApp `json:"app"`
 }
@@ -89112,6 +90195,18 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflake) __premars
 	}
 	retval.SkillAccessConfig = v.SkillAccessConfig
 	retval.StartingActions = v.StartingActions
+	{
+
+		dst := &retval.RunAs
+		src := v.RunAs
+		var err error
+		*dst, err = __marshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAs(
+			&src)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to marshal GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflake.RunAs: %w", err)
+		}
+	}
 	retval.App = v.App
 	return &retval, nil
 }
@@ -90152,6 +91247,173 @@ func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeAppAspectAp
 // GetName returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeAppAspectApp.Name, and is useful for accessing the field via an interface.
 func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeAppAspectApp) GetName() string {
 	return v.Name
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAs includes the requested fields of the GraphQL interface AgentConversationRunAs.
+//
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAs is implemented by the following types:
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsCurrentUser
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccount
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUser
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAs interface {
+	implementsGraphQLInterfaceGetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAs()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() *string
+}
+
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsCurrentUser) implementsGraphQLInterfaceGetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAs() {
+}
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccount) implementsGraphQLInterfaceGetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAs() {
+}
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUser) implementsGraphQLInterfaceGetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAs() {
+}
+
+func __unmarshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAs(b []byte, v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAs) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "AgentConversationRunAsCurrentUser":
+		*v = new(GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsCurrentUser)
+		return json.Unmarshal(b, *v)
+	case "AgentConversationRunAsServiceAccount":
+		*v = new(GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccount)
+		return json.Unmarshal(b, *v)
+	case "AgentConversationRunAsUser":
+		*v = new(GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUser)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing AgentConversationRunAs.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAs: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalGetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAs(v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAs) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsCurrentUser:
+		typename = "AgentConversationRunAsCurrentUser"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsCurrentUser
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccount:
+		typename = "AgentConversationRunAsServiceAccount"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccount
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUser:
+		typename = "AgentConversationRunAsUser"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUser
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAs: "%T"`, v)
+	}
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsCurrentUser includes the requested fields of the GraphQL type AgentConversationRunAsCurrentUser.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsCurrentUser struct {
+	Typename *string `json:"__typename"`
+	Id       string  `json:"id"`
+}
+
+// GetTypename returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsCurrentUser.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsCurrentUser) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsCurrentUser.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsCurrentUser) GetId() string {
+	return v.Id
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccount includes the requested fields of the GraphQL type AgentConversationRunAsServiceAccount.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccount struct {
+	Typename       *string                                                                                                             `json:"__typename"`
+	Id             string                                                                                                              `json:"id"`
+	ServiceAccount GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccountServiceAccount `json:"serviceAccount"`
+}
+
+// GetTypename returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccount.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccount) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccount.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccount) GetId() string {
+	return v.Id
+}
+
+// GetServiceAccount returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccount.ServiceAccount, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccount) GetServiceAccount() GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccountServiceAccount {
+	return v.ServiceAccount
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccountServiceAccount includes the requested fields of the GraphQL type ServiceAccount.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccountServiceAccount struct {
+	Id string `json:"id"`
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccountServiceAccount.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsServiceAccountServiceAccount) GetId() string {
+	return v.Id
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUser includes the requested fields of the GraphQL type AgentConversationRunAsUser.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUser struct {
+	Typename *string                                                                                         `json:"__typename"`
+	Id       string                                                                                          `json:"id"`
+	User     GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUserUser `json:"user"`
+}
+
+// GetTypename returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUser.Typename, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUser) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUser.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUser) GetId() string {
+	return v.Id
+}
+
+// GetUser returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUser.User, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUser) GetUser() GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUserUser {
+	return v.User
+}
+
+// GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUserUser includes the requested fields of the GraphQL type User.
+type GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUserUser struct {
+	Id string `json:"id"`
+}
+
+// GetId returns GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUserUser.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeRunAsAgentConversationRunAsUserUser) GetId() string {
+	return v.Id
 }
 
 // GetAgentByIDOrganizationAspectAspectAppAgentV2AgentSnowflakeSkillAccessConfig includes the requested fields of the GraphQL type SkillAccessConfig.
@@ -212722,6 +213984,681 @@ func (v *GetDisplayWidgetResponse) GetOrganization() GetDisplayWidgetOrganizatio
 	return v.Organization
 }
 
+// GetDocumentModelDependenciesOrganization includes the requested fields of the GraphQL type Organization.
+type GetDocumentModelDependenciesOrganization struct {
+	// query aspect by id or namespace
+	Aspect *GetDocumentModelDependenciesOrganizationAspect `json:"-"`
+}
+
+// GetAspect returns GetDocumentModelDependenciesOrganization.Aspect, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganization) GetAspect() *GetDocumentModelDependenciesOrganizationAspect {
+	return v.Aspect
+}
+
+func (v *GetDocumentModelDependenciesOrganization) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*GetDocumentModelDependenciesOrganization
+		Aspect json.RawMessage `json:"aspect"`
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.GetDocumentModelDependenciesOrganization = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	{
+		dst := &v.Aspect
+		src := firstPass.Aspect
+		if len(src) != 0 && string(src) != "null" {
+			*dst = new(GetDocumentModelDependenciesOrganizationAspect)
+			err = __unmarshalGetDocumentModelDependenciesOrganizationAspect(
+				src, *dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal GetDocumentModelDependenciesOrganization.Aspect: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+type __premarshalGetDocumentModelDependenciesOrganization struct {
+	Aspect json.RawMessage `json:"aspect"`
+}
+
+func (v *GetDocumentModelDependenciesOrganization) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *GetDocumentModelDependenciesOrganization) __premarshalJSON() (*__premarshalGetDocumentModelDependenciesOrganization, error) {
+	var retval __premarshalGetDocumentModelDependenciesOrganization
+
+	{
+
+		dst := &retval.Aspect
+		src := v.Aspect
+		if src != nil {
+			var err error
+			*dst, err = __marshalGetDocumentModelDependenciesOrganizationAspect(
+				src)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"unable to marshal GetDocumentModelDependenciesOrganization.Aspect: %w", err)
+			}
+		}
+	}
+	return &retval, nil
+}
+
+// GetDocumentModelDependenciesOrganizationAspect includes the requested fields of the GraphQL interface Aspect.
+//
+// GetDocumentModelDependenciesOrganizationAspect is implemented by the following types:
+// GetDocumentModelDependenciesOrganizationAspectAspectApp
+// GetDocumentModelDependenciesOrganizationAspectAspectElement
+// GetDocumentModelDependenciesOrganizationAspectAspectTask
+// GetDocumentModelDependenciesOrganizationAspectAspectTransaction
+type GetDocumentModelDependenciesOrganizationAspect interface {
+	implementsGraphQLInterfaceGetDocumentModelDependenciesOrganizationAspect()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() *string
+}
+
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectApp) implementsGraphQLInterfaceGetDocumentModelDependenciesOrganizationAspect() {
+}
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectElement) implementsGraphQLInterfaceGetDocumentModelDependenciesOrganizationAspect() {
+}
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectTask) implementsGraphQLInterfaceGetDocumentModelDependenciesOrganizationAspect() {
+}
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectTransaction) implementsGraphQLInterfaceGetDocumentModelDependenciesOrganizationAspect() {
+}
+
+func __unmarshalGetDocumentModelDependenciesOrganizationAspect(b []byte, v *GetDocumentModelDependenciesOrganizationAspect) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "AspectApp":
+		*v = new(GetDocumentModelDependenciesOrganizationAspectAspectApp)
+		return json.Unmarshal(b, *v)
+	case "AspectElement":
+		*v = new(GetDocumentModelDependenciesOrganizationAspectAspectElement)
+		return json.Unmarshal(b, *v)
+	case "AspectTask":
+		*v = new(GetDocumentModelDependenciesOrganizationAspectAspectTask)
+		return json.Unmarshal(b, *v)
+	case "AspectTransaction":
+		*v = new(GetDocumentModelDependenciesOrganizationAspectAspectTransaction)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing Aspect.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for GetDocumentModelDependenciesOrganizationAspect: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalGetDocumentModelDependenciesOrganizationAspect(v *GetDocumentModelDependenciesOrganizationAspect) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *GetDocumentModelDependenciesOrganizationAspectAspectApp:
+		typename = "AspectApp"
+
+		premarshaled, err := v.__premarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		result := struct {
+			TypeName string `json:"__typename"`
+			*__premarshalGetDocumentModelDependenciesOrganizationAspectAspectApp
+		}{typename, premarshaled}
+		return json.Marshal(result)
+	case *GetDocumentModelDependenciesOrganizationAspectAspectElement:
+		typename = "AspectElement"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetDocumentModelDependenciesOrganizationAspectAspectElement
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetDocumentModelDependenciesOrganizationAspectAspectTask:
+		typename = "AspectTask"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetDocumentModelDependenciesOrganizationAspectAspectTask
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetDocumentModelDependenciesOrganizationAspectAspectTransaction:
+		typename = "AspectTransaction"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetDocumentModelDependenciesOrganizationAspectAspectTransaction
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for GetDocumentModelDependenciesOrganizationAspect: "%T"`, v)
+	}
+}
+
+// GetDocumentModelDependenciesOrganizationAspectAspectApp includes the requested fields of the GraphQL type AspectApp.
+type GetDocumentModelDependenciesOrganizationAspectAspectApp struct {
+	Typename      *string                                                              `json:"__typename"`
+	DocumentModel GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel `json:"-"`
+}
+
+// GetTypename returns GetDocumentModelDependenciesOrganizationAspectAspectApp.Typename, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectApp) GetTypename() *string {
+	return v.Typename
+}
+
+// GetDocumentModel returns GetDocumentModelDependenciesOrganizationAspectAspectApp.DocumentModel, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectApp) GetDocumentModel() GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel {
+	return v.DocumentModel
+}
+
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectApp) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*GetDocumentModelDependenciesOrganizationAspectAspectApp
+		DocumentModel json.RawMessage `json:"documentModel"`
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.GetDocumentModelDependenciesOrganizationAspectAspectApp = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	{
+		dst := &v.DocumentModel
+		src := firstPass.DocumentModel
+		if len(src) != 0 && string(src) != "null" {
+			err = __unmarshalGetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel(
+				src, dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal GetDocumentModelDependenciesOrganizationAspectAspectApp.DocumentModel: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+type __premarshalGetDocumentModelDependenciesOrganizationAspectAspectApp struct {
+	Typename *string `json:"__typename"`
+
+	DocumentModel json.RawMessage `json:"documentModel"`
+}
+
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectApp) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectApp) __premarshalJSON() (*__premarshalGetDocumentModelDependenciesOrganizationAspectAspectApp, error) {
+	var retval __premarshalGetDocumentModelDependenciesOrganizationAspectAspectApp
+
+	retval.Typename = v.Typename
+	{
+
+		dst := &retval.DocumentModel
+		src := v.DocumentModel
+		var err error
+		*dst, err = __marshalGetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel(
+			&src)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to marshal GetDocumentModelDependenciesOrganizationAspectAspectApp.DocumentModel: %w", err)
+		}
+	}
+	return &retval, nil
+}
+
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel includes the requested fields of the GraphQL interface DocumentModel.
+//
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel is implemented by the following types:
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelAi
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcel
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcelCell
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelInvoice
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelJson
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelOCR
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelXml
+type GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel interface {
+	implementsGraphQLInterfaceGetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() *string
+	// GetId returns the interface-field "id" from its implementation.
+	GetId() string
+	// GetUsage returns the interface-field "usage" from its implementation.
+	GetUsage() GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage
+}
+
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelAi) implementsGraphQLInterfaceGetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel() {
+}
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcel) implementsGraphQLInterfaceGetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel() {
+}
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcelCell) implementsGraphQLInterfaceGetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel() {
+}
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelInvoice) implementsGraphQLInterfaceGetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel() {
+}
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelJson) implementsGraphQLInterfaceGetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel() {
+}
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelOCR) implementsGraphQLInterfaceGetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel() {
+}
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelXml) implementsGraphQLInterfaceGetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel() {
+}
+
+func __unmarshalGetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel(b []byte, v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "DocumentModelAi":
+		*v = new(GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelAi)
+		return json.Unmarshal(b, *v)
+	case "DocumentModelExcel":
+		*v = new(GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcel)
+		return json.Unmarshal(b, *v)
+	case "DocumentModelExcelCell":
+		*v = new(GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcelCell)
+		return json.Unmarshal(b, *v)
+	case "DocumentModelInvoice":
+		*v = new(GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelInvoice)
+		return json.Unmarshal(b, *v)
+	case "DocumentModelJson":
+		*v = new(GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelJson)
+		return json.Unmarshal(b, *v)
+	case "DocumentModelOCR":
+		*v = new(GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelOCR)
+		return json.Unmarshal(b, *v)
+	case "DocumentModelXml":
+		*v = new(GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelXml)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing DocumentModel.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalGetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel(v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelAi:
+		typename = "DocumentModelAi"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelAi
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcel:
+		typename = "DocumentModelExcel"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcel
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcelCell:
+		typename = "DocumentModelExcelCell"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcelCell
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelInvoice:
+		typename = "DocumentModelInvoice"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelInvoice
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelJson:
+		typename = "DocumentModelJson"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelJson
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelOCR:
+		typename = "DocumentModelOCR"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelOCR
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelXml:
+		typename = "DocumentModelXml"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelXml
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModel: "%T"`, v)
+	}
+}
+
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelAi includes the requested fields of the GraphQL type DocumentModelAi.
+type GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelAi struct {
+	Typename *string                                                                   `json:"__typename"`
+	Id       string                                                                    `json:"id"`
+	Name     string                                                                    `json:"name"`
+	Usage    GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage `json:"usage"`
+}
+
+// GetTypename returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelAi.Typename, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelAi) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelAi.Id, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelAi) GetId() string {
+	return v.Id
+}
+
+// GetName returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelAi.Name, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelAi) GetName() string {
+	return v.Name
+}
+
+// GetUsage returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelAi.Usage, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelAi) GetUsage() GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage {
+	return v.Usage
+}
+
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcel includes the requested fields of the GraphQL type DocumentModelExcel.
+type GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcel struct {
+	Typename *string                                                                   `json:"__typename"`
+	Id       string                                                                    `json:"id"`
+	Usage    GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage `json:"usage"`
+}
+
+// GetTypename returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcel.Typename, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcel) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcel.Id, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcel) GetId() string {
+	return v.Id
+}
+
+// GetUsage returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcel.Usage, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcel) GetUsage() GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage {
+	return v.Usage
+}
+
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcelCell includes the requested fields of the GraphQL type DocumentModelExcelCell.
+type GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcelCell struct {
+	Typename *string                                                                   `json:"__typename"`
+	Id       string                                                                    `json:"id"`
+	Usage    GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage `json:"usage"`
+}
+
+// GetTypename returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcelCell.Typename, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcelCell) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcelCell.Id, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcelCell) GetId() string {
+	return v.Id
+}
+
+// GetUsage returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcelCell.Usage, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelExcelCell) GetUsage() GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage {
+	return v.Usage
+}
+
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelInvoice includes the requested fields of the GraphQL type DocumentModelInvoice.
+type GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelInvoice struct {
+	Typename *string                                                                   `json:"__typename"`
+	Id       string                                                                    `json:"id"`
+	Usage    GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage `json:"usage"`
+}
+
+// GetTypename returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelInvoice.Typename, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelInvoice) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelInvoice.Id, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelInvoice) GetId() string {
+	return v.Id
+}
+
+// GetUsage returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelInvoice.Usage, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelInvoice) GetUsage() GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage {
+	return v.Usage
+}
+
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelJson includes the requested fields of the GraphQL type DocumentModelJson.
+type GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelJson struct {
+	Typename *string                                                                   `json:"__typename"`
+	Id       string                                                                    `json:"id"`
+	Name     string                                                                    `json:"name"`
+	Usage    GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage `json:"usage"`
+}
+
+// GetTypename returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelJson.Typename, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelJson) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelJson.Id, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelJson) GetId() string {
+	return v.Id
+}
+
+// GetName returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelJson.Name, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelJson) GetName() string {
+	return v.Name
+}
+
+// GetUsage returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelJson.Usage, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelJson) GetUsage() GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage {
+	return v.Usage
+}
+
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelOCR includes the requested fields of the GraphQL type DocumentModelOCR.
+type GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelOCR struct {
+	Typename *string                                                                   `json:"__typename"`
+	Id       string                                                                    `json:"id"`
+	Name     string                                                                    `json:"name"`
+	Usage    GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage `json:"usage"`
+}
+
+// GetTypename returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelOCR.Typename, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelOCR) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelOCR.Id, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelOCR) GetId() string {
+	return v.Id
+}
+
+// GetName returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelOCR.Name, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelOCR) GetName() string {
+	return v.Name
+}
+
+// GetUsage returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelOCR.Usage, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelOCR) GetUsage() GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage {
+	return v.Usage
+}
+
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelXml includes the requested fields of the GraphQL type DocumentModelXml.
+type GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelXml struct {
+	Typename *string                                                                   `json:"__typename"`
+	Id       string                                                                    `json:"id"`
+	Name     string                                                                    `json:"name"`
+	Usage    GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage `json:"usage"`
+}
+
+// GetTypename returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelXml.Typename, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelXml) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelXml.Id, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelXml) GetId() string {
+	return v.Id
+}
+
+// GetName returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelXml.Name, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelXml) GetName() string {
+	return v.Name
+}
+
+// GetUsage returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelXml.Usage, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelDocumentModelXml) GetUsage() GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage {
+	return v.Usage
+}
+
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage includes the requested fields of the GraphQL type Usage.
+type GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage struct {
+	Automations GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnection `json:"automations"`
+}
+
+// GetAutomations returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage.Automations, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsage) GetAutomations() GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnection {
+	return v.Automations
+}
+
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnection includes the requested fields of the GraphQL type AutomationOptionalConnection.
+type GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnection struct {
+	Edges []GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdge `json:"edges"`
+}
+
+// GetEdges returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnection.Edges, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnection) GetEdges() []GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdge {
+	return v.Edges
+}
+
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdge includes the requested fields of the GraphQL type AutomationOptionalEdge.
+type GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdge struct {
+	Node *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdgeNodeAutomation `json:"node"`
+}
+
+// GetNode returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdge.Node, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdge) GetNode() *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdgeNodeAutomation {
+	return v.Node
+}
+
+// GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdgeNodeAutomation includes the requested fields of the GraphQL type Automation.
+type GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdgeNodeAutomation struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// GetId returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdgeNodeAutomation.Id, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdgeNodeAutomation) GetId() string {
+	return v.Id
+}
+
+// GetName returns GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdgeNodeAutomation.Name, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectAppDocumentModelUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdgeNodeAutomation) GetName() string {
+	return v.Name
+}
+
+// GetDocumentModelDependenciesOrganizationAspectAspectElement includes the requested fields of the GraphQL type AspectElement.
+type GetDocumentModelDependenciesOrganizationAspectAspectElement struct {
+	Typename *string `json:"__typename"`
+}
+
+// GetTypename returns GetDocumentModelDependenciesOrganizationAspectAspectElement.Typename, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectElement) GetTypename() *string {
+	return v.Typename
+}
+
+// GetDocumentModelDependenciesOrganizationAspectAspectTask includes the requested fields of the GraphQL type AspectTask.
+type GetDocumentModelDependenciesOrganizationAspectAspectTask struct {
+	Typename *string `json:"__typename"`
+}
+
+// GetTypename returns GetDocumentModelDependenciesOrganizationAspectAspectTask.Typename, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectTask) GetTypename() *string {
+	return v.Typename
+}
+
+// GetDocumentModelDependenciesOrganizationAspectAspectTransaction includes the requested fields of the GraphQL type AspectTransaction.
+type GetDocumentModelDependenciesOrganizationAspectAspectTransaction struct {
+	Typename *string `json:"__typename"`
+}
+
+// GetTypename returns GetDocumentModelDependenciesOrganizationAspectAspectTransaction.Typename, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesOrganizationAspectAspectTransaction) GetTypename() *string {
+	return v.Typename
+}
+
+// GetDocumentModelDependenciesResponse is returned by GetDocumentModelDependencies on success.
+type GetDocumentModelDependenciesResponse struct {
+	Organization GetDocumentModelDependenciesOrganization `json:"organization"`
+}
+
+// GetOrganization returns GetDocumentModelDependenciesResponse.Organization, and is useful for accessing the field via an interface.
+func (v *GetDocumentModelDependenciesResponse) GetOrganization() GetDocumentModelDependenciesOrganization {
+	return v.Organization
+}
+
 // GetElementOrganization includes the requested fields of the GraphQL type Organization.
 type GetElementOrganization struct {
 	// query aspect by id or namespace
@@ -239809,6 +241746,501 @@ type GetStageLayoutResponse struct {
 // GetOrganization returns GetStageLayoutResponse.Organization, and is useful for accessing the field via an interface.
 func (v *GetStageLayoutResponse) GetOrganization() GetStageLayoutOrganization { return v.Organization }
 
+// GetStoredFunctionDependenciesOrganization includes the requested fields of the GraphQL type Organization.
+type GetStoredFunctionDependenciesOrganization struct {
+	CloudLink *GetStoredFunctionDependenciesOrganizationCloudLink `json:"-"`
+}
+
+// GetCloudLink returns GetStoredFunctionDependenciesOrganization.CloudLink, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganization) GetCloudLink() *GetStoredFunctionDependenciesOrganizationCloudLink {
+	return v.CloudLink
+}
+
+func (v *GetStoredFunctionDependenciesOrganization) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*GetStoredFunctionDependenciesOrganization
+		CloudLink json.RawMessage `json:"cloudLink"`
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.GetStoredFunctionDependenciesOrganization = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	{
+		dst := &v.CloudLink
+		src := firstPass.CloudLink
+		if len(src) != 0 && string(src) != "null" {
+			*dst = new(GetStoredFunctionDependenciesOrganizationCloudLink)
+			err = __unmarshalGetStoredFunctionDependenciesOrganizationCloudLink(
+				src, *dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal GetStoredFunctionDependenciesOrganization.CloudLink: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+type __premarshalGetStoredFunctionDependenciesOrganization struct {
+	CloudLink json.RawMessage `json:"cloudLink"`
+}
+
+func (v *GetStoredFunctionDependenciesOrganization) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *GetStoredFunctionDependenciesOrganization) __premarshalJSON() (*__premarshalGetStoredFunctionDependenciesOrganization, error) {
+	var retval __premarshalGetStoredFunctionDependenciesOrganization
+
+	{
+
+		dst := &retval.CloudLink
+		src := v.CloudLink
+		if src != nil {
+			var err error
+			*dst, err = __marshalGetStoredFunctionDependenciesOrganizationCloudLink(
+				src)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"unable to marshal GetStoredFunctionDependenciesOrganization.CloudLink: %w", err)
+			}
+		}
+	}
+	return &retval, nil
+}
+
+// GetStoredFunctionDependenciesOrganizationCloudLink includes the requested fields of the GraphQL interface CloudLink.
+//
+// GetStoredFunctionDependenciesOrganizationCloudLink is implemented by the following types:
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkApi
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkBigQuery
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkDatabricks
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementum
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementumSnowflake
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkOracle
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflake
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkUnconfigured
+type GetStoredFunctionDependenciesOrganizationCloudLink interface {
+	implementsGraphQLInterfaceGetStoredFunctionDependenciesOrganizationCloudLink()
+	// GetId returns the interface-field "id" from its implementation.
+	GetId() string
+	// GetName returns the interface-field "name" from its implementation.
+	GetName() string
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() *string
+}
+
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkApi) implementsGraphQLInterfaceGetStoredFunctionDependenciesOrganizationCloudLink() {
+}
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkBigQuery) implementsGraphQLInterfaceGetStoredFunctionDependenciesOrganizationCloudLink() {
+}
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkDatabricks) implementsGraphQLInterfaceGetStoredFunctionDependenciesOrganizationCloudLink() {
+}
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementum) implementsGraphQLInterfaceGetStoredFunctionDependenciesOrganizationCloudLink() {
+}
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementumSnowflake) implementsGraphQLInterfaceGetStoredFunctionDependenciesOrganizationCloudLink() {
+}
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkOracle) implementsGraphQLInterfaceGetStoredFunctionDependenciesOrganizationCloudLink() {
+}
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflake) implementsGraphQLInterfaceGetStoredFunctionDependenciesOrganizationCloudLink() {
+}
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkUnconfigured) implementsGraphQLInterfaceGetStoredFunctionDependenciesOrganizationCloudLink() {
+}
+
+func __unmarshalGetStoredFunctionDependenciesOrganizationCloudLink(b []byte, v *GetStoredFunctionDependenciesOrganizationCloudLink) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "CloudLinkApi":
+		*v = new(GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkApi)
+		return json.Unmarshal(b, *v)
+	case "CloudLinkBigQuery":
+		*v = new(GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkBigQuery)
+		return json.Unmarshal(b, *v)
+	case "CloudLinkDatabricks":
+		*v = new(GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkDatabricks)
+		return json.Unmarshal(b, *v)
+	case "CloudLinkElementum":
+		*v = new(GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementum)
+		return json.Unmarshal(b, *v)
+	case "CloudLinkElementumSnowflake":
+		*v = new(GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementumSnowflake)
+		return json.Unmarshal(b, *v)
+	case "CloudLinkOracle":
+		*v = new(GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkOracle)
+		return json.Unmarshal(b, *v)
+	case "CloudLinkSnowflake":
+		*v = new(GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflake)
+		return json.Unmarshal(b, *v)
+	case "CloudLinkUnconfigured":
+		*v = new(GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkUnconfigured)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing CloudLink.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for GetStoredFunctionDependenciesOrganizationCloudLink: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalGetStoredFunctionDependenciesOrganizationCloudLink(v *GetStoredFunctionDependenciesOrganizationCloudLink) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkApi:
+		typename = "CloudLinkApi"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkApi
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkBigQuery:
+		typename = "CloudLinkBigQuery"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkBigQuery
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkDatabricks:
+		typename = "CloudLinkDatabricks"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkDatabricks
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementum:
+		typename = "CloudLinkElementum"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementum
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementumSnowflake:
+		typename = "CloudLinkElementumSnowflake"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementumSnowflake
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkOracle:
+		typename = "CloudLinkOracle"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkOracle
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflake:
+		typename = "CloudLinkSnowflake"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflake
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkUnconfigured:
+		typename = "CloudLinkUnconfigured"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkUnconfigured
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for GetStoredFunctionDependenciesOrganizationCloudLink: "%T"`, v)
+	}
+}
+
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkApi includes the requested fields of the GraphQL type CloudLinkApi.
+type GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkApi struct {
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+	Typename *string `json:"__typename"`
+}
+
+// GetId returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkApi.Id, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkApi) GetId() string { return v.Id }
+
+// GetName returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkApi.Name, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkApi) GetName() string {
+	return v.Name
+}
+
+// GetTypename returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkApi.Typename, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkApi) GetTypename() *string {
+	return v.Typename
+}
+
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkBigQuery includes the requested fields of the GraphQL type CloudLinkBigQuery.
+type GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkBigQuery struct {
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+	Typename *string `json:"__typename"`
+}
+
+// GetId returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkBigQuery.Id, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkBigQuery) GetId() string {
+	return v.Id
+}
+
+// GetName returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkBigQuery.Name, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkBigQuery) GetName() string {
+	return v.Name
+}
+
+// GetTypename returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkBigQuery.Typename, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkBigQuery) GetTypename() *string {
+	return v.Typename
+}
+
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkDatabricks includes the requested fields of the GraphQL type CloudLinkDatabricks.
+type GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkDatabricks struct {
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+	Typename *string `json:"__typename"`
+}
+
+// GetId returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkDatabricks.Id, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkDatabricks) GetId() string {
+	return v.Id
+}
+
+// GetName returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkDatabricks.Name, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkDatabricks) GetName() string {
+	return v.Name
+}
+
+// GetTypename returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkDatabricks.Typename, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkDatabricks) GetTypename() *string {
+	return v.Typename
+}
+
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementum includes the requested fields of the GraphQL type CloudLinkElementum.
+type GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementum struct {
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+	Typename *string `json:"__typename"`
+}
+
+// GetId returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementum.Id, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementum) GetId() string {
+	return v.Id
+}
+
+// GetName returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementum.Name, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementum) GetName() string {
+	return v.Name
+}
+
+// GetTypename returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementum.Typename, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementum) GetTypename() *string {
+	return v.Typename
+}
+
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementumSnowflake includes the requested fields of the GraphQL type CloudLinkElementumSnowflake.
+type GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementumSnowflake struct {
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+	Typename *string `json:"__typename"`
+}
+
+// GetId returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementumSnowflake.Id, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementumSnowflake) GetId() string {
+	return v.Id
+}
+
+// GetName returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementumSnowflake.Name, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementumSnowflake) GetName() string {
+	return v.Name
+}
+
+// GetTypename returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementumSnowflake.Typename, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkElementumSnowflake) GetTypename() *string {
+	return v.Typename
+}
+
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkOracle includes the requested fields of the GraphQL type CloudLinkOracle.
+type GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkOracle struct {
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+	Typename *string `json:"__typename"`
+}
+
+// GetId returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkOracle.Id, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkOracle) GetId() string {
+	return v.Id
+}
+
+// GetName returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkOracle.Name, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkOracle) GetName() string {
+	return v.Name
+}
+
+// GetTypename returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkOracle.Typename, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkOracle) GetTypename() *string {
+	return v.Typename
+}
+
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflake includes the requested fields of the GraphQL type CloudLinkSnowflake.
+type GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflake struct {
+	Id                      string                                                                                      `json:"id"`
+	Name                    string                                                                                      `json:"name"`
+	Typename                *string                                                                                     `json:"__typename"`
+	StoredSnowflakeFunction GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunction `json:"storedSnowflakeFunction"`
+}
+
+// GetId returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflake.Id, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflake) GetId() string {
+	return v.Id
+}
+
+// GetName returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflake.Name, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflake) GetName() string {
+	return v.Name
+}
+
+// GetTypename returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflake.Typename, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflake) GetTypename() *string {
+	return v.Typename
+}
+
+// GetStoredSnowflakeFunction returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflake.StoredSnowflakeFunction, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflake) GetStoredSnowflakeFunction() GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunction {
+	return v.StoredSnowflakeFunction
+}
+
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunction includes the requested fields of the GraphQL type StoredSnowflakeFunction.
+type GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunction struct {
+	Id          string                                                                                            `json:"id"`
+	DisplayName string                                                                                            `json:"displayName"`
+	Usage       *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsage `json:"usage"`
+}
+
+// GetId returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunction.Id, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunction) GetId() string {
+	return v.Id
+}
+
+// GetDisplayName returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunction.DisplayName, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunction) GetDisplayName() string {
+	return v.DisplayName
+}
+
+// GetUsage returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunction.Usage, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunction) GetUsage() *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsage {
+	return v.Usage
+}
+
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsage includes the requested fields of the GraphQL type Usage.
+type GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsage struct {
+	Automations GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnection `json:"automations"`
+}
+
+// GetAutomations returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsage.Automations, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsage) GetAutomations() GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnection {
+	return v.Automations
+}
+
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnection includes the requested fields of the GraphQL type AutomationOptionalConnection.
+type GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnection struct {
+	Edges []GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdge `json:"edges"`
+}
+
+// GetEdges returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnection.Edges, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnection) GetEdges() []GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdge {
+	return v.Edges
+}
+
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdge includes the requested fields of the GraphQL type AutomationOptionalEdge.
+type GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdge struct {
+	Node *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdgeNodeAutomation `json:"node"`
+}
+
+// GetNode returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdge.Node, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdge) GetNode() *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdgeNodeAutomation {
+	return v.Node
+}
+
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdgeNodeAutomation includes the requested fields of the GraphQL type Automation.
+type GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdgeNodeAutomation struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// GetId returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdgeNodeAutomation.Id, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdgeNodeAutomation) GetId() string {
+	return v.Id
+}
+
+// GetName returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdgeNodeAutomation.Name, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkSnowflakeStoredSnowflakeFunctionUsageAutomationsAutomationOptionalConnectionEdgesAutomationOptionalEdgeNodeAutomation) GetName() string {
+	return v.Name
+}
+
+// GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkUnconfigured includes the requested fields of the GraphQL type CloudLinkUnconfigured.
+type GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkUnconfigured struct {
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+	Typename *string `json:"__typename"`
+}
+
+// GetId returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkUnconfigured.Id, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkUnconfigured) GetId() string {
+	return v.Id
+}
+
+// GetName returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkUnconfigured.Name, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkUnconfigured) GetName() string {
+	return v.Name
+}
+
+// GetTypename returns GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkUnconfigured.Typename, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesOrganizationCloudLinkCloudLinkUnconfigured) GetTypename() *string {
+	return v.Typename
+}
+
+// GetStoredFunctionDependenciesResponse is returned by GetStoredFunctionDependencies on success.
+type GetStoredFunctionDependenciesResponse struct {
+	Organization GetStoredFunctionDependenciesOrganization `json:"organization"`
+}
+
+// GetOrganization returns GetStoredFunctionDependenciesResponse.Organization, and is useful for accessing the field via an interface.
+func (v *GetStoredFunctionDependenciesResponse) GetOrganization() GetStoredFunctionDependenciesOrganization {
+	return v.Organization
+}
+
 // GetStoredFunctionOrganization includes the requested fields of the GraphQL type Organization.
 type GetStoredFunctionOrganization struct {
 	CloudLink *GetStoredFunctionOrganizationCloudLink `json:"-"`
@@ -266080,6 +268512,7 @@ type GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger 
 	Typename              *string                                                                                          `json:"__typename"`
 	ApprovalChainTemplate *GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTriggerApprovalChainTemplate `json:"approvalChainTemplate"`
 	Status                *string                                                                                          `json:"status"`
+	Filter                *json.RawMessage                                                                                 `json:"-"`
 }
 
 // GetId returns GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger.Id, and is useful for accessing the field via an interface.
@@ -266100,6 +268533,89 @@ func (v *GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrig
 // GetStatus returns GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger.Status, and is useful for accessing the field via an interface.
 func (v *GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger) GetStatus() *string {
 	return v.Status
+}
+
+// GetFilter returns GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger.Filter, and is useful for accessing the field via an interface.
+func (v *GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger) GetFilter() *json.RawMessage {
+	return v.Filter
+}
+
+func (v *GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger
+		Filter json.RawMessage `json:"filter"`
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	{
+		dst := &v.Filter
+		src := firstPass.Filter
+		if len(src) != 0 && string(src) != "null" {
+			*dst = new(json.RawMessage)
+			err = json.Unmarshal(
+				src, *dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger.Filter: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+type __premarshalGetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger struct {
+	Id string `json:"id"`
+
+	Typename *string `json:"__typename"`
+
+	ApprovalChainTemplate *GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTriggerApprovalChainTemplate `json:"approvalChainTemplate"`
+
+	Status *string `json:"status"`
+
+	Filter json.RawMessage `json:"filter"`
+}
+
+func (v *GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger) __premarshalJSON() (*__premarshalGetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger, error) {
+	var retval __premarshalGetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger
+
+	retval.Id = v.Id
+	retval.Typename = v.Typename
+	retval.ApprovalChainTemplate = v.ApprovalChainTemplate
+	retval.Status = v.Status
+	{
+
+		dst := &retval.Filter
+		src := v.Filter
+		if src != nil {
+			var err error
+			*dst, err = json.Marshal(
+				src)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"unable to marshal GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger.Filter: %w", err)
+			}
+		}
+	}
+	return &retval, nil
 }
 
 // GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTriggerApprovalChainTemplate includes the requested fields of the GraphQL type ApprovalChainTemplate.
@@ -267874,10 +270390,14 @@ func __marshalGetWorkflowDetailsOrganizationWorkflowTriggersWorkflowTrigger(v *G
 	case *GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger:
 		typename = "WorkflowApprovalChainTrigger"
 
+		premarshaled, err := v.__premarshalJSON()
+		if err != nil {
+			return nil, err
+		}
 		result := struct {
 			TypeName string `json:"__typename"`
-			*GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger
-		}{typename, v}
+			*__premarshalGetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalChainTrigger
+		}{typename, premarshaled}
 		return json.Marshal(result)
 	case *GetWorkflowDetailsOrganizationWorkflowTriggersWorkflowApprovalTrigger:
 		typename = "WorkflowApprovalTrigger"
@@ -366224,6 +368744,14 @@ type __DeleteAccessPolicyInput struct {
 // GetId returns __DeleteAccessPolicyInput.Id, and is useful for accessing the field via an interface.
 func (v *__DeleteAccessPolicyInput) GetId() string { return v.Id }
 
+// __DeleteAgentA2ASkillInput is used internally by genqlient
+type __DeleteAgentA2ASkillInput struct {
+	Id string `json:"id"`
+}
+
+// GetId returns __DeleteAgentA2ASkillInput.Id, and is useful for accessing the field via an interface.
+func (v *__DeleteAgentA2ASkillInput) GetId() string { return v.Id }
+
 // __DeleteAgentInput is used internally by genqlient
 type __DeleteAgentInput struct {
 	Id string `json:"id"`
@@ -366452,6 +368980,14 @@ type __DeleteRoleInput struct {
 // GetId returns __DeleteRoleInput.Id, and is useful for accessing the field via an interface.
 func (v *__DeleteRoleInput) GetId() string { return v.Id }
 
+// __DeleteStoredSnowflakeFunctionInput is used internally by genqlient
+type __DeleteStoredSnowflakeFunctionInput struct {
+	Id string `json:"id"`
+}
+
+// GetId returns __DeleteStoredSnowflakeFunctionInput.Id, and is useful for accessing the field via an interface.
+func (v *__DeleteStoredSnowflakeFunctionInput) GetId() string { return v.Id }
+
 // __DeleteTableInput is used internally by genqlient
 type __DeleteTableInput struct {
 	Id string `json:"id"`
@@ -366537,6 +369073,14 @@ func (v *__GetActionExecutionIOInput) GetExecutionId() string { return v.Executi
 
 // GetActionId returns __GetActionExecutionIOInput.ActionId, and is useful for accessing the field via an interface.
 func (v *__GetActionExecutionIOInput) GetActionId() string { return v.ActionId }
+
+// __GetAgentA2ASkillsInput is used internally by genqlient
+type __GetAgentA2ASkillsInput struct {
+	AgentId string `json:"agentId"`
+}
+
+// GetAgentId returns __GetAgentA2ASkillsInput.AgentId, and is useful for accessing the field via an interface.
+func (v *__GetAgentA2ASkillsInput) GetAgentId() string { return v.AgentId }
 
 // __GetAgentByIDInput is used internally by genqlient
 type __GetAgentByIDInput struct {
@@ -367734,6 +370278,18 @@ func (v *__GetDisplayWidgetInput) GetAspectId() string { return v.AspectId }
 // GetWidgetId returns __GetDisplayWidgetInput.WidgetId, and is useful for accessing the field via an interface.
 func (v *__GetDisplayWidgetInput) GetWidgetId() string { return v.WidgetId }
 
+// __GetDocumentModelDependenciesInput is used internally by genqlient
+type __GetDocumentModelDependenciesInput struct {
+	AspectId        string `json:"aspectId"`
+	DocumentModelId string `json:"documentModelId"`
+}
+
+// GetAspectId returns __GetDocumentModelDependenciesInput.AspectId, and is useful for accessing the field via an interface.
+func (v *__GetDocumentModelDependenciesInput) GetAspectId() string { return v.AspectId }
+
+// GetDocumentModelId returns __GetDocumentModelDependenciesInput.DocumentModelId, and is useful for accessing the field via an interface.
+func (v *__GetDocumentModelDependenciesInput) GetDocumentModelId() string { return v.DocumentModelId }
+
 // __GetElementInput is used internally by genqlient
 type __GetElementInput struct {
 	AspectId string `json:"aspectId"`
@@ -368112,6 +370668,18 @@ func (v *__GetStageLayoutInput) GetAspectId() string { return v.AspectId }
 
 // GetStageId returns __GetStageLayoutInput.StageId, and is useful for accessing the field via an interface.
 func (v *__GetStageLayoutInput) GetStageId() string { return v.StageId }
+
+// __GetStoredFunctionDependenciesInput is used internally by genqlient
+type __GetStoredFunctionDependenciesInput struct {
+	CloudLinkId string `json:"cloudLinkId"`
+	FunctionId  string `json:"functionId"`
+}
+
+// GetCloudLinkId returns __GetStoredFunctionDependenciesInput.CloudLinkId, and is useful for accessing the field via an interface.
+func (v *__GetStoredFunctionDependenciesInput) GetCloudLinkId() string { return v.CloudLinkId }
+
+// GetFunctionId returns __GetStoredFunctionDependenciesInput.FunctionId, and is useful for accessing the field via an interface.
+func (v *__GetStoredFunctionDependenciesInput) GetFunctionId() string { return v.FunctionId }
 
 // __GetStoredFunctionInput is used internally by genqlient
 type __GetStoredFunctionInput struct {
@@ -371981,6 +374549,41 @@ func DeleteAgent(
 	return data_, err_
 }
 
+// The mutation executed by DeleteAgentA2ASkill.
+const DeleteAgentA2ASkill_Operation = `
+mutation DeleteAgentA2ASkill ($id: ID!) {
+	agentSkillDelete(id: $id) {
+		id
+	}
+}
+`
+
+// Delete an A2A skill by ID
+func DeleteAgentA2ASkill(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	id string,
+) (data_ *DeleteAgentA2ASkillResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "DeleteAgentA2ASkill",
+		Query:  DeleteAgentA2ASkill_Operation,
+		Variables: &__DeleteAgentA2ASkillInput{
+			Id: id,
+		},
+	}
+
+	data_ = &DeleteAgentA2ASkillResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
 // The mutation executed by DeleteAgentTool.
 const DeleteAgentTool_Operation = `
 mutation DeleteAgentTool ($id: ID!) {
@@ -372933,6 +375536,39 @@ func DeleteRole(
 	return data_, err_
 }
 
+// The mutation executed by DeleteStoredSnowflakeFunction.
+const DeleteStoredSnowflakeFunction_Operation = `
+mutation DeleteStoredSnowflakeFunction ($id: ID!) {
+	storedSnowflakeFunctionDelete(id: $id)
+}
+`
+
+// Delete a stored Snowflake function
+func DeleteStoredSnowflakeFunction(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	id string,
+) (data_ *DeleteStoredSnowflakeFunctionResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "DeleteStoredSnowflakeFunction",
+		Query:  DeleteStoredSnowflakeFunction_Operation,
+		Variables: &__DeleteStoredSnowflakeFunctionInput{
+			Id: id,
+		},
+	}
+
+	data_ = &DeleteStoredSnowflakeFunctionResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
 // The mutation executed by DeleteTable.
 const DeleteTable_Operation = `
 mutation DeleteTable ($id: ID!) {
@@ -373390,6 +376026,62 @@ func GetActionExecutionIO(
 	return data_, err_
 }
 
+// The query executed by GetAgentA2ASkills.
+const GetAgentA2ASkills_Operation = `
+query GetAgentA2ASkills ($agentId: ID!) {
+	organization {
+		agent(id: $agentId) {
+			__typename
+			id
+			name
+			... on AgentElementum {
+				card {
+					skills {
+						edges {
+							node {
+								id
+								name
+								description
+								tags
+								examples
+								inputModes
+								outputModes
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+`
+
+// Get A2A skills for an agent (only available on AgentElementum)
+func GetAgentA2ASkills(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	agentId string,
+) (data_ *GetAgentA2ASkillsResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "GetAgentA2ASkills",
+		Query:  GetAgentA2ASkills_Operation,
+		Variables: &__GetAgentA2ASkillsInput{
+			AgentId: agentId,
+		},
+	}
+
+	data_ = &GetAgentA2ASkillsResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
 // The query executed by GetAgentByID.
 const GetAgentByID_Operation = `
 query GetAgentByID ($aspectId: ID!, $agentId: ID!) {
@@ -373431,6 +376123,24 @@ query GetAgentByID ($aspectId: ID!, $agentId: ID!) {
 						startingActions {
 							... StartingActionInfo
 						}
+						runAs {
+							__typename
+							... on AgentConversationRunAsCurrentUser {
+								id
+							}
+							... on AgentConversationRunAsServiceAccount {
+								id
+								serviceAccount {
+									id
+								}
+							}
+							... on AgentConversationRunAsUser {
+								id
+								user {
+									id
+								}
+							}
+						}
 						app {
 							id
 							name
@@ -373468,6 +376178,24 @@ query GetAgentByID ($aspectId: ID!, $agentId: ID!) {
 						startingActions {
 							... StartingActionInfo
 						}
+						runAs {
+							__typename
+							... on AgentConversationRunAsCurrentUser {
+								id
+							}
+							... on AgentConversationRunAsServiceAccount {
+								id
+								serviceAccount {
+									id
+								}
+							}
+							... on AgentConversationRunAsUser {
+								id
+								user {
+									id
+								}
+							}
+						}
 						app {
 							id
 							name
@@ -373502,6 +376230,24 @@ query GetAgentByID ($aspectId: ID!, $agentId: ID!) {
 						}
 						startingActions {
 							... StartingActionInfo
+						}
+						runAs {
+							__typename
+							... on AgentConversationRunAsCurrentUser {
+								id
+							}
+							... on AgentConversationRunAsServiceAccount {
+								id
+								serviceAccount {
+									id
+								}
+							}
+							... on AgentConversationRunAsUser {
+								id
+								user {
+									id
+								}
+							}
 						}
 						app {
 							id
@@ -373539,6 +376285,24 @@ query GetAgentByID ($aspectId: ID!, $agentId: ID!) {
 						}
 						startingActions {
 							... StartingActionInfo
+						}
+						runAs {
+							__typename
+							... on AgentConversationRunAsCurrentUser {
+								id
+							}
+							... on AgentConversationRunAsServiceAccount {
+								id
+								serviceAccount {
+									id
+								}
+							}
+							... on AgentConversationRunAsUser {
+								id
+								user {
+									id
+								}
+							}
 						}
 						app {
 							id
@@ -379529,6 +382293,73 @@ func GetDisplayWidget(
 	return data_, err_
 }
 
+// The query executed by GetDocumentModelDependencies.
+const GetDocumentModelDependencies_Operation = `
+query GetDocumentModelDependencies ($aspectId: ID!, $documentModelId: ID!) {
+	organization {
+		aspect(id: $aspectId) {
+			__typename
+			... on AspectApp {
+				documentModel(id: $documentModelId) {
+					__typename
+					id
+					... on DocumentModelAi {
+						name
+					}
+					... on DocumentModelOCR {
+						name
+					}
+					... on DocumentModelJson {
+						name
+					}
+					... on DocumentModelXml {
+						name
+					}
+					usage {
+						automations {
+							edges {
+								node {
+									id
+									name
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+`
+
+// Query to get file reader dependencies (automations using this file reader)
+func GetDocumentModelDependencies(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	aspectId string,
+	documentModelId string,
+) (data_ *GetDocumentModelDependenciesResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "GetDocumentModelDependencies",
+		Query:  GetDocumentModelDependencies_Operation,
+		Variables: &__GetDocumentModelDependenciesInput{
+			AspectId:        aspectId,
+			DocumentModelId: documentModelId,
+		},
+	}
+
+	data_ = &GetDocumentModelDependenciesResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
 // The query executed by GetElement.
 const GetElement_Operation = `
 query GetElement ($aspectId: ID!) {
@@ -381637,6 +384468,63 @@ func GetStoredFunction(
 	return data_, err_
 }
 
+// The query executed by GetStoredFunctionDependencies.
+const GetStoredFunctionDependencies_Operation = `
+query GetStoredFunctionDependencies ($cloudLinkId: ID!, $functionId: ID!) {
+	organization {
+		cloudLink(id: $cloudLinkId) {
+			id
+			name
+			__typename
+			... on CloudLinkSnowflake {
+				storedSnowflakeFunction(id: $functionId) {
+					id
+					displayName
+					usage {
+						automations {
+							edges {
+								node {
+									id
+									name
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+`
+
+// Get dependencies (automations using this stored function)
+func GetStoredFunctionDependencies(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	cloudLinkId string,
+	functionId string,
+) (data_ *GetStoredFunctionDependenciesResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "GetStoredFunctionDependencies",
+		Query:  GetStoredFunctionDependencies_Operation,
+		Variables: &__GetStoredFunctionDependenciesInput{
+			CloudLinkId: cloudLinkId,
+			FunctionId:  functionId,
+		},
+	}
+
+	data_ = &GetStoredFunctionDependenciesResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
 // The query executed by GetTable.
 const GetTable_Operation = `
 query GetTable ($id: ID!) {
@@ -382594,6 +385482,7 @@ query GetWorkflowDetails ($workflowId: ID!) {
 						name
 					}
 					status
+					filter
 				}
 			}
 			tasks {

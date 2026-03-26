@@ -374,6 +374,13 @@ func decodeValueReference(ref map[string]interface{}) string {
 		}
 	}
 
+	// Check for nested calculationReference (used by calculation tasks)
+	if calcRef, ok := ref["calculationReference"].(map[string]interface{}); ok && calcRef != nil {
+		if calculation, ok := calcRef["calculation"].(string); ok && calculation != "" {
+			return calculation
+		}
+	}
+
 	// Check for templateReference with parameters
 	if templateRef, ok := ref["templateReference"].(map[string]interface{}); ok && templateRef != nil {
 		template, _ := templateRef["template"].(string)

@@ -407,6 +407,18 @@ query GetAgentByID($aspectId: ID!, $agentId: ID!) {
             startingActions {
               ...StartingActionInfo
             }
+            runAs {
+              __typename
+              ... on AgentConversationRunAsCurrentUser { id }
+              ... on AgentConversationRunAsServiceAccount {
+                id
+                serviceAccount { id }
+              }
+              ... on AgentConversationRunAsUser {
+                id
+                user { id }
+              }
+            }
             app { id name }
           }
           ... on AgentSnowflake {
@@ -431,6 +443,18 @@ query GetAgentByID($aspectId: ID!, $agentId: ID!) {
             startingActions {
               ...StartingActionInfo
             }
+            runAs {
+              __typename
+              ... on AgentConversationRunAsCurrentUser { id }
+              ... on AgentConversationRunAsServiceAccount {
+                id
+                serviceAccount { id }
+              }
+              ... on AgentConversationRunAsUser {
+                id
+                user { id }
+              }
+            }
             app { id name }
           }
           ... on AgentBedrock {
@@ -452,6 +476,18 @@ query GetAgentByID($aspectId: ID!, $agentId: ID!) {
             }
             startingActions {
               ...StartingActionInfo
+            }
+            runAs {
+              __typename
+              ... on AgentConversationRunAsCurrentUser { id }
+              ... on AgentConversationRunAsServiceAccount {
+                id
+                serviceAccount { id }
+              }
+              ... on AgentConversationRunAsUser {
+                id
+                user { id }
+              }
             }
             app { id name }
           }
@@ -476,6 +512,18 @@ query GetAgentByID($aspectId: ID!, $agentId: ID!) {
             }
             startingActions {
               ...StartingActionInfo
+            }
+            runAs {
+              __typename
+              ... on AgentConversationRunAsCurrentUser { id }
+              ... on AgentConversationRunAsServiceAccount {
+                id
+                serviceAccount { id }
+              }
+              ... on AgentConversationRunAsUser {
+                id
+                user { id }
+              }
             }
             app { id name }
           }
@@ -531,5 +579,43 @@ query GetAgentTools($aspectId: ID!, $agentId: ID!) {
         }
       }
     }
+  }
+}
+
+# Get A2A skills for an agent (only available on AgentElementum)
+query GetAgentA2ASkills($agentId: ID!) {
+  organization {
+    agent(id: $agentId) {
+      id
+      name
+      ... on AgentElementum {
+        card {
+          skills {
+            edges {
+              node {
+                id
+                name
+                description
+                tags
+                examples
+                inputModes
+                outputModes
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# ==============================================================================
+# Mutations
+# ==============================================================================
+
+# Delete an A2A skill by ID
+mutation DeleteAgentA2ASkill($id: ID!) {
+  agentSkillDelete(id: $id) {
+    id
   }
 }
