@@ -700,14 +700,14 @@ func renderExecutionTable(_ string, exec *analysis.ExecutionAnalysis, showIO boo
 				fmt.Printf("     %s %s\n", ui.ErrorStyle.Render("Error:"), errMsg)
 			}
 
-			// Show I/O only if loaded
+			// Show I/O only if loaded (no truncation since user explicitly requested --io)
 			if showIO && action.IOLoaded {
 				if len(action.Inputs) > 0 && string(action.Inputs) != "null" && string(action.Inputs) != "{}" {
-					inputPreview := formatIOPreview(action.Inputs, 120)
+					inputPreview := formatIOPreview(action.Inputs, 0)
 					fmt.Printf("     %s %s\n", ui.LabelStyle.Render("Inputs:"), ui.MutedStyle.Render(inputPreview))
 				}
 				if len(action.Outputs) > 0 && string(action.Outputs) != "null" && string(action.Outputs) != "{}" {
-					outputPreview := formatIOPreview(action.Outputs, 120)
+					outputPreview := formatIOPreview(action.Outputs, 0)
 					fmt.Printf("     %s %s\n", ui.LabelStyle.Render("Outputs:"), ui.MutedStyle.Render(outputPreview))
 				}
 			}
@@ -852,15 +852,15 @@ func renderExecutionTableWithIO(_ string, exec *analysis.ExecutionAnalysis) erro
 				fmt.Printf("     %s %s\n", ui.ErrorStyle.Render("Error:"), errMsg)
 			}
 
-			// Inputs (if present and not empty/null)
+			// Inputs (if present and not empty/null) - no truncation since user explicitly filtered by action
 			if len(action.Inputs) > 0 && string(action.Inputs) != "null" && string(action.Inputs) != "{}" {
-				inputPreview := formatIOPreview(action.Inputs, 120)
+				inputPreview := formatIOPreview(action.Inputs, 0)
 				fmt.Printf("     %s %s\n", ui.LabelStyle.Render("Inputs:"), ui.MutedStyle.Render(inputPreview))
 			}
 
-			// Outputs (if present and not empty/null)
+			// Outputs (if present and not empty/null) - no truncation since user explicitly filtered by action
 			if len(action.Outputs) > 0 && string(action.Outputs) != "null" && string(action.Outputs) != "{}" {
-				outputPreview := formatIOPreview(action.Outputs, 120)
+				outputPreview := formatIOPreview(action.Outputs, 0)
 				fmt.Printf("     %s %s\n", ui.LabelStyle.Render("Outputs:"), ui.MutedStyle.Render(outputPreview))
 			}
 
@@ -879,7 +879,8 @@ func renderExecutionTableWithIO(_ string, exec *analysis.ExecutionAnalysis) erro
 	return nil
 }
 
-// formatIOPreview formats JSON inputs/outputs for compact display
+// formatIOPreview formats JSON inputs/outputs for compact display.
+// If maxLen is 0, no truncation is applied.
 func formatIOPreview(data []byte, maxLen int) string {
 	if len(data) == 0 {
 		return "(empty)"
@@ -890,7 +891,7 @@ func formatIOPreview(data []byte, maxLen int) string {
 	s = strings.ReplaceAll(s, "\n", " ")
 	s = strings.ReplaceAll(s, "  ", " ")
 
-	if len(s) > maxLen {
+	if maxLen > 0 && len(s) > maxLen {
 		s = s[:maxLen-3] + "..."
 	}
 

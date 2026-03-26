@@ -213,6 +213,120 @@ func containsSubstring(s, sub string) bool {
 	return strings.Contains(s, sub)
 }
 
+// TestToMultiFileExport_DataSourceRouting verifies that data source blocks
+// (Type == "data") are merged into DataSourcesFile, not lost to AppFiles.
+// This is a regression test for the bug where access policy data sources
+// (elementum_user, elementum_group) were generated but never written to data.tf.
+func TestToMultiFileExport_DataSourceRouting(t *testing.T) {
+	app := &discovery.App{
+		ID:        "app-1",
+		Name:      "Test App",
+		Namespace: "test-app",
+	}
+
+	imports := []ImportBlock{}
+
+	// Create data source blocks (Type = "data" instead of "resource")
+	userBlock := &HCLBlock{
+		Type:   "data",
+		Labels: []string{"elementum_user", "john_doe"},
+		Body:   &HCLBody{},
+	}
+	userBlock.SetAttr("email", Str("john@example.com"))
+
+	groupBlock := &HCLBlock{
+		Type:   "data",
+		Labels: []string{"elementum_group", "admins"},
+		Body:   &HCLBody{},
+	}
+	groupBlock.SetAttr("name", Str("Administrators"))
+
+	blocks := []*HCLBlock{userBlock, groupBlock}
+
+	result := OrganizeBlocksExport(blocks, app, imports)
+
+	// Verify blocks are routed to data.tf
+	dataFileFound := false
+	for _, fg := range result.FileGroups {
+		if fg.FileName == "data.tf" {
+			dataFileFound = true
+			if len(fg.Blocks) != 2 {
+				t.Errorf("expected 2 blocks in data.tf, got %d", len(fg.Blocks))
+			}
+		}
+	}
+	if !dataFileFound {
+		t.Error("expected data.tf file group")
+		for _, fg := range result.FileGroups {
+			t.Logf("  found: %s (%d blocks)", fg.FileName, len(fg.Blocks))
+		}
+	}
+
+	// Convert to MultiFileExport and verify DataSourcesFile is populated
+	export := result.ToMultiFileExport()
+
+	if export.DataSourcesFile == "" {
+		t.Error("expected DataSourcesFile to be populated")
+	}
+
+	if !strings.Contains(export.DataSourcesFile, `data "elementum_user" "john_doe"`) {
+		t.Error("expected user data source in DataSourcesFile")
+	}
+	if !strings.Contains(export.DataSourcesFile, `data "elementum_group" "admins"`) {
+		t.Error("expected group data source in DataSourcesFile")
+	}
+
+	// Verify data sources are NOT in AppFiles
+	for _, fg := range export.AppFiles {
+		content := strings.Join(fg.Resources, "\n")
+		if strings.Contains(content, "elementum_user") || strings.Contains(content, "elementum_group") {
+			t.Errorf("data sources should NOT be in AppFiles, found in %s", fg.FileName)
+		}
+	}
+}
+
+// TestToMultiFileExport_DataSourceMerging verifies that when DataSourcesFile
+// already has content, additional data sources from the IR pipeline are merged
+// rather than overwritten. This mirrors the apps.go scenario where category/cloudlink
+// data sources are added after ToMultiFileExport().
+func TestToMultiFileExport_DataSourceMerging(t *testing.T) {
+	app := &discovery.App{
+		ID:        "app-1",
+		Name:      "Test App",
+		Namespace: "test-app",
+	}
+
+	imports := []ImportBlock{}
+
+	// Create data source blocks
+	userBlock := &HCLBlock{
+		Type:   "data",
+		Labels: []string{"elementum_user", "admin"},
+		Body:   &HCLBody{},
+	}
+	userBlock.SetAttr("email", Str("admin@example.com"))
+
+	blocks := []*HCLBlock{userBlock}
+	result := OrganizeBlocksExport(blocks, app, imports)
+
+	// Pre-populate DataSourcesFile as apps.go does
+	result.DataSourcesFile = `data "elementum_category" "existing" {
+  name = "Existing Category"
+}
+`
+
+	// Convert to MultiFileExport - this should MERGE, not overwrite
+	export := result.ToMultiFileExport()
+
+	// Verify both existing and new data sources are present
+	if !strings.Contains(export.DataSourcesFile, `data "elementum_category" "existing"`) {
+		t.Error("expected existing category data source to be preserved")
+	}
+	if !strings.Contains(export.DataSourcesFile, `data "elementum_user" "admin"`) {
+		t.Error("expected user data source to be merged into DataSourcesFile")
+	}
+}
+
 // TestOrganizeBlocksExport_TasksUseWorkflowID is a regression test to ensure tasks
 // are correctly organized into their automation files when using workflow IDs.
 // The task import ID format is {workflow_id}:{task_id}, NOT {automation_id}:{task_id}.

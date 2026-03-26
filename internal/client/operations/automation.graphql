@@ -217,6 +217,7 @@ query GetWorkflowDetails($workflowId: ID!) {
             name
           }
           status
+          filter
         }
       }
       tasks {

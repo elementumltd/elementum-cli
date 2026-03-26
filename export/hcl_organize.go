@@ -85,6 +85,12 @@ func (e *BlockMultiFileExport) ToMultiFileExport() *MultiFileExport {
 			result.SecurityFiles = append(result.SecurityFiles, fg)
 		case strings.HasSuffix(group.FileName, "-ai-search.tf"):
 			result.AISearchTableFiles = append(result.AISearchTableFiles, fg)
+		case group.FileName == "data.tf":
+			// Append IR-generated data sources to DataSourcesFile
+			if result.DataSourcesFile != "" {
+				result.DataSourcesFile += "\n"
+			}
+			result.DataSourcesFile += group.Serialize()
 		default:
 			result.AppFiles = append(result.AppFiles, fg)
 		}

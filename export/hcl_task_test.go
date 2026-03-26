@@ -556,8 +556,9 @@ func TestTaskHCL_Calculation(t *testing.T) {
 		"name":       "Calculate",
 		"calculations": []interface{}{
 			map[string]interface{}{
-				"id":   "calc-1",
-				"name": "result",
+				"id":          "calc-1",
+				"name":        "result",
+				"calculation": "1 + 1",
 				"calculationReference": map[string]interface{}{
 					"id":    "ref-1",
 					"label": "1 + 1",
@@ -572,6 +573,8 @@ func TestTaskHCL_Calculation(t *testing.T) {
 	assertHCLContains(t, hcl,
 		`resource "elementum_calculation_task" "calculate"`,
 		"calculations",
+		`variable_name = "result"`,
+		`formula = "1 + 1"`,
 	)
 }
 
@@ -1021,24 +1024,16 @@ func TestTaskHCL_ApprovalStatusUpdate(t *testing.T) {
 		"id":         TestTaskID,
 		"name":       "Update Approval",
 		"approvalChainTemplate": map[string]interface{}{
-			"id":   TestApprovalTemplateID,
-			"name": "Template",
-		},
-		"recordId": map[string]interface{}{
-			"id":    "ref-1",
-			"label": "Record",
-			"value": "Record",
+			"id": "act-123",
 		},
 		"status": "APPROVED",
 	}
 
-	uuidMap := map[string]string{TestApprovalTemplateID: "elementum_approval_process.template.id"}
-	_, hcl := generateTaskHCLWithUUIDMap(t, "approval_status_update", "update_approval", rawData, uuidMap)
+	_, hcl := generateTaskHCL(t, "approval_status_update", "update_approval", rawData)
 
 	assertHCLContains(t, hcl,
 		`resource "elementum_approval_status_update_task" "update_approval"`,
-		"approval_chain_template_id",
-		"record_reference",
+		"approval_reference",
 		"status",
 	)
 }

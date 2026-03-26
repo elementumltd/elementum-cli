@@ -126,7 +126,7 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		`,
 		Fields: []TaskFieldConfig{
 			{Name: "object_id", GraphQLPath: "aspect.id", Required: false, IsReference: true, ReferenceType: "object"},
-			{Name: "record_reference", GraphQLPath: "recordReference", Required: false},
+			{Name: "record_reference", GraphQLPath: "recordReference", Required: false, IsValueReference: true},
 			{Name: "fields", GraphQLPath: "workflowFields", Required: false},
 		},
 	},
@@ -356,6 +356,7 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 				calculations {
 					id
 					name
+					calculation
 					calculationReference {
 						id
 						label
@@ -568,15 +569,15 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLTypename: "WorkflowApprovalStatusUpdateTask",
 		GraphQLFragment: `
 			... on WorkflowApprovalStatusUpdateTask {
-				approvalChainTemplate { id name }
-				recordId { id label value }
+				approvalChainTemplate { id }
 				status
 				reason { id label value }
 			}
 		`,
 		Fields: []TaskFieldConfig{
-			{Name: "approval_chain_template_id", GraphQLPath: "approvalChainTemplate.id", Required: true, IsReference: true, ReferenceType: "approval_template"},
-			{Name: "record_reference", GraphQLPath: "recordId", Required: true, IsValueReference: true},
+			// Note: API has approvalChainTemplate, but Terraform schema expects approval_reference
+			// The schema maps this as a value reference string
+			{Name: "approval_reference", GraphQLPath: "approvalChainTemplate.id", Required: true},
 			{Name: "status", GraphQLPath: "status", Required: true},
 			{Name: "reason", GraphQLPath: "reason", Required: false, IsValueReference: true},
 		},

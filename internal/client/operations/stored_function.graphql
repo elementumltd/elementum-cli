@@ -144,3 +144,35 @@ query ListAllStoredFunctions {
     }
   }
 }
+
+# Delete a stored Snowflake function
+mutation DeleteStoredSnowflakeFunction($id: ID!) {
+  storedSnowflakeFunctionDelete(id: $id)
+}
+
+# Get dependencies (automations using this stored function)
+query GetStoredFunctionDependencies($cloudLinkId: ID!, $functionId: ID!) {
+  organization {
+    cloudLink(id: $cloudLinkId) {
+      id
+      name
+      __typename
+      ... on CloudLinkSnowflake {
+        storedSnowflakeFunction(id: $functionId) {
+          id
+          displayName
+          usage {
+            automations {
+              edges {
+                node {
+                  id
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

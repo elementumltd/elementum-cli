@@ -147,6 +147,8 @@ func init() {
 	rootCmd.AddCommand(elementumcmd.GetInterventionsCmd())
 	rootCmd.AddCommand(elementumcmd.GetFileReadersCmd())
 	rootCmd.AddCommand(elementumcmd.GetTableCmd())
+	rootCmd.AddCommand(elementumcmd.GetFunctionsCmd())
+	rootCmd.AddCommand(elementumcmd.GetA2ASkillsCmd())
 
 	// Infrastructure/config commands
 	rootCmd.AddCommand(elementumcmd.GetAiProvidersCmd())

@@ -6,6 +6,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/elementumltd/elementum-cli/auth"
 	"github.com/elementumltd/elementum-cli/ui"
@@ -89,6 +90,15 @@ func runFileReadersDeleteCmd(cmd *cobra.Command, args []string) error {
 
 	_, err = client.DeleteDocumentModel(ctx, apiClient.Genqlient(), fileReaderID)
 	if err != nil {
+		// Fetch and display dependencies as blockers
+		if blockers := getFileReaderBlockers(ctx, apiClient, aspectID, fileReaderID); blockers != "" {
+			fmt.Println()
+			fmt.Println(ui.ErrorStyle.Render("Cannot delete file reader - blocked by dependencies:"))
+			fmt.Println(blockers)
+			fmt.Println()
+			fmt.Println(ui.MutedStyle.Render("Delete or update the blocking resources first, then retry."))
+			return fmt.Errorf("file reader has active dependencies")
+		}
 		return fmt.Errorf("failed to delete file reader: %w", err)
 	}
 
@@ -103,4 +113,41 @@ func runFileReadersDeleteCmd(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(ui.SuccessStyle.Render("Deleted file reader:") + fmt.Sprintf(" %s (%s)", displayName, fileReaderID))
 	return nil
+}
+
+// getFileReaderBlockers fetches dependencies that block deleting a file reader
+// and returns a formatted string of blockers, or empty string if no blockers found
+func getFileReaderBlockers(ctx context.Context, c *client.Client, aspectID, fileReaderID string) string {
+	resp, err := client.GetDocumentModelDependencies(ctx, c.Genqlient(), aspectID, fileReaderID)
+	if err != nil {
+		return "" // Can't fetch dependencies, return empty
+	}
+
+	aspect := resp.Organization.Aspect
+	if aspect == nil {
+		return ""
+	}
+
+	var blockers []string
+
+	// Type switch to access the document model
+	switch a := (*aspect).(type) {
+	case *client.GetDocumentModelDependenciesOrganizationAspectAspectApp:
+		docModel := a.DocumentModel
+		if docModel == nil {
+			return ""
+		}
+
+		// Access usage through the interface method
+		usage := docModel.GetUsage()
+		for _, edge := range usage.Automations.Edges {
+			blockers = append(blockers, fmt.Sprintf("  • Automation: %s (%s)", edge.Node.Name, edge.Node.Id))
+		}
+	}
+
+	if len(blockers) == 0 {
+		return ""
+	}
+
+	return strings.Join(blockers, "\n")
 }
