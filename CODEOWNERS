@@ -1,0 +1,11 @@
+# CODEOWNERS
+#
+# This file defines the default code owners for this repository.
+# Code owners are automatically requested for review on pull requests
+# that modify files they own.
+#
+# For more information, see:
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything in the repo
+* @elementumltd/open-source
