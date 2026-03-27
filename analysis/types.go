@@ -47,20 +47,21 @@ const (
 
 // ToolCallInfo represents a single tool invocation with timing data.
 type ToolCallInfo struct {
-	ToolCallID    string         `json:"toolCallId"`
-	ToolName      string         `json:"toolName"`
-	DisplayName   string         `json:"displayName"`
-	ResolvedLabel string         `json:"resolvedLabel"`
-	Status        ToolCallStatus `json:"status"`
-	StartedAt     *time.Time     `json:"startedAt"`
-	CompletedAt   *time.Time     `json:"completedAt"`
-	DurationMs    int64          `json:"durationMs"`
-	ErrorMessage  string         `json:"errorMessage,omitempty"`
-	Arguments     []ToolCallArg  `json:"arguments,omitempty"`
-	IsOutlier     bool           `json:"isOutlier"`
-	ParallelGroup int            `json:"parallelGroup"`
-	ParallelSize  int            `json:"parallelSize"`
-	Strategy      TimingStrategy `json:"strategy"`
+	ToolCallID    string          `json:"toolCallId"`
+	ToolName      string          `json:"toolName"`
+	DisplayName   string          `json:"displayName"`
+	ResolvedLabel string          `json:"resolvedLabel"`
+	Status        ToolCallStatus  `json:"status"`
+	StartedAt     *time.Time      `json:"startedAt"`
+	CompletedAt   *time.Time      `json:"completedAt"`
+	DurationMs    int64           `json:"durationMs"`
+	ErrorMessage  string          `json:"errorMessage,omitempty"`
+	Arguments     []ToolCallArg   `json:"arguments,omitempty"`
+	Output        json.RawMessage `json:"output,omitempty"`
+	IsOutlier     bool            `json:"isOutlier"`
+	ParallelGroup int             `json:"parallelGroup"`
+	ParallelSize  int             `json:"parallelSize"`
+	Strategy      TimingStrategy  `json:"strategy"`
 }
 
 type ToolCallStatus string
@@ -186,7 +187,8 @@ type RawToolCall struct {
 
 // RawToolResponse is a normalized tool response from a tool message event.
 type RawToolResponse struct {
-	ToolCallID  string
-	Name        string
-	DisplayName string
+	ToolCallID   string
+	Name         string
+	DisplayName  string
+	ResponseData json.RawMessage
 }

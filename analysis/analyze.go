@@ -15,6 +15,7 @@
 package analysis
 
 import (
+	"encoding/json"
 	"sort"
 	"time"
 )
@@ -51,6 +52,7 @@ func Analyze(parsed *ParsedConversation) *ConversationAnalysis {
 	completeEvents := buildToolEventIndex(events, EventToolComplete)
 	errorEvents := buildToolEventIndex(events, EventToolError)
 	responseIndex := buildToolResponseIndex(events)
+	responseDataIndex := buildToolResponseDataIndex(events)
 
 	// Determine timing strategy
 	strategy := TimingEstimated
@@ -59,7 +61,7 @@ func Analyze(parsed *ParsedConversation) *ConversationAnalysis {
 	}
 
 	// Extract tool call timings
-	toolCalls := extractToolCalls(events, toolCallIndex, startEvents, completeEvents, errorEvents, responseIndex, strategy)
+	toolCalls := extractToolCalls(events, toolCallIndex, startEvents, completeEvents, errorEvents, responseIndex, responseDataIndex, strategy)
 
 	// Post-processing
 	detectParallelGroups(toolCalls)
@@ -154,11 +156,27 @@ func buildToolResponseIndex(events []RawEvent) map[string]RawEvent {
 	return index
 }
 
+func buildToolResponseDataIndex(events []RawEvent) map[string]json.RawMessage {
+	index := map[string]json.RawMessage{}
+	for _, ev := range events {
+		if ev.Type != EventToolMessage {
+			continue
+		}
+		for _, tr := range ev.ToolResponses {
+			if len(tr.ResponseData) > 0 {
+				index[tr.ToolCallID] = tr.ResponseData
+			}
+		}
+	}
+	return index
+}
+
 func extractToolCalls(
 	events []RawEvent,
 	callIndex map[string]toolCallMeta,
 	starts, completes, errors map[string]RawEvent,
 	responses map[string]RawEvent,
+	responseData map[string]json.RawMessage,
 	defaultStrategy TimingStrategy,
 ) []ToolCallInfo {
 
@@ -177,6 +195,11 @@ func extractToolCalls(
 			DisplayName:   meta.displayName,
 			Arguments:     meta.args,
 			ResolvedLabel: ResolveToolLabel(meta.name, meta.displayName, meta.args),
+		}
+
+		// Attach tool output if available
+		if data, ok := responseData[meta.toolCallID]; ok {
+			tc.Output = data
 		}
 
 		startEv, hasStart := starts[meta.toolCallID]

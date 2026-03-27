@@ -92394,9 +92394,10 @@ func __marshalGetAgentConversationOrganizationAgentAgentV2(v *GetAgentConversati
 
 // GetAgentConversationOrganizationAgentAgentV2ConversationV2AgentConversation includes the requested fields of the GraphQL type AgentConversation.
 type GetAgentConversationOrganizationAgentAgentV2ConversationV2AgentConversation struct {
-	Id       string                                                                                                              `json:"id"`
-	Title    *string                                                                                                             `json:"title"`
-	Messages GetAgentConversationOrganizationAgentAgentV2ConversationV2AgentConversationMessagesAgentConversationEventConnection `json:"messages"`
+	Id           string                                                                                                              `json:"id"`
+	Title        *string                                                                                                             `json:"title"`
+	Conversation *GetAgentConversationOrganizationAgentAgentV2ConversationV2AgentConversationConversation                            `json:"conversation"`
+	Messages     GetAgentConversationOrganizationAgentAgentV2ConversationV2AgentConversationMessagesAgentConversationEventConnection `json:"messages"`
 }
 
 // GetId returns GetAgentConversationOrganizationAgentAgentV2ConversationV2AgentConversation.Id, and is useful for accessing the field via an interface.
@@ -92409,9 +92410,24 @@ func (v *GetAgentConversationOrganizationAgentAgentV2ConversationV2AgentConversa
 	return v.Title
 }
 
+// GetConversation returns GetAgentConversationOrganizationAgentAgentV2ConversationV2AgentConversation.Conversation, and is useful for accessing the field via an interface.
+func (v *GetAgentConversationOrganizationAgentAgentV2ConversationV2AgentConversation) GetConversation() *GetAgentConversationOrganizationAgentAgentV2ConversationV2AgentConversationConversation {
+	return v.Conversation
+}
+
 // GetMessages returns GetAgentConversationOrganizationAgentAgentV2ConversationV2AgentConversation.Messages, and is useful for accessing the field via an interface.
 func (v *GetAgentConversationOrganizationAgentAgentV2ConversationV2AgentConversation) GetMessages() GetAgentConversationOrganizationAgentAgentV2ConversationV2AgentConversationMessagesAgentConversationEventConnection {
 	return v.Messages
+}
+
+// GetAgentConversationOrganizationAgentAgentV2ConversationV2AgentConversationConversation includes the requested fields of the GraphQL type Conversation.
+type GetAgentConversationOrganizationAgentAgentV2ConversationV2AgentConversationConversation struct {
+	Id string `json:"id"`
+}
+
+// GetId returns GetAgentConversationOrganizationAgentAgentV2ConversationV2AgentConversationConversation.Id, and is useful for accessing the field via an interface.
+func (v *GetAgentConversationOrganizationAgentAgentV2ConversationV2AgentConversationConversation) GetId() string {
+	return v.Id
 }
 
 // GetAgentConversationOrganizationAgentAgentV2ConversationV2AgentConversationMessagesAgentConversationEventConnection includes the requested fields of the GraphQL type AgentConversationEventConnection.
@@ -202622,6 +202638,371 @@ type GetConversationAnalysisResponse struct {
 
 // GetOrganization returns GetConversationAnalysisResponse.Organization, and is useful for accessing the field via an interface.
 func (v *GetConversationAnalysisResponse) GetOrganization() GetConversationAnalysisOrganization {
+	return v.Organization
+}
+
+// GetConversationRestIdOrganization includes the requested fields of the GraphQL type Organization.
+type GetConversationRestIdOrganization struct {
+	Agent *GetConversationRestIdOrganizationAgentAgentV2 `json:"-"`
+}
+
+// GetAgent returns GetConversationRestIdOrganization.Agent, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdOrganization) GetAgent() *GetConversationRestIdOrganizationAgentAgentV2 {
+	return v.Agent
+}
+
+func (v *GetConversationRestIdOrganization) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*GetConversationRestIdOrganization
+		Agent json.RawMessage `json:"agent"`
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.GetConversationRestIdOrganization = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	{
+		dst := &v.Agent
+		src := firstPass.Agent
+		if len(src) != 0 && string(src) != "null" {
+			*dst = new(GetConversationRestIdOrganizationAgentAgentV2)
+			err = __unmarshalGetConversationRestIdOrganizationAgentAgentV2(
+				src, *dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal GetConversationRestIdOrganization.Agent: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+type __premarshalGetConversationRestIdOrganization struct {
+	Agent json.RawMessage `json:"agent"`
+}
+
+func (v *GetConversationRestIdOrganization) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *GetConversationRestIdOrganization) __premarshalJSON() (*__premarshalGetConversationRestIdOrganization, error) {
+	var retval __premarshalGetConversationRestIdOrganization
+
+	{
+
+		dst := &retval.Agent
+		src := v.Agent
+		if src != nil {
+			var err error
+			*dst, err = __marshalGetConversationRestIdOrganizationAgentAgentV2(
+				src)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"unable to marshal GetConversationRestIdOrganization.Agent: %w", err)
+			}
+		}
+	}
+	return &retval, nil
+}
+
+// GetConversationRestIdOrganizationAgentAgentBedrock includes the requested fields of the GraphQL type AgentBedrock.
+type GetConversationRestIdOrganizationAgentAgentBedrock struct {
+	Typename       *string                                                                       `json:"__typename"`
+	ConversationV2 *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation `json:"conversationV2"`
+}
+
+// GetTypename returns GetConversationRestIdOrganizationAgentAgentBedrock.Typename, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdOrganizationAgentAgentBedrock) GetTypename() *string { return v.Typename }
+
+// GetConversationV2 returns GetConversationRestIdOrganizationAgentAgentBedrock.ConversationV2, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdOrganizationAgentAgentBedrock) GetConversationV2() *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation {
+	return v.ConversationV2
+}
+
+// GetConversationRestIdOrganizationAgentAgentBrowserUse includes the requested fields of the GraphQL type AgentBrowserUse.
+type GetConversationRestIdOrganizationAgentAgentBrowserUse struct {
+	Typename       *string                                                                       `json:"__typename"`
+	ConversationV2 *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation `json:"conversationV2"`
+}
+
+// GetTypename returns GetConversationRestIdOrganizationAgentAgentBrowserUse.Typename, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdOrganizationAgentAgentBrowserUse) GetTypename() *string {
+	return v.Typename
+}
+
+// GetConversationV2 returns GetConversationRestIdOrganizationAgentAgentBrowserUse.ConversationV2, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdOrganizationAgentAgentBrowserUse) GetConversationV2() *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation {
+	return v.ConversationV2
+}
+
+// GetConversationRestIdOrganizationAgentAgentComputerUse includes the requested fields of the GraphQL type AgentComputerUse.
+type GetConversationRestIdOrganizationAgentAgentComputerUse struct {
+	Typename       *string                                                                       `json:"__typename"`
+	ConversationV2 *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation `json:"conversationV2"`
+}
+
+// GetTypename returns GetConversationRestIdOrganizationAgentAgentComputerUse.Typename, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdOrganizationAgentAgentComputerUse) GetTypename() *string {
+	return v.Typename
+}
+
+// GetConversationV2 returns GetConversationRestIdOrganizationAgentAgentComputerUse.ConversationV2, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdOrganizationAgentAgentComputerUse) GetConversationV2() *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation {
+	return v.ConversationV2
+}
+
+// GetConversationRestIdOrganizationAgentAgentElementum includes the requested fields of the GraphQL type AgentElementum.
+type GetConversationRestIdOrganizationAgentAgentElementum struct {
+	Typename       *string                                                                       `json:"__typename"`
+	ConversationV2 *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation `json:"conversationV2"`
+}
+
+// GetTypename returns GetConversationRestIdOrganizationAgentAgentElementum.Typename, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdOrganizationAgentAgentElementum) GetTypename() *string {
+	return v.Typename
+}
+
+// GetConversationV2 returns GetConversationRestIdOrganizationAgentAgentElementum.ConversationV2, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdOrganizationAgentAgentElementum) GetConversationV2() *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation {
+	return v.ConversationV2
+}
+
+// GetConversationRestIdOrganizationAgentAgentExternal includes the requested fields of the GraphQL type AgentExternal.
+type GetConversationRestIdOrganizationAgentAgentExternal struct {
+	Typename       *string                                                                       `json:"__typename"`
+	ConversationV2 *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation `json:"conversationV2"`
+}
+
+// GetTypename returns GetConversationRestIdOrganizationAgentAgentExternal.Typename, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdOrganizationAgentAgentExternal) GetTypename() *string {
+	return v.Typename
+}
+
+// GetConversationV2 returns GetConversationRestIdOrganizationAgentAgentExternal.ConversationV2, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdOrganizationAgentAgentExternal) GetConversationV2() *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation {
+	return v.ConversationV2
+}
+
+// GetConversationRestIdOrganizationAgentAgentSnowflake includes the requested fields of the GraphQL type AgentSnowflake.
+type GetConversationRestIdOrganizationAgentAgentSnowflake struct {
+	Typename       *string                                                                       `json:"__typename"`
+	ConversationV2 *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation `json:"conversationV2"`
+}
+
+// GetTypename returns GetConversationRestIdOrganizationAgentAgentSnowflake.Typename, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdOrganizationAgentAgentSnowflake) GetTypename() *string {
+	return v.Typename
+}
+
+// GetConversationV2 returns GetConversationRestIdOrganizationAgentAgentSnowflake.ConversationV2, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdOrganizationAgentAgentSnowflake) GetConversationV2() *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation {
+	return v.ConversationV2
+}
+
+// GetConversationRestIdOrganizationAgentAgentSystem includes the requested fields of the GraphQL type AgentSystem.
+type GetConversationRestIdOrganizationAgentAgentSystem struct {
+	Typename       *string                                                                       `json:"__typename"`
+	ConversationV2 *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation `json:"conversationV2"`
+}
+
+// GetTypename returns GetConversationRestIdOrganizationAgentAgentSystem.Typename, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdOrganizationAgentAgentSystem) GetTypename() *string { return v.Typename }
+
+// GetConversationV2 returns GetConversationRestIdOrganizationAgentAgentSystem.ConversationV2, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdOrganizationAgentAgentSystem) GetConversationV2() *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation {
+	return v.ConversationV2
+}
+
+// GetConversationRestIdOrganizationAgentAgentV2 includes the requested fields of the GraphQL interface AgentV2.
+//
+// GetConversationRestIdOrganizationAgentAgentV2 is implemented by the following types:
+// GetConversationRestIdOrganizationAgentAgentBedrock
+// GetConversationRestIdOrganizationAgentAgentBrowserUse
+// GetConversationRestIdOrganizationAgentAgentComputerUse
+// GetConversationRestIdOrganizationAgentAgentElementum
+// GetConversationRestIdOrganizationAgentAgentExternal
+// GetConversationRestIdOrganizationAgentAgentSnowflake
+// GetConversationRestIdOrganizationAgentAgentSystem
+type GetConversationRestIdOrganizationAgentAgentV2 interface {
+	implementsGraphQLInterfaceGetConversationRestIdOrganizationAgentAgentV2()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() *string
+	// GetConversationV2 returns the interface-field "conversationV2" from its implementation.
+	GetConversationV2() *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation
+}
+
+func (v *GetConversationRestIdOrganizationAgentAgentBedrock) implementsGraphQLInterfaceGetConversationRestIdOrganizationAgentAgentV2() {
+}
+func (v *GetConversationRestIdOrganizationAgentAgentBrowserUse) implementsGraphQLInterfaceGetConversationRestIdOrganizationAgentAgentV2() {
+}
+func (v *GetConversationRestIdOrganizationAgentAgentComputerUse) implementsGraphQLInterfaceGetConversationRestIdOrganizationAgentAgentV2() {
+}
+func (v *GetConversationRestIdOrganizationAgentAgentElementum) implementsGraphQLInterfaceGetConversationRestIdOrganizationAgentAgentV2() {
+}
+func (v *GetConversationRestIdOrganizationAgentAgentExternal) implementsGraphQLInterfaceGetConversationRestIdOrganizationAgentAgentV2() {
+}
+func (v *GetConversationRestIdOrganizationAgentAgentSnowflake) implementsGraphQLInterfaceGetConversationRestIdOrganizationAgentAgentV2() {
+}
+func (v *GetConversationRestIdOrganizationAgentAgentSystem) implementsGraphQLInterfaceGetConversationRestIdOrganizationAgentAgentV2() {
+}
+
+func __unmarshalGetConversationRestIdOrganizationAgentAgentV2(b []byte, v *GetConversationRestIdOrganizationAgentAgentV2) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "AgentBedrock":
+		*v = new(GetConversationRestIdOrganizationAgentAgentBedrock)
+		return json.Unmarshal(b, *v)
+	case "AgentBrowserUse":
+		*v = new(GetConversationRestIdOrganizationAgentAgentBrowserUse)
+		return json.Unmarshal(b, *v)
+	case "AgentComputerUse":
+		*v = new(GetConversationRestIdOrganizationAgentAgentComputerUse)
+		return json.Unmarshal(b, *v)
+	case "AgentElementum":
+		*v = new(GetConversationRestIdOrganizationAgentAgentElementum)
+		return json.Unmarshal(b, *v)
+	case "AgentExternal":
+		*v = new(GetConversationRestIdOrganizationAgentAgentExternal)
+		return json.Unmarshal(b, *v)
+	case "AgentSnowflake":
+		*v = new(GetConversationRestIdOrganizationAgentAgentSnowflake)
+		return json.Unmarshal(b, *v)
+	case "AgentSystem":
+		*v = new(GetConversationRestIdOrganizationAgentAgentSystem)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing AgentV2.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for GetConversationRestIdOrganizationAgentAgentV2: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalGetConversationRestIdOrganizationAgentAgentV2(v *GetConversationRestIdOrganizationAgentAgentV2) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *GetConversationRestIdOrganizationAgentAgentBedrock:
+		typename = "AgentBedrock"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetConversationRestIdOrganizationAgentAgentBedrock
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetConversationRestIdOrganizationAgentAgentBrowserUse:
+		typename = "AgentBrowserUse"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetConversationRestIdOrganizationAgentAgentBrowserUse
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetConversationRestIdOrganizationAgentAgentComputerUse:
+		typename = "AgentComputerUse"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetConversationRestIdOrganizationAgentAgentComputerUse
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetConversationRestIdOrganizationAgentAgentElementum:
+		typename = "AgentElementum"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetConversationRestIdOrganizationAgentAgentElementum
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetConversationRestIdOrganizationAgentAgentExternal:
+		typename = "AgentExternal"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetConversationRestIdOrganizationAgentAgentExternal
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetConversationRestIdOrganizationAgentAgentSnowflake:
+		typename = "AgentSnowflake"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetConversationRestIdOrganizationAgentAgentSnowflake
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetConversationRestIdOrganizationAgentAgentSystem:
+		typename = "AgentSystem"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetConversationRestIdOrganizationAgentAgentSystem
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for GetConversationRestIdOrganizationAgentAgentV2: "%T"`, v)
+	}
+}
+
+// GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation includes the requested fields of the GraphQL type AgentConversation.
+type GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation struct {
+	Id           string                                                                                    `json:"id"`
+	Conversation *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversationConversation `json:"conversation"`
+}
+
+// GetId returns GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation.Id, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation) GetId() string {
+	return v.Id
+}
+
+// GetConversation returns GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation.Conversation, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversation) GetConversation() *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversationConversation {
+	return v.Conversation
+}
+
+// GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversationConversation includes the requested fields of the GraphQL type Conversation.
+type GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversationConversation struct {
+	Id string `json:"id"`
+}
+
+// GetId returns GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversationConversation.Id, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdOrganizationAgentAgentV2ConversationV2AgentConversationConversation) GetId() string {
+	return v.Id
+}
+
+// GetConversationRestIdResponse is returned by GetConversationRestId on success.
+type GetConversationRestIdResponse struct {
+	Organization GetConversationRestIdOrganization `json:"organization"`
+}
+
+// GetOrganization returns GetConversationRestIdResponse.Organization, and is useful for accessing the field via an interface.
+func (v *GetConversationRestIdResponse) GetOrganization() GetConversationRestIdOrganization {
 	return v.Organization
 }
 
@@ -320686,9 +321067,10 @@ func (v *ListAgentConversationsOrganizationAgentAgentV2ConversationsV2AgentConve
 
 // ListAgentConversationsOrganizationAgentAgentV2ConversationsV2AgentConversationConnectionEdgesAgentConversationEdgeNodeAgentConversation includes the requested fields of the GraphQL type AgentConversation.
 type ListAgentConversationsOrganizationAgentAgentV2ConversationsV2AgentConversationConnectionEdgesAgentConversationEdgeNodeAgentConversation struct {
-	Id        string  `json:"id"`
-	Title     *string `json:"title"`
-	UpdatedAt string  `json:"updatedAt"`
+	Id           string                                                                                                                                               `json:"id"`
+	Title        *string                                                                                                                                              `json:"title"`
+	UpdatedAt    string                                                                                                                                               `json:"updatedAt"`
+	Conversation *ListAgentConversationsOrganizationAgentAgentV2ConversationsV2AgentConversationConnectionEdgesAgentConversationEdgeNodeAgentConversationConversation `json:"conversation"`
 }
 
 // GetId returns ListAgentConversationsOrganizationAgentAgentV2ConversationsV2AgentConversationConnectionEdgesAgentConversationEdgeNodeAgentConversation.Id, and is useful for accessing the field via an interface.
@@ -320704,6 +321086,21 @@ func (v *ListAgentConversationsOrganizationAgentAgentV2ConversationsV2AgentConve
 // GetUpdatedAt returns ListAgentConversationsOrganizationAgentAgentV2ConversationsV2AgentConversationConnectionEdgesAgentConversationEdgeNodeAgentConversation.UpdatedAt, and is useful for accessing the field via an interface.
 func (v *ListAgentConversationsOrganizationAgentAgentV2ConversationsV2AgentConversationConnectionEdgesAgentConversationEdgeNodeAgentConversation) GetUpdatedAt() string {
 	return v.UpdatedAt
+}
+
+// GetConversation returns ListAgentConversationsOrganizationAgentAgentV2ConversationsV2AgentConversationConnectionEdgesAgentConversationEdgeNodeAgentConversation.Conversation, and is useful for accessing the field via an interface.
+func (v *ListAgentConversationsOrganizationAgentAgentV2ConversationsV2AgentConversationConnectionEdgesAgentConversationEdgeNodeAgentConversation) GetConversation() *ListAgentConversationsOrganizationAgentAgentV2ConversationsV2AgentConversationConnectionEdgesAgentConversationEdgeNodeAgentConversationConversation {
+	return v.Conversation
+}
+
+// ListAgentConversationsOrganizationAgentAgentV2ConversationsV2AgentConversationConnectionEdgesAgentConversationEdgeNodeAgentConversationConversation includes the requested fields of the GraphQL type Conversation.
+type ListAgentConversationsOrganizationAgentAgentV2ConversationsV2AgentConversationConnectionEdgesAgentConversationEdgeNodeAgentConversationConversation struct {
+	Id string `json:"id"`
+}
+
+// GetId returns ListAgentConversationsOrganizationAgentAgentV2ConversationsV2AgentConversationConnectionEdgesAgentConversationEdgeNodeAgentConversationConversation.Id, and is useful for accessing the field via an interface.
+func (v *ListAgentConversationsOrganizationAgentAgentV2ConversationsV2AgentConversationConnectionEdgesAgentConversationEdgeNodeAgentConversationConversation) GetId() string {
+	return v.Id
 }
 
 // ListAgentConversationsResponse is returned by ListAgentConversations on success.
@@ -336566,6 +336963,410 @@ func (v *ReorderAspectViewsResponse) __premarshalJSON() (*__premarshalReorderAsp
 		}
 	}
 	return &retval, nil
+}
+
+// ResolveAgentByNameOrganization includes the requested fields of the GraphQL type Organization.
+type ResolveAgentByNameOrganization struct {
+	Agents ResolveAgentByNameOrganizationAgentsAgentV2Connection `json:"agents"`
+}
+
+// GetAgents returns ResolveAgentByNameOrganization.Agents, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganization) GetAgents() ResolveAgentByNameOrganizationAgentsAgentV2Connection {
+	return v.Agents
+}
+
+// ResolveAgentByNameOrganizationAgentsAgentV2Connection includes the requested fields of the GraphQL type AgentV2Connection.
+type ResolveAgentByNameOrganizationAgentsAgentV2Connection struct {
+	Edges []ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2Edge `json:"edges"`
+}
+
+// GetEdges returns ResolveAgentByNameOrganizationAgentsAgentV2Connection.Edges, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2Connection) GetEdges() []ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2Edge {
+	return v.Edges
+}
+
+// ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2Edge includes the requested fields of the GraphQL type AgentV2Edge.
+type ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2Edge struct {
+	Node ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2 `json:"-"`
+}
+
+// GetNode returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2Edge.Node, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2Edge) GetNode() ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2 {
+	return v.Node
+}
+
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2Edge) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2Edge
+		Node json.RawMessage `json:"node"`
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2Edge = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	{
+		dst := &v.Node
+		src := firstPass.Node
+		if len(src) != 0 && string(src) != "null" {
+			err = __unmarshalResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2(
+				src, dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2Edge.Node: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+type __premarshalResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2Edge struct {
+	Node json.RawMessage `json:"node"`
+}
+
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2Edge) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2Edge) __premarshalJSON() (*__premarshalResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2Edge, error) {
+	var retval __premarshalResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2Edge
+
+	{
+
+		dst := &retval.Node
+		src := v.Node
+		var err error
+		*dst, err = __marshalResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2(
+			&src)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to marshal ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2Edge.Node: %w", err)
+		}
+	}
+	return &retval, nil
+}
+
+// ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBedrock includes the requested fields of the GraphQL type AgentBedrock.
+type ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBedrock struct {
+	Typename *string `json:"__typename"`
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+}
+
+// GetTypename returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBedrock.Typename, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBedrock) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBedrock.Id, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBedrock) GetId() string {
+	return v.Id
+}
+
+// GetName returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBedrock.Name, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBedrock) GetName() string {
+	return v.Name
+}
+
+// ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBrowserUse includes the requested fields of the GraphQL type AgentBrowserUse.
+type ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBrowserUse struct {
+	Typename *string `json:"__typename"`
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+}
+
+// GetTypename returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBrowserUse.Typename, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBrowserUse) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBrowserUse.Id, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBrowserUse) GetId() string {
+	return v.Id
+}
+
+// GetName returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBrowserUse.Name, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBrowserUse) GetName() string {
+	return v.Name
+}
+
+// ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentComputerUse includes the requested fields of the GraphQL type AgentComputerUse.
+type ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentComputerUse struct {
+	Typename *string `json:"__typename"`
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+}
+
+// GetTypename returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentComputerUse.Typename, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentComputerUse) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentComputerUse.Id, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentComputerUse) GetId() string {
+	return v.Id
+}
+
+// GetName returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentComputerUse.Name, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentComputerUse) GetName() string {
+	return v.Name
+}
+
+// ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentElementum includes the requested fields of the GraphQL type AgentElementum.
+type ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentElementum struct {
+	Typename *string `json:"__typename"`
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+}
+
+// GetTypename returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentElementum.Typename, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentElementum) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentElementum.Id, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentElementum) GetId() string {
+	return v.Id
+}
+
+// GetName returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentElementum.Name, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentElementum) GetName() string {
+	return v.Name
+}
+
+// ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentExternal includes the requested fields of the GraphQL type AgentExternal.
+type ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentExternal struct {
+	Typename *string `json:"__typename"`
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+}
+
+// GetTypename returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentExternal.Typename, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentExternal) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentExternal.Id, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentExternal) GetId() string {
+	return v.Id
+}
+
+// GetName returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentExternal.Name, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentExternal) GetName() string {
+	return v.Name
+}
+
+// ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSnowflake includes the requested fields of the GraphQL type AgentSnowflake.
+type ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSnowflake struct {
+	Typename *string `json:"__typename"`
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+}
+
+// GetTypename returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSnowflake.Typename, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSnowflake) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSnowflake.Id, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSnowflake) GetId() string {
+	return v.Id
+}
+
+// GetName returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSnowflake.Name, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSnowflake) GetName() string {
+	return v.Name
+}
+
+// ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSystem includes the requested fields of the GraphQL type AgentSystem.
+type ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSystem struct {
+	Typename *string `json:"__typename"`
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+}
+
+// GetTypename returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSystem.Typename, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSystem) GetTypename() *string {
+	return v.Typename
+}
+
+// GetId returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSystem.Id, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSystem) GetId() string {
+	return v.Id
+}
+
+// GetName returns ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSystem.Name, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSystem) GetName() string {
+	return v.Name
+}
+
+// ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2 includes the requested fields of the GraphQL interface AgentV2.
+//
+// ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2 is implemented by the following types:
+// ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBedrock
+// ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBrowserUse
+// ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentComputerUse
+// ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentElementum
+// ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentExternal
+// ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSnowflake
+// ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSystem
+type ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2 interface {
+	implementsGraphQLInterfaceResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() *string
+	// GetId returns the interface-field "id" from its implementation.
+	GetId() string
+	// GetName returns the interface-field "name" from its implementation.
+	GetName() string
+}
+
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBedrock) implementsGraphQLInterfaceResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2() {
+}
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBrowserUse) implementsGraphQLInterfaceResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2() {
+}
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentComputerUse) implementsGraphQLInterfaceResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2() {
+}
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentElementum) implementsGraphQLInterfaceResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2() {
+}
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentExternal) implementsGraphQLInterfaceResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2() {
+}
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSnowflake) implementsGraphQLInterfaceResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2() {
+}
+func (v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSystem) implementsGraphQLInterfaceResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2() {
+}
+
+func __unmarshalResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2(b []byte, v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "AgentBedrock":
+		*v = new(ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBedrock)
+		return json.Unmarshal(b, *v)
+	case "AgentBrowserUse":
+		*v = new(ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBrowserUse)
+		return json.Unmarshal(b, *v)
+	case "AgentComputerUse":
+		*v = new(ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentComputerUse)
+		return json.Unmarshal(b, *v)
+	case "AgentElementum":
+		*v = new(ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentElementum)
+		return json.Unmarshal(b, *v)
+	case "AgentExternal":
+		*v = new(ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentExternal)
+		return json.Unmarshal(b, *v)
+	case "AgentSnowflake":
+		*v = new(ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSnowflake)
+		return json.Unmarshal(b, *v)
+	case "AgentSystem":
+		*v = new(ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSystem)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing AgentV2.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2(v *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBedrock:
+		typename = "AgentBedrock"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBedrock
+		}{typename, v}
+		return json.Marshal(result)
+	case *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBrowserUse:
+		typename = "AgentBrowserUse"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentBrowserUse
+		}{typename, v}
+		return json.Marshal(result)
+	case *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentComputerUse:
+		typename = "AgentComputerUse"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentComputerUse
+		}{typename, v}
+		return json.Marshal(result)
+	case *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentElementum:
+		typename = "AgentElementum"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentElementum
+		}{typename, v}
+		return json.Marshal(result)
+	case *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentExternal:
+		typename = "AgentExternal"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentExternal
+		}{typename, v}
+		return json.Marshal(result)
+	case *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSnowflake:
+		typename = "AgentSnowflake"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSnowflake
+		}{typename, v}
+		return json.Marshal(result)
+	case *ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSystem:
+		typename = "AgentSystem"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentSystem
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for ResolveAgentByNameOrganizationAgentsAgentV2ConnectionEdgesAgentV2EdgeNodeAgentV2: "%T"`, v)
+	}
+}
+
+// ResolveAgentByNameResponse is returned by ResolveAgentByName on success.
+type ResolveAgentByNameResponse struct {
+	Organization ResolveAgentByNameOrganization `json:"organization"`
+}
+
+// GetOrganization returns ResolveAgentByNameResponse.Organization, and is useful for accessing the field via an interface.
+func (v *ResolveAgentByNameResponse) GetOrganization() ResolveAgentByNameOrganization {
+	return v.Organization
 }
 
 // RetryAspectSearchTableAspectSearchTableRetryAspectSearchSnowflakeTable includes the requested fields of the GraphQL type AspectSearchSnowflakeTable.
@@ -370113,6 +370914,18 @@ func (v *__GetConversationAnalysisInput) GetFirst() int { return v.First }
 // GetAfter returns __GetConversationAnalysisInput.After, and is useful for accessing the field via an interface.
 func (v *__GetConversationAnalysisInput) GetAfter() *string { return v.After }
 
+// __GetConversationRestIdInput is used internally by genqlient
+type __GetConversationRestIdInput struct {
+	AgentId        string `json:"agentId"`
+	ConversationId string `json:"conversationId"`
+}
+
+// GetAgentId returns __GetConversationRestIdInput.AgentId, and is useful for accessing the field via an interface.
+func (v *__GetConversationRestIdInput) GetAgentId() string { return v.AgentId }
+
+// GetConversationId returns __GetConversationRestIdInput.ConversationId, and is useful for accessing the field via an interface.
+func (v *__GetConversationRestIdInput) GetConversationId() string { return v.ConversationId }
+
 // __GetDashboardByAspectInput is used internally by genqlient
 type __GetDashboardByAspectInput struct {
 	AspectId    string `json:"aspectId"`
@@ -376423,6 +377236,9 @@ query GetAgentConversation ($agentId: ID!, $conversationId: ID!) {
 			conversationV2(id: $conversationId) {
 				id
 				title
+				conversation {
+					id
+				}
 				messages(first: 250) {
 					edges {
 						node {
@@ -381556,6 +382372,52 @@ func GetConversationAnalysis(
 	return data_, err_
 }
 
+// The query executed by GetConversationRestId.
+const GetConversationRestId_Operation = `
+query GetConversationRestId ($agentId: ID!, $conversationId: ID!) {
+	organization {
+		agent(id: $agentId) {
+			__typename
+			conversationV2(id: $conversationId) {
+				id
+				conversation {
+					id
+				}
+			}
+		}
+	}
+}
+`
+
+// Look up conversation REST ID from AgentConversation ID
+// Used when --continue is provided with an AgentConversation ID
+func GetConversationRestId(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	agentId string,
+	conversationId string,
+) (data_ *GetConversationRestIdResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "GetConversationRestId",
+		Query:  GetConversationRestId_Operation,
+		Variables: &__GetConversationRestIdInput{
+			AgentId:        agentId,
+			ConversationId: conversationId,
+		},
+	}
+
+	data_ = &GetConversationRestIdResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
 // The query executed by GetDashboardByAspect.
 const GetDashboardByAspect_Operation = `
 query GetDashboardByAspect ($aspectId: ID!, $dashboardId: ID!) {
@@ -386101,6 +386963,9 @@ query ListAgentConversations ($agentId: ID!) {
 						id
 						title
 						updatedAt
+						conversation {
+							id
+						}
 					}
 				}
 			}
@@ -387266,6 +388131,46 @@ func ReorderAspectViews(
 	}
 
 	data_ = &ReorderAspectViewsResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
+// The query executed by ResolveAgentByName.
+const ResolveAgentByName_Operation = `
+query ResolveAgentByName {
+	organization {
+		agents {
+			edges {
+				node {
+					__typename
+					id
+					name
+				}
+			}
+		}
+	}
+}
+`
+
+// Lightweight query for resolving agent name to ID
+// Only fetches id and name - no app field that can cause orphaned reference errors
+func ResolveAgentByName(
+	ctx_ context.Context,
+	client_ graphql.Client,
+) (data_ *ResolveAgentByNameResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "ResolveAgentByName",
+		Query:  ResolveAgentByName_Operation,
+	}
+
+	data_ = &ResolveAgentByNameResponse{}
 	resp_ := &graphql.Response{Data: data_}
 
 	err_ = client_.MakeRequest(

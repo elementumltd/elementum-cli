@@ -182,6 +182,9 @@ func parseToolResponses(responses []gqlToolResponse) []RawToolResponse {
 		if tr.Name != nil {
 			raw.Name = *tr.Name
 		}
+		if tr.ResponseData != nil {
+			raw.ResponseData = *tr.ResponseData
+		}
 		result = append(result, raw)
 	}
 	return result

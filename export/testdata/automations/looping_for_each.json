@@ -70,7 +70,7 @@
         },
         "recordReference": {
           "forEachReference": {
-            "propertyPath": "Current Item.id"
+            "propertyPath": "Item.id"
           }
         },
         "workflowFields": [
