@@ -171,6 +171,22 @@ ei export cloudlink cl_12345678                   # By ID
 ei export cloudlink "Production API" -o cloudlink.tf  # Custom output file
 ```
 
+### Stored Functions
+
+```bash
+ei functions list                          # List all stored Snowflake functions
+ei functions delete "Invoice Parser"       # Delete by display name (with confirmation)
+ei functions delete <uuid> --force         # Delete by ID without confirmation
+```
+
+### A2A Skills
+
+```bash
+ei a2a-skills list "Support Bot"           # List A2A skills on an agent
+ei a2a-skills list <agent-uuid>            # List by agent ID
+ei a2a-skills delete <skill-uuid>          # Delete an A2A skill
+```
+
 ### Terraform/Tofu Helpers
 
 ```bash
@@ -440,4 +456,4 @@ See [TESTING.md](TESTING.md) for detailed information about test coverage.
 
 ## License
 
-MPL-2.0
+License TBD — pending final sign-off from Legal (likely Apache 2.0).
