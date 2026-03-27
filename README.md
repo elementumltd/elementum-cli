@@ -456,4 +456,4 @@ See [TESTING.md](TESTING.md) for detailed information about test coverage.
 
 ## License
 
-License TBD — pending final sign-off from Legal (likely Apache 2.0).
+Apache-2.0 — see [LICENSE](LICENSE) for details.

@@ -1,8 +1,5 @@
 # Contributor Covenant Code of Conduct
 
-> **Note:** The contact information in the Enforcement section is a placeholder
-> and will be updated before this repository goes public.
-
 ## Our Pledge
 
 We as members, contributors, and leaders pledge to make participation in our
@@ -62,7 +59,7 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement at
-[TBD - insert contact email or method once decided].
+opensource@elementum.com.
 
 All complaints will be reviewed and investigated promptly and fairly.
 
