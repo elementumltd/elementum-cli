@@ -19,6 +19,9 @@ query GetAgentConversation($agentId: ID!, $conversationId: ID!) {
       conversationV2(id: $conversationId) {
         id
         title
+        conversation {
+          id
+        }
         messages(first: 250) {
           edges {
             node {
@@ -100,6 +103,9 @@ query ListAgentConversations($agentId: ID!) {
             id
             title
             updatedAt
+            conversation {
+              id
+            }
           }
         }
       }
@@ -188,6 +194,21 @@ query GetConversationAnalysis($agentId: ID!, $conversationId: ID!, $first: Int!,
               }
             }
           }
+        }
+      }
+    }
+  }
+}
+
+# Look up conversation REST ID from AgentConversation ID
+# Used when --continue is provided with an AgentConversation ID
+query GetConversationRestId($agentId: ID!, $conversationId: ID!) {
+  organization {
+    agent(id: $agentId) {
+      conversationV2(id: $conversationId) {
+        id
+        conversation {
+          id
         }
       }
     }

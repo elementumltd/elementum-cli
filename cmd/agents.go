@@ -32,20 +32,21 @@ var agentsParentCmd = &cobra.Command{
 }
 
 var agentsListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List agents",
-	Long: `List agents in an app or across the entire organization.
+	Use:   "list <namespace>",
+	Short: "List agents in an app",
+	Long: `List agents belonging to an app.
 
 Examples:
-  ei agents list --app clm             # List agents in the CLM app
-  ei agents list                       # List all agents in the organization`,
+  ei agents list support-tickets
+  ei agents list clm --json`,
+	Args: cobra.ExactArgs(1),
 	RunE: runAgentsListCmd,
 }
 
 func init() {
-	agentsListCmd.Flags().String("app", "", "App namespace to filter agents")
 	agentsParentCmd.AddCommand(agentsListCmd)
 	agentsParentCmd.AddCommand(agentsCreateCmd)
+	agentsShowCmd.Flags().Bool("hcl", false, "Export agent as Terraform HCL")
 	agentsParentCmd.AddCommand(agentsShowCmd)
 	agentsParentCmd.AddCommand(agentsUpdateCmd)
 	agentsParentCmd.AddCommand(agentsDeleteCmd)
@@ -58,19 +59,14 @@ func GetAgentsCmd() *cobra.Command {
 
 func runAgentsListCmd(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
+	namespace := args[0]
 
 	apiClient, err := auth.GetClientFromCmd(cmd)
 	if err != nil {
 		return err
 	}
 
-	appNamespace, _ := cmd.Flags().GetString("app")
-
-	if appNamespace != "" {
-		return listAgentsInApp(ctx, cmd, apiClient, appNamespace)
-	}
-
-	return listAllAgents(ctx, cmd, apiClient)
+	return listAgentsInApp(ctx, cmd, apiClient, namespace)
 }
 
 func listAgentsInApp(ctx context.Context, cmd *cobra.Command, apiClient *client.Client, appNamespace string) error {
@@ -142,129 +138,31 @@ func listAgentsInApp(ctx context.Context, cmd *cobra.Command, apiClient *client.
 	return nil
 }
 
-type agentListItem struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Type     string `json:"__typename"`
-	AppName  string `json:"app_name,omitempty"`
-	AppID    string `json:"app_id,omitempty"`
-	Model    string `json:"model,omitempty"`
-	Provider string `json:"provider,omitempty"`
-}
-
-func listAllAgents(ctx context.Context, cmd *cobra.Command, apiClient *client.Client) error {
-	if !isJSONOutput(cmd) {
-		fmt.Println(ui.InfoStyle.Render("Loading all agents..."))
-	}
-
-	var result struct {
-		Organization struct {
-			Agents struct {
-				Edges []struct {
-					Node struct {
-						ID          string  `json:"id"`
-						Name        string  `json:"name"`
-						Description string  `json:"description"`
-						Typename    *string `json:"__typename"`
-						App         *struct {
-							ID   string `json:"id"`
-							Name string `json:"name"`
-						} `json:"app"`
-						AiProviderConnector *struct {
-							ID    string `json:"id"`
-							Model struct {
-								Name string `json:"name"`
-							} `json:"model"`
-							Provider struct {
-								Name string `json:"name"`
-							} `json:"provider"`
-						} `json:"aiProviderConnector"`
-					} `json:"node"`
-				} `json:"edges"`
-			} `json:"agents"`
-		} `json:"organization"`
-	}
-
-	query := `
-		query ListAllAgents {
-			organization {
-				agents {
-					edges {
-						node {
-							id
-							name
-							description
-							__typename
-							... on AgentElementum {
-								app { id name }
-								aiProviderConnector { id model { name } provider { name } }
-							}
-							... on AgentSnowflake {
-								app { id name }
-								aiProviderConnector { id model { name } provider { name } }
-							}
-							... on AgentBedrock {
-								app { id name }
-								aiProviderConnector { id model { name } provider { name } }
-							}
-							... on AgentBrowserUse {
-								app { id name }
-								aiProviderConnector { id model { name } provider { name } }
-							}
-						}
-					}
-				}
-			}
-		}
-	`
-
-	err := apiClient.ExecuteInto(ctx, query, nil, &result)
+// findAgentByNameInApp looks up an agent by name within a specific app.
+func findAgentByNameInApp(ctx context.Context, apiClient *client.Client, aspectID, agentName string) (string, error) {
+	resp, err := client.ListAppAgents(ctx, apiClient.Genqlient(), aspectID)
 	if err != nil {
-		return fmt.Errorf("failed to list agents: %w", err)
+		return "", fmt.Errorf("failed to list agents: %w", err)
 	}
 
-	agents := result.Organization.Agents.Edges
-
-	if isJSONOutput(cmd) {
-		return outputJSON(agents)
+	if resp.Organization.Aspect == nil {
+		return "", fmt.Errorf("app not found")
 	}
 
-	if len(agents) == 0 {
-		fmt.Println()
-		fmt.Println(ui.WarningStyle.Render("No agents found."))
-		fmt.Println()
-		return nil
+	aspect := *resp.Organization.Aspect
+	appAspect, ok := aspect.(*client.ListAppAgentsOrganizationAspectAspectApp)
+	if !ok {
+		return "", fmt.Errorf("aspect is not an app")
 	}
 
-	table := ui.NewTable([]string{"NAME", "TYPE", "APP", "MODEL", "ID"})
-
-	for _, edge := range agents {
-		n := edge.Node
-		agentType := ""
-		if n.Typename != nil {
-			agentType = strings.TrimPrefix(*n.Typename, "Agent")
+	for _, edge := range appAspect.AgentsV2.Edges {
+		agent := edge.Node
+		if strings.EqualFold(agent.GetName(), agentName) {
+			return agent.GetId(), nil
 		}
-		appName := ""
-		model := ""
-		if n.App != nil {
-			appName = n.App.Name
-		}
-		if n.AiProviderConnector != nil {
-			model = n.AiProviderConnector.Model.Name
-		}
-
-		table.AddRow(n.Name, agentType, appName, model, n.ID)
 	}
 
-	fmt.Println()
-	fmt.Println(ui.TitleStyle.Render("All Agents"))
-	fmt.Println()
-	fmt.Println(table.Render())
-	fmt.Println()
-	fmt.Println(ui.MutedStyle.Render(fmt.Sprintf("Total: %d agents", len(agents))))
-	fmt.Println()
-
-	return nil
+	return "", fmt.Errorf("agent not found: %s", agentName)
 }
 
 // resolveAgentID resolves an agent argument to a UUID.
@@ -276,8 +174,9 @@ func resolveAgentID(ctx context.Context, cmd *cobra.Command, apiClient *client.C
 }
 
 // resolveAgentByName looks up an agent by name across the organization (case-insensitive).
+// Uses a lightweight query that only fetches id and name to avoid orphaned reference errors.
 func resolveAgentByName(ctx context.Context, cmd *cobra.Command, apiClient *client.Client, agentName string) (string, error) {
-	resp, err := client.GetAgents(ctx, apiClient.Genqlient(), nil)
+	resp, err := client.ResolveAgentByName(ctx, apiClient.Genqlient())
 	if err != nil {
 		return "", fmt.Errorf("failed to list agents: %w", err)
 	}
@@ -285,7 +184,7 @@ func resolveAgentByName(ctx context.Context, cmd *cobra.Command, apiClient *clie
 	var matches []struct{ id, name string }
 	for _, edge := range resp.Organization.Agents.Edges {
 		agent := edge.Node
-		if strings.EqualFold(agent.GetName(), agentName) {
+		if strings.EqualFold(agent.GetId(), agentName) || strings.EqualFold(agent.GetName(), agentName) {
 			matches = append(matches, struct{ id, name string }{agent.GetId(), agent.GetName()})
 		}
 	}

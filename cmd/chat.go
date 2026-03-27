@@ -98,26 +98,34 @@ func runChat(cmd *cobra.Command, args []string) error {
 	}
 
 	// Get or create conversation
-	var conversationID string
+	var convIDs ConversationIDs
 	if chatConversationID != "" {
-		conversationID = chatConversationID
-		fmt.Println(ui.MutedStyle.Render(fmt.Sprintf("Continuing conversation %s...", conversationID)))
+		// User provided an AgentConversation ID via --continue, look up the REST ID
+		restID, err := lookupRestID(ctx, apiClient, agentID, chatConversationID)
+		if err != nil {
+			return fmt.Errorf("failed to look up conversation: %w", err)
+		}
+		convIDs = ConversationIDs{
+			DisplayID: chatConversationID,
+			RestID:    restID,
+		}
+		fmt.Println(ui.MutedStyle.Render(fmt.Sprintf("Continuing conversation %s...", chatConversationID)))
 	} else {
 		// Create new conversation
-		convID, err := createConversation(ctx, apiClient, agentID)
+		ids, err := createConversation(ctx, apiClient, agentID)
 		if err != nil {
 			return fmt.Errorf("failed to create conversation: %w", err)
 		}
-		conversationID = convID
+		convIDs = ids
 	}
 
 	// Single message mode
 	if chatMessage != "" {
-		return sendSingleMessage(ctx, apiClient, conversationID, chatMessage)
+		return sendSingleMessage(ctx, apiClient, convIDs, chatMessage)
 	}
 
 	// Interactive mode
-	return runInteractiveChat(ctx, apiClient, agentID, agentName, conversationID, firstMessage)
+	return runInteractiveChat(ctx, apiClient, agentID, agentName, convIDs, firstMessage)
 }
 
 func getAgentDetails(ctx context.Context, apiClient *client.Client, agentID string) (name, firstMessage string, err error) {
@@ -148,7 +156,13 @@ func looksLikeUUID(s string) bool {
 	return err == nil
 }
 
-func createConversation(ctx context.Context, apiClient *client.Client, agentID string) (string, error) {
+// ConversationIDs holds both the display ID (for --list compatibility) and REST ID (for API calls)
+type ConversationIDs struct {
+	DisplayID string // AgentConversation.Id - shown to user, used with --list/--continue
+	RestID    string // Conversation.Id - used for REST API calls
+}
+
+func createConversation(ctx context.Context, apiClient *client.Client, agentID string) (ConversationIDs, error) {
 	input := client.AgentConversationCreateInput{
 		AgentId: agentID,
 		Channel: "ELEMENTUM_UI",
@@ -156,10 +170,34 @@ func createConversation(ctx context.Context, apiClient *client.Client, agentID s
 
 	resp, err := client.CreateAgentConversation(ctx, apiClient.Genqlient(), input)
 	if err != nil {
-		return "", err
+		return ConversationIDs{}, err
 	}
 
-	return resp.AgentConversationCreateV2.Conversation.Id, nil
+	return ConversationIDs{
+		DisplayID: resp.AgentConversationCreateV2.Id,
+		RestID:    resp.AgentConversationCreateV2.Conversation.Id,
+	}, nil
+}
+
+// lookupRestID converts an AgentConversation ID (from --continue) to the REST API conversation ID
+func lookupRestID(ctx context.Context, apiClient *client.Client, agentID, displayID string) (string, error) {
+	resp, err := client.GetConversationRestId(ctx, apiClient.Genqlient(), agentID, displayID)
+	if err != nil {
+		return "", fmt.Errorf("failed to look up conversation: %w", err)
+	}
+
+	if resp.Organization.Agent == nil {
+		return "", fmt.Errorf("agent not found")
+	}
+
+	// Agent is a pointer to interface, dereference and call method
+	agent := *resp.Organization.Agent
+	conv := agent.GetConversationV2()
+	if conv == nil {
+		return "", fmt.Errorf("conversation not found")
+	}
+
+	return conv.Conversation.Id, nil
 }
 
 func listConversations(ctx context.Context, apiClient *client.Client, agentID, agentName string) error {
@@ -234,7 +272,7 @@ type SSEMessageData struct {
 	Error string `json:"error,omitempty"`
 }
 
-func sendSingleMessage(ctx context.Context, apiClient *client.Client, conversationID, message string) error {
+func sendSingleMessage(ctx context.Context, apiClient *client.Client, convIDs ConversationIDs, message string) error {
 	fmt.Println()
 	fmt.Print(ui.LabelStyle.Render("You: "))
 	fmt.Println(message)
@@ -242,7 +280,8 @@ func sendSingleMessage(ctx context.Context, apiClient *client.Client, conversati
 	fmt.Print(ui.InfoStyle.Render("Agent: "))
 
 	start := time.Now()
-	err := streamAgentMessage(ctx, apiClient, conversationID, message, func(event SSEEvent) error {
+	// Use RestID for the actual API call
+	err := streamAgentMessage(ctx, apiClient, convIDs.RestID, message, func(event SSEEvent) error {
 		return handleSSEEvent(event, true)
 	})
 	elapsed := time.Since(start)
@@ -250,17 +289,17 @@ func sendSingleMessage(ctx context.Context, apiClient *client.Client, conversati
 	fmt.Println()
 	fmt.Println()
 
-	// Print conversation ID and timing for follow-up messages
-	fmt.Println(ui.MutedStyle.Render(fmt.Sprintf("Conversation ID: %s", conversationID)))
+	// Print DisplayID (AgentConversation.Id) - this matches what --list shows
+	fmt.Println(ui.MutedStyle.Render(fmt.Sprintf("Conversation ID: %s", convIDs.DisplayID)))
 	fmt.Println(ui.MutedStyle.Render(fmt.Sprintf("Response time: %s", elapsed.Round(time.Millisecond))))
-	fmt.Println(ui.MutedStyle.Render("Continue with: ei chat <agent-id> -c " + conversationID + " -m \"your message\""))
-	fmt.Println(ui.MutedStyle.Render("Analyze with:  ei conversation <agent-id> " + conversationID))
+	fmt.Println(ui.MutedStyle.Render("Continue with: ei chat <agent-id> -c " + convIDs.DisplayID + " -m \"your message\""))
+	fmt.Println(ui.MutedStyle.Render("Analyze with:  ei conversation <agent-id> " + convIDs.DisplayID))
 	fmt.Println()
 
 	return err
 }
 
-func runInteractiveChat(ctx context.Context, apiClient *client.Client, agentID, agentName, conversationID, firstMessage string) error {
+func runInteractiveChat(ctx context.Context, apiClient *client.Client, agentID, agentName string, convIDs ConversationIDs, firstMessage string) error {
 	fmt.Println()
 	fmt.Println(ui.TitleStyle.Render(fmt.Sprintf("Chat with %s", agentName)))
 	fmt.Println(ui.MutedStyle.Render("Type your message and press Enter. Type /quit to exit, /new to start a new conversation."))
@@ -298,12 +337,12 @@ func runInteractiveChat(ctx context.Context, apiClient *client.Client, agentID, 
 			fmt.Println(ui.MutedStyle.Render("Goodbye!"))
 			return nil
 		case "/new":
-			newConvID, err := createConversation(ctx, apiClient, agentID)
+			newConvIDs, err := createConversation(ctx, apiClient, agentID)
 			if err != nil {
 				fmt.Println(ui.ErrorStyle.Render(fmt.Sprintf("Failed to create new conversation: %v", err)))
 				continue
 			}
-			conversationID = newConvID
+			convIDs = newConvIDs
 			fmt.Println(ui.MutedStyle.Render("Started new conversation."))
 			fmt.Println()
 			continue
@@ -354,12 +393,12 @@ Commands:
 			fmt.Println(ui.MutedStyle.Render(fmt.Sprintf("(sending file: %d chars)", len(input))))
 		}
 
-		// Send message
+		// Send message using RestID for the API call
 		fmt.Println()
 		fmt.Print(ui.InfoStyle.Render("Agent: "))
 
 		start := time.Now()
-		err = streamAgentMessage(ctx, apiClient, conversationID, input, func(event SSEEvent) error {
+		err = streamAgentMessage(ctx, apiClient, convIDs.RestID, input, func(event SSEEvent) error {
 			return handleSSEEvent(event, true)
 		})
 		elapsed := time.Since(start)

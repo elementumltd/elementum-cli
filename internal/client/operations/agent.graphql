@@ -185,6 +185,21 @@ query GetAIProviderConnectors {
   }
 }
 
+# Lightweight query for resolving agent name to ID
+# Only fetches id and name - no app field that can cause orphaned reference errors
+query ResolveAgentByName {
+  organization {
+    agents {
+      edges {
+        node {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+
 # Get all agents with optional filter
 query GetAgents($filter: Filter) {
   organization {

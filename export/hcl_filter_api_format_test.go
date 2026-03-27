@@ -175,7 +175,7 @@ func TestFilterExport_LeftValueReferenceTypeForEach(t *testing.T) {
 	gen := NewFilterHCLGenerator(nil)
 	filter := map[string]interface{}{
 		"type":      "EQUALS",
-		"leftValue": createAPIReferenceLeftValue("FOR_EACH", "task-for-each.Current Item", "TEXT"),
+		"leftValue": createAPIReferenceLeftValue("FOR_EACH", "task-for-each.Item", "TEXT"),
 		"value": map[string]interface{}{
 			"type":  "TEXT",
 			"value": "expected",
@@ -185,7 +185,7 @@ func TestFilterExport_LeftValueReferenceTypeForEach(t *testing.T) {
 	result := gen.Generate(filter, 1)
 
 	assertContains(t, result, "left_value = {", "Expected left_value block")
-	assertContains(t, result, `value_reference = "for_each.task-for-each.Current Item"`, "Expected for_each reference")
+	assertContains(t, result, `value_reference = "for_each.task-for-each.Item"`, "Expected for_each reference")
 }
 
 // =====================================================
