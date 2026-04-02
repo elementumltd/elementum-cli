@@ -51,9 +51,15 @@ Feature requests are welcome! [Open a GitHub Issue](https://github.com/elementum
 
 ## Contributor License Agreement (CLA)
 
-All contributors must sign a CLA before their first PR can be merged. When you submit a PR, the CLA bot will automatically comment with instructions. This is a one-time requirement.
+All contributors must sign a [Contributor License Agreement](CLA.md) before their first PR can be merged. This is a one-time requirement.
 
-> **Note:** CLA details coming soon.
+When you open a pull request, the CLA bot will check whether you have already signed. If you haven't, it will post a comment with instructions. To sign, paste the following as a PR comment:
+
+```
+I have read the CLA Document and I hereby sign the CLA
+```
+
+The bot will record your signature and update the PR status automatically.
 
 ## Development Setup
 
