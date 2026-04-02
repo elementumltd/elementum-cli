@@ -1,0 +1,11 @@
+{
+  "__typename": "WorkflowDatamineTrigger",
+  "id": "dddddddd-1111-2222-3333-444444444444",
+  "name": "Datamine Alert and Recovery",
+  "datamine": {
+    "id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+    "name": "Sales Dashboard"
+  },
+  "fireOnAlert": true,
+  "fireOnRecovery": true
+}

@@ -1,0 +1,11 @@
+# Feature flag queries
+
+# Get all feature flags from the organization
+# - features: all available feature flags
+# - enabledFeatures: feature flags that are currently enabled
+query GetFeatureFlags {
+  organization {
+    features
+    enabledFeatures
+  }
+}

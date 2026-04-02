@@ -1,0 +1,15 @@
+{
+  "__typename": "WorkflowRecordSearchTask",
+  "id": "record-search-2222-222222222222",
+  "name": "Search Active Records",
+  "aspect": {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "name": "Test App"
+  },
+  "filter": {
+    "type": "equals",
+    "fieldId": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+    "value": "ACTIVE"
+  },
+  "limit": null
+}

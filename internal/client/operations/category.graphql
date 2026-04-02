@@ -1,0 +1,37 @@
+# Category queries and mutations
+
+query GetCategoryByID($id: ID!) {
+  organization {
+    category(id: $id) {
+      id
+      name
+      color
+      icon
+      description
+    }
+  }
+}
+
+mutation CreateCategory($input: AspectCategoryInput!) {
+  aspectCategoryCreate(input: $input) {
+    id
+    name
+    color
+    icon
+    description
+  }
+}
+
+mutation UpdateCategory($id: ID!, $input: AspectCategoryInput!) {
+  aspectCategoryUpdate(id: $id, input: $input) {
+    id
+    name
+    color
+    icon
+    description
+  }
+}
+
+mutation DeleteCategory($id: ID!) {
+  aspectCategoryDelete(id: $id)
+}

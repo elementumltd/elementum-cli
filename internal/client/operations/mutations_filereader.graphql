@@ -1,0 +1,38 @@
+# AI File Reader (DocumentModel) mutations
+
+mutation CreateDocumentModel($aspectId: ID!, $input: DocumentModelCreateInput!) {
+  documentModelCreate(aspect: $aspectId, input: $input) {
+    __typename
+    id
+    ... on DocumentModelAi {
+      name
+      instructions
+      fields {
+        edges {
+          node {
+            id
+            name
+            fieldType
+            ... on DocumentModelAiField {
+              description
+              required
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+mutation UpdateDocumentModel($id: ID!, $input: DocumentModelUpdateInput!) {
+  documentModelUpdate(id: $id, input: $input) {
+    __typename
+    id
+  }
+}
+
+mutation DeleteDocumentModel($id: ID!) {
+  documentModelDeleteV2(id: $id) {
+    id
+  }
+}

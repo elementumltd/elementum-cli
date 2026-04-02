@@ -1,0 +1,9 @@
+{
+  "__typename": "WorkflowApprovalChainTask",
+  "id": "approval-chain-task-1111-111111",
+  "name": "Request Approval",
+  "approvers": [
+    {"id": "user-1111-1111-1111-111111111111", "displayName": "Manager"}
+  ],
+  "reason": null
+}

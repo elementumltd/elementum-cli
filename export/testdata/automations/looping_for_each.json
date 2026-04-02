@@ -1,0 +1,90 @@
+{
+  "id": "auto-loop-5555-555555555555",
+  "name": "Looping ForEach Workflow",
+  "status": "ACTIVE",
+  "workflowId": "workflow-loop-5555-555555",
+  "hasPublished": true,
+  "triggers": [
+    {
+      "id": "trigger-5555-5555-5555-555555555555",
+      "type": "on_demand",
+      "name": "Manual Trigger",
+      "rawData": {
+        "__typename": "WorkflowOnDemandTrigger",
+        "id": "trigger-5555-5555-5555-555555555555",
+        "name": "Manual Trigger",
+        "aspect": {
+          "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "name": "Test App"
+        },
+        "parameters": []
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task-search-5555-555555555555",
+      "type": "record_search",
+      "name": "Find All Records",
+      "parentId": "trigger-5555-5555-5555-555555555555",
+      "rawData": {
+        "__typename": "WorkflowRecordSearchTask",
+        "id": "task-search-5555-555555555555",
+        "name": "Find All Records",
+        "aspect": {
+          "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "name": "Test App"
+        }
+      }
+    },
+    {
+      "id": "task-foreach-5555-555555555555",
+      "type": "for_each",
+      "name": "Process Each",
+      "parentId": "task-search-5555-555555555555",
+      "rawData": {
+        "__typename": "WorkflowForEachTask",
+        "id": "task-foreach-5555-555555555555",
+        "name": "Process Each",
+        "forEach": {
+          "taskReference": {
+            "taskId": "task-search-5555-555555555555",
+            "propertyPath": "All found records"
+          }
+        },
+        "children": []
+      }
+    },
+    {
+      "id": "task-update-5555-555555555555",
+      "type": "update_field",
+      "name": "Update Each Record",
+      "parentId": "task-foreach-5555-555555555555",
+      "rawData": {
+        "__typename": "WorkflowUpdateFieldTask",
+        "id": "task-update-5555-555555555555",
+        "name": "Update Each Record",
+        "aspect": {
+          "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "name": "Test App"
+        },
+        "recordReference": {
+          "forEachReference": {
+            "propertyPath": "Item.id"
+          }
+        },
+        "workflowFields": [
+          {
+            "field": {
+              "id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+              "name": "Processed"
+            },
+            "valueReference": {
+              "staticValue": "true"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

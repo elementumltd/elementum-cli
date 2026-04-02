@@ -1,0 +1,60 @@
+# Flow queries
+
+fragment FlowActionInfo on FlowAction {
+  id
+  name
+  __typename
+  ... on FlowAgentAction {
+    agentV2 {
+      id
+    }
+  }
+  ... on FlowAutomationAction {
+    automation {
+      id
+    }
+  }
+  ... on FlowRecordAction {
+    stage {
+      id
+    }
+  }
+}
+
+query GetFlowConfiguration($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      ... on AspectApp {
+        stages {
+          id
+          flowBlock {
+            id
+            nodes {
+              id
+              description
+              symbol
+              sourcePosition
+              targetPosition
+              x
+              y
+              actions {
+                ...FlowActionInfo
+              }
+            }
+            edges {
+              id
+              label
+              source {
+                id
+              }
+              target {
+                id
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

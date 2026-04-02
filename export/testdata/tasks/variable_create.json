@@ -1,0 +1,10 @@
+{
+  "__typename": "WorkflowVariableTask",
+  "id": "variable-task-1111-111111111111",
+  "name": "Set Counter",
+  "variableName": "counter",
+  "variableType": "NUMBER",
+  "valueReference": {
+    "staticValue": "0"
+  }
+}

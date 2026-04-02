@@ -1,0 +1,9 @@
+{
+  "__typename": "WorkflowSlackMessageTrigger",
+  "id": "88888888-8888-8888-8888-888888888888",
+  "name": "Slack Message Trigger",
+  "aspect": {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "name": "Test App"
+  }
+}

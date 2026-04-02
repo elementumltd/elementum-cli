@@ -1,0 +1,162 @@
+# File Reader (DocumentModel) queries
+
+# List all document models for an app
+query ListDocumentModels($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        documentModels(first: 500) {
+          edges {
+            node {
+              __typename
+              id
+              ... on DocumentModelAi {
+                name
+                instructions
+                fields {
+                  edges {
+                    node {
+                      id
+                      name
+                      fieldType
+                      ... on DocumentModelAiField {
+                        description
+                        required
+                      }
+                    }
+                  }
+                }
+              }
+              ... on DocumentModelOCR {
+                name
+              }
+              ... on DocumentModelJson {
+                name
+              }
+              ... on DocumentModelXml {
+                name
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Query to get an OCR/Text document model
+query GetTextDocumentModel($aspectId: ID!, $documentModelId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        documentModel(id: $documentModelId) {
+          __typename
+          id
+          ... on DocumentModelOCR {
+            name
+          }
+        }
+      }
+    }
+  }
+}
+
+# Query to get an AI document model
+query GetAiDocumentModel($aspectId: ID!, $documentModelId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        documentModel(id: $documentModelId) {
+          __typename
+          id
+          ... on DocumentModelAi {
+            name
+            instructions
+            fields {
+              edges {
+                node {
+                  id
+                  name
+                  fieldType
+                  ... on DocumentModelAiField {
+                    description
+                    required
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Query to get a JSON document model
+query GetJsonDocumentModel($aspectId: ID!, $documentModelId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        documentModel(id: $documentModelId) {
+          __typename
+          id
+          ... on DocumentModelJson {
+            name
+          }
+        }
+      }
+    }
+  }
+}
+
+# Query to get an XML document model
+query GetXmlDocumentModel($aspectId: ID!, $documentModelId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        documentModel(id: $documentModelId) {
+          __typename
+          id
+          ... on DocumentModelXml {
+            name
+          }
+        }
+      }
+    }
+  }
+}
+
+# Query to get file reader dependencies (automations using this file reader)
+query GetDocumentModelDependencies($aspectId: ID!, $documentModelId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        documentModel(id: $documentModelId) {
+          id
+          ... on DocumentModelAi {
+            name
+          }
+          ... on DocumentModelOCR {
+            name
+          }
+          ... on DocumentModelJson {
+            name
+          }
+          ... on DocumentModelXml {
+            name
+          }
+          usage {
+            automations {
+              edges {
+                node {
+                  id
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

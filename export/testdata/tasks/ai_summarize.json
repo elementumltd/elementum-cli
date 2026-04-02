@@ -1,0 +1,12 @@
+{
+  "__typename": "WorkflowAiSummarizeTask",
+  "id": "ai-summarize-1111-111111111111",
+  "name": "Summarize Text",
+  "textToSummarize": {
+    "triggerReference": {
+      "name": "record.description"
+    }
+  },
+  "context": null,
+  "length": null
+}

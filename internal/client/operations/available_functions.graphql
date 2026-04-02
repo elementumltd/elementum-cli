@@ -1,0 +1,165 @@
+# Available Snowflake Functions queries
+# These queries discover functions available in Snowflake that can be configured as elementum_function resources
+# Note: This is different from storedSnowflakeFunctions which shows already-configured functions
+
+# List available functions from a CloudLink's Snowflake connection
+query ListAvailableFunctions($cloudLinkId: ID!, $functionType: SnowflakeFunctionType) {
+  organization {
+    cloudLink(id: $cloudLinkId) {
+      id
+      name
+      __typename
+      ... on CloudLinkSnowflake {
+        availableFunctions(functionType: $functionType, showBuiltIn: false) {
+          name
+          databaseName
+          schemaName
+          type
+          description
+          minimumNumberOfArguments
+          maximumNumberOfArguments
+          builtIn
+          secure
+          tableFunction
+          arguments {
+            inputArgs {
+              name
+              type
+            }
+            outputArg {
+              ... on SnowflakeFunctionSimpleOutput {
+                returnType
+                nullable
+              }
+              ... on SnowflakeFunctionTableOutput {
+                columns {
+                  name
+                  columnType
+                }
+              }
+            }
+          }
+        }
+      }
+      ... on CloudLinkElementumSnowflake {
+        availableFunctions(functionType: $functionType, showBuiltIn: false) {
+          name
+          databaseName
+          schemaName
+          type
+          description
+          minimumNumberOfArguments
+          maximumNumberOfArguments
+          builtIn
+          secure
+          tableFunction
+          arguments {
+            inputArgs {
+              name
+              type
+            }
+            outputArg {
+              ... on SnowflakeFunctionSimpleOutput {
+                returnType
+                nullable
+              }
+              ... on SnowflakeFunctionTableOutput {
+                columns {
+                  name
+                  columnType
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# List both stored (configured) and available functions for a CloudLink
+# Supports filter for database/schema filtering on available functions
+query ListCloudLinkFunctions($cloudLinkId: ID!, $filter: Filter, $functionType: SnowflakeFunctionType) {
+  organization {
+    cloudLink(id: $cloudLinkId) {
+      id
+      name
+      __typename
+      ... on CloudLinkSnowflake {
+        storedSnowflakeFunctions {
+          edges {
+            node {
+              id
+              name
+              displayName
+            }
+          }
+        }
+        availableFunctions(filter: $filter, functionType: $functionType, showBuiltIn: false) {
+          name
+          type
+          databaseName
+          schemaName
+          builtIn
+          createdAt
+          description
+          minimumNumberOfArguments
+          maximumNumberOfArguments
+          secure
+          tableFunction
+          arguments {
+            inputArgs {
+              name
+              type
+            }
+            outputArg {
+              ... on SnowflakeFunctionSimpleOutput {
+                returnType
+                nullable
+              }
+              ... on SnowflakeFunctionTableOutput {
+                columns {
+                  name
+                  columnType
+                }
+              }
+            }
+          }
+        }
+      }
+      ... on CloudLinkElementumSnowflake {
+        availableFunctions(filter: $filter, functionType: $functionType, showBuiltIn: false) {
+          name
+          type
+          databaseName
+          schemaName
+          builtIn
+          createdAt
+          description
+          minimumNumberOfArguments
+          maximumNumberOfArguments
+          secure
+          tableFunction
+          arguments {
+            inputArgs {
+              name
+              type
+            }
+            outputArg {
+              ... on SnowflakeFunctionSimpleOutput {
+                returnType
+                nullable
+              }
+              ... on SnowflakeFunctionTableOutput {
+                columns {
+                  name
+                  columnType
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

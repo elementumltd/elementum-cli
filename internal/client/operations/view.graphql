@@ -1,0 +1,179 @@
+# Copyright (c) ElementumAI, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+# ============================================================================
+# AspectView GraphQL Operations
+# ============================================================================
+# This file contains queries and mutations for managing AspectViews (managed views)
+# on Apps, Elements, and Tasks. Views support 5 types: List, Kanban, Calendar,
+# Dashboard, and Agent views.
+
+# ============================================================================
+# Fragments
+# ============================================================================
+
+# Common fields shared by all view types
+fragment ViewCommonFields on AspectView {
+  id
+  name
+  allowRecordCreation
+  filter
+  sort
+  displayOrder
+  createdAt
+  updatedAt
+}
+
+# Access policy fragment for view sharing
+fragment ViewAccessPolicyFields on AspectViewAccessPolicy {
+  id
+  users(first: 100) {
+    edges {
+      node {
+        id
+        email
+        name
+      }
+    }
+  }
+  groups(first: 100) {
+    edges {
+      node {
+        id
+        name
+      }
+    }
+  }
+}
+
+# Full view details with type-specific fields
+fragment ViewFullDetails on AspectView {
+  ...ViewCommonFields
+  __typename
+  accessPolicies(first: 1) {
+    edges {
+      node {
+        ...ViewAccessPolicyFields
+      }
+    }
+  }
+  ... on AspectViewList {
+    listColumns: columns
+    density
+    rows
+    listAgent: agent {
+      id
+      name
+    }
+  }
+  ... on AspectViewKanban {
+    kanbanColumns: columns
+    displayByField
+    allowedFilterFields
+    kanbanAgent: agent {
+      id
+      name
+    }
+  }
+  ... on AspectViewCalendar {
+    calendarColumns: columns
+    calendarDisplayByField: displayByField
+    calendarAgent: agent {
+      id
+      name
+    }
+  }
+  ... on AspectViewDashboard {
+    dashboard {
+      id
+      name
+    }
+    dashboardAgent: agent {
+      id
+      name
+    }
+  }
+  ... on AspectViewAgent {
+    agentViewAgent: agent {
+      id
+      name
+    }
+  }
+}
+
+# ============================================================================
+# Queries
+# ============================================================================
+
+# Get a single view by ID from an aspect
+query GetAspectView($aspectId: ID!, $viewId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      view(id: $viewId) {
+        ...ViewFullDetails
+      }
+    }
+  }
+}
+
+# Get all views for an aspect
+query GetAspectViews($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      views(first: 100) {
+        edges {
+          node {
+            ...ViewFullDetails
+          }
+        }
+      }
+    }
+  }
+}
+
+# ============================================================================
+# Mutations
+# ============================================================================
+
+# Create a new view on an aspect
+mutation CreateAspectView($aspectId: ID!, $input: AspectViewInput!) {
+  aspectViewCreate(aspectId: $aspectId, input: $input) {
+    ...ViewFullDetails
+  }
+}
+
+# Update an existing view
+mutation UpdateAspectView($id: ID!, $input: AspectViewUpdateInput!) {
+  aspectViewUpdate(id: $id, input: $input) {
+    ...ViewFullDetails
+  }
+}
+
+# Delete a view
+mutation DeleteAspectView($id: ID!) {
+  aspectViewDelete(id: $id) {
+    id
+  }
+}
+
+# Share a view with users and/or groups
+mutation ShareAspectView($id: ID!, $input: AspectViewShareInput!) {
+  aspectViewShare(id: $id, input: $input) {
+    ...ViewAccessPolicyFields
+  }
+}
+
+# Unshare a view from users and/or groups
+mutation UnshareAspectView($id: ID!, $input: AspectViewShareInput!) {
+  aspectViewUnshare(id: $id, input: $input) {
+    ...ViewAccessPolicyFields
+  }
+}
+
+# Reorder views on an aspect
+mutation ReorderAspectViews($aspectId: ID!, $viewIds: [ID!]!) {
+  aspectViewReorder(aspectId: $aspectId, viewIds: $viewIds) {
+    id
+    displayOrder
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "__typename": "WorkflowAspectRecordFieldLockingTask",
+  "id": "field-locking-2222-222222222222",
+  "name": "Lock and Unlock Fields",
+  "aspect": {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "name": "Test App"
+  },
+  "recordReference": {
+    "triggerReference": {
+      "name": "record.id"
+    }
+  },
+  "fieldsToLock": [
+    {"id": "ffffffff-ffff-ffff-ffff-ffffffffffff", "name": "Status"}
+  ],
+  "fieldsToUnlock": [
+    {"id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee", "name": "Comments"}
+  ]
+}

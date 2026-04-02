@@ -1,0 +1,16 @@
+{
+  "__typename": "WorkflowApiTask",
+  "id": "api-task-3333-333333333333",
+  "name": "POST Custom Body",
+  "method": "POST",
+  "url": {
+    "staticValue": "https://api.example.com/webhook"
+  },
+  "body": {
+    "__typename": "ApiCustomBody",
+    "custom": {
+      "staticValue": "{\"event\": \"trigger\", \"data\": {}}"
+    }
+  },
+  "headers": []
+}

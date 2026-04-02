@@ -1,0 +1,31 @@
+{
+  "__typename": "WorkflowCalculationTask",
+  "id": "calculation-2222-222222222222",
+  "name": "Calculate Multiple Values",
+  "calculations": [
+    {
+      "name": "subtotal",
+      "calculationReference": {
+        "calculationReference": {
+          "calculation": "quantity * price"
+        }
+      }
+    },
+    {
+      "name": "tax",
+      "calculationReference": {
+        "calculationReference": {
+          "calculation": "subtotal * 0.1"
+        }
+      }
+    },
+    {
+      "name": "total",
+      "calculationReference": {
+        "calculationReference": {
+          "calculation": "subtotal + tax"
+        }
+      }
+    }
+  ]
+}

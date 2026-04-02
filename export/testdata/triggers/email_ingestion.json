@@ -1,0 +1,9 @@
+{
+  "__typename": "WorkflowEmailIngestionTrigger",
+  "id": "99999999-9999-9999-9999-999999999999",
+  "name": "Email Ingestion Trigger",
+  "emailAlias": {
+    "id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+    "name": "support@company.elementum.io"
+  }
+}

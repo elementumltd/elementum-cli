@@ -1,0 +1,636 @@
+# Agent queries - using genqlient directives for cleaner types
+
+# ==============================================================================
+# Reusable Fragments (for field selection reuse)
+# ==============================================================================
+
+# Basic aspect reference (id + name)
+fragment AspectRef on Aspect {
+  id
+  name
+}
+
+# Starting action with variables
+fragment StartingActionInfo on StartingAction {
+  id
+  name
+  prompt
+  order
+  enabled
+  icon
+  variables {
+    key
+    label
+    type
+    required
+    placeholder
+    options {
+      label
+      value
+    }
+    validation {
+      minLength
+      maxLength
+      pattern
+      errorMessage
+    }
+  }
+}
+
+# Agent tool - all types with their specific fields
+fragment AgentToolInfo on AgentTool {
+  id
+  name
+  description
+  startMessage
+  __typename
+  ... on AgentCreateRecordTool {
+    aspect { ...AspectRef }
+    fieldsV2 {
+      name
+      description
+      required
+      field { id name }
+    }
+  }
+  ... on AgentSearchAspectTool {
+    aspect { ...AspectRef }
+    queryDescription
+    limit
+    fields {
+      name
+      description
+      field { id name }
+    }
+    filter
+    filterVariables {
+      id
+      name
+      description
+      required
+    }
+    sort
+  }
+  ... on AgentUpdateRecordTool {
+    aspect { ...AspectRef }
+    handleDescription
+    fieldsV2 {
+      name
+      description
+      required
+      field { id name }
+    }
+  }
+  ... on AgentSearchTableTool {
+    aspect { ...AspectRef }
+    queryDescription
+    limit
+    table {
+      __typename
+      id
+      aspect {
+        __typename
+        id
+      }
+      field { id name }
+    }
+    fields {
+      name
+      description
+      field { id name }
+    }
+    filter
+    attributeFields { id name }
+    filterVariables {
+      id
+      name
+      description
+      required
+    }
+    returnFields {
+      name
+      field { id name }
+    }
+  }
+  ... on AgentRelateRecordTool {
+    aspect { ...AspectRef }
+    relatedAspect { ...AspectRef }
+  }
+  ... on AgentExecuteWorkflowTool {
+    automation { id name }
+    inputs {
+      name
+      description
+      required
+      triggerParameter { id name }
+    }
+    outputs {
+      name
+      workflowPropertyName
+    }
+  }
+  ... on AgentRunAgentTool {
+    targetAgent { id name }
+    workerTaskPrompt
+  }
+  ... on AgentMcpTool {
+    mcpToolName
+    serverUrl
+    headers {
+      key
+      value
+    }
+  }
+  ... on AgentSelectBotRouteTool {
+    # No additional fields beyond common AgentTool fields
+    id
+  }
+}
+
+# ==============================================================================
+# Queries
+# ==============================================================================
+
+# Get agents belonging to a specific app (lightweight, for app deletion cleanup)
+query GetAppAgentsList($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      ... on AspectApp {
+        agents {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetAIProviderConnectors {
+  organization {
+    id
+    aiProviderConnectors {
+      edges {
+        node {
+          id
+          model { name }
+          provider { name }
+        }
+      }
+    }
+  }
+}
+
+# Lightweight query for resolving agent name to ID
+# Only fetches id and name - no app field that can cause orphaned reference errors
+query ResolveAgentByName {
+  organization {
+    agents {
+      edges {
+        node {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+
+# Get all agents with optional filter
+query GetAgents($filter: Filter) {
+  organization {
+    id
+    agents(filter: $filter) {
+      edges {
+        node {
+          id
+          name
+          description
+          __typename
+          ... on AgentElementum {
+            instructions
+            firstMessage
+            aiProviderConnector {
+              id
+              model { name }
+              provider { name }
+            }
+            app { id name }
+          }
+          ... on AgentSnowflake {
+            instructions
+            firstMessage
+            aiProviderConnector {
+              id
+              model { name }
+              provider { name }
+            }
+            app { id name }
+          }
+          ... on AgentBedrock {
+            instructions
+            firstMessage
+            aiProviderConnector {
+              id
+              model { name }
+              provider { name }
+            }
+            app { id name }
+          }
+          ... on AgentBrowserUse {
+            instructions
+            firstMessage
+            persistSession
+            flashMode
+            vision
+            sessionTimeoutMinutes
+            aiProviderConnector {
+              id
+              model { name }
+              provider { name }
+            }
+            app { id name }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Get agents for a specific app/aspect - simplified query
+query GetAspectAgents($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      name
+      ... on AspectApp {
+        agentsV2 {
+          edges {
+            node {
+              id
+              name
+              description
+              __typename
+              ... on AgentElementum {
+                instructions
+                firstMessage
+                aiProviderConnector {
+                  id
+                  model { name }
+                  provider { name }
+                }
+                skillAccessConfig {
+                  mode
+                  skills { id }
+                  preloadedSkills { id }
+                }
+                startingActions {
+                  ...StartingActionInfo
+                }
+                tools {
+                  edges {
+                    node {
+                      ...AgentToolInfo
+                    }
+                  }
+                }
+              }
+              ... on AgentSnowflake {
+                instructions
+                firstMessage
+                agentSnowflakeConfig {
+                  database
+                  name
+                  schema
+                }
+                aiProviderConnector {
+                  id
+                  model { name }
+                  provider { name }
+                }
+                skillAccessConfig {
+                  mode
+                  skills { id }
+                  preloadedSkills { id }
+                }
+                startingActions {
+                  ...StartingActionInfo
+                }
+                tools {
+                  edges {
+                    node {
+                      ...AgentToolInfo
+                    }
+                  }
+                }
+              }
+              ... on AgentBedrock {
+                instructions
+                firstMessage
+                agentBedrockConfig {
+                  agentArn
+                }
+                aiProviderConnector {
+                  id
+                  model { name }
+                  provider { name }
+                }
+                skillAccessConfig {
+                  mode
+                  skills { id }
+                  preloadedSkills { id }
+                }
+                startingActions {
+                  ...StartingActionInfo
+                }
+                tools {
+                  edges {
+                    node {
+                      ...AgentToolInfo
+                    }
+                  }
+                }
+              }
+              ... on AgentBrowserUse {
+                instructions
+                firstMessage
+                browserAgentInstructions
+                persistSession
+                flashMode
+                vision
+                sessionTimeoutMinutes
+                aiProviderConnector {
+                  id
+                  model { name }
+                  provider { name }
+                }
+                skillAccessConfig {
+                  mode
+                  skills { id }
+                  preloadedSkills { id }
+                }
+                startingActions {
+                  ...StartingActionInfo
+                }
+                tools {
+                  edges {
+                    node {
+                      ...AgentToolInfo
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Get a single agent by ID
+query GetAgentByID($aspectId: ID!, $agentId: ID!) {
+  organization {
+    id
+    aspect(id: $aspectId) {
+      __typename
+      id
+      ... on AspectApp {
+        agentV2(id: $agentId) {
+          id
+          name
+          description
+          __typename
+          ... on AgentElementum {
+            instructions
+            firstMessage
+            maxLength
+            aiProviderConnector {
+              id
+              model { name }
+              provider { name }
+            }
+            skillAccessConfig {
+              mode
+              skills { id }
+              preloadedSkills { id }
+            }
+            startingActions {
+              ...StartingActionInfo
+            }
+            runAs {
+              __typename
+              ... on AgentConversationRunAsCurrentUser { id }
+              ... on AgentConversationRunAsServiceAccount {
+                id
+                serviceAccount { id }
+              }
+              ... on AgentConversationRunAsUser {
+                id
+                user { id }
+              }
+            }
+            app { id name }
+          }
+          ... on AgentSnowflake {
+            instructions
+            firstMessage
+            maxLength
+            agentSnowflakeConfig {
+              database
+              name
+              schema
+            }
+            aiProviderConnector {
+              id
+              model { name }
+              provider { name }
+            }
+            skillAccessConfig {
+              mode
+              skills { id }
+              preloadedSkills { id }
+            }
+            startingActions {
+              ...StartingActionInfo
+            }
+            runAs {
+              __typename
+              ... on AgentConversationRunAsCurrentUser { id }
+              ... on AgentConversationRunAsServiceAccount {
+                id
+                serviceAccount { id }
+              }
+              ... on AgentConversationRunAsUser {
+                id
+                user { id }
+              }
+            }
+            app { id name }
+          }
+          ... on AgentBedrock {
+            instructions
+            firstMessage
+            maxLength
+            agentBedrockConfig {
+              agentArn
+            }
+            aiProviderConnector {
+              id
+              model { name }
+              provider { name }
+            }
+            skillAccessConfig {
+              mode
+              skills { id }
+              preloadedSkills { id }
+            }
+            startingActions {
+              ...StartingActionInfo
+            }
+            runAs {
+              __typename
+              ... on AgentConversationRunAsCurrentUser { id }
+              ... on AgentConversationRunAsServiceAccount {
+                id
+                serviceAccount { id }
+              }
+              ... on AgentConversationRunAsUser {
+                id
+                user { id }
+              }
+            }
+            app { id name }
+          }
+          ... on AgentBrowserUse {
+            instructions
+            firstMessage
+            maxLength
+            browserAgentInstructions
+            persistSession
+            flashMode
+            vision
+            sessionTimeoutMinutes
+            aiProviderConnector {
+              id
+              model { name }
+              provider { name }
+            }
+            skillAccessConfig {
+              mode
+              skills { id }
+              preloadedSkills { id }
+            }
+            startingActions {
+              ...StartingActionInfo
+            }
+            runAs {
+              __typename
+              ... on AgentConversationRunAsCurrentUser { id }
+              ... on AgentConversationRunAsServiceAccount {
+                id
+                serviceAccount { id }
+              }
+              ... on AgentConversationRunAsUser {
+                id
+                user { id }
+              }
+            }
+            app { id name }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Get tools for a specific agent
+query GetAgentTools($aspectId: ID!, $agentId: ID!) {
+  organization {
+    id
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        agentV2(id: $agentId) {
+          ... on AgentElementum {
+            tools {
+              edges {
+                node {
+                  ...AgentToolInfo
+                }
+              }
+            }
+          }
+          ... on AgentSnowflake {
+            tools {
+              edges {
+                node {
+                  ...AgentToolInfo
+                }
+              }
+            }
+          }
+          ... on AgentBedrock {
+            tools {
+              edges {
+                node {
+                  ...AgentToolInfo
+                }
+              }
+            }
+          }
+          ... on AgentBrowserUse {
+            tools {
+              edges {
+                node {
+                  ...AgentToolInfo
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Get A2A skills for an agent (only available on AgentElementum)
+query GetAgentA2ASkills($agentId: ID!) {
+  organization {
+    agent(id: $agentId) {
+      id
+      name
+      ... on AgentElementum {
+        card {
+          skills {
+            edges {
+              node {
+                id
+                name
+                description
+                tags
+                examples
+                inputModes
+                outputModes
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# ==============================================================================
+# Mutations
+# ==============================================================================
+
+# Delete an A2A skill by ID
+mutation DeleteAgentA2ASkill($id: ID!) {
+  agentSkillDelete(id: $id) {
+    id
+  }
+}

@@ -1,0 +1,44 @@
+# Approval Chain Template queries and mutations
+
+query GetApprovalChainTemplate($aspectId: ID!, $templateId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      approvalChainTemplate(id: $templateId) {
+        id
+        name
+        stage {
+          id
+        }
+        numberOfDynamicApprovers
+        managedByAutomation
+        approveButton
+        denyButton
+        exceptionButton
+        summary
+        defaultReason
+        lockedAspectFields {
+          id
+        }
+      }
+    }
+  }
+}
+
+mutation CreateApprovalChainTemplate($input: ApprovalChainTemplateInput!, $owner: EntityIdentifierInput!) {
+  approvalChainTemplateCreate(input: $input, owner: $owner) {
+    id
+    name
+    stage {
+      id
+      name
+    }
+    numberOfDynamicApprovers
+  }
+}
+
+mutation UpdateApprovalChainTemplate($id: ID!, $input: ApprovalChainTemplateUpdateInput!) {
+  approvalChainTemplateUpdate(id: $id, input: $input) {
+    id
+  }
+}

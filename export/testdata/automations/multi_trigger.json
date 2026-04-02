@@ -1,0 +1,53 @@
+{
+  "id": "auto-multi-2222-222222222222",
+  "name": "Multi-Trigger Workflow",
+  "status": "ACTIVE",
+  "workflowId": "workflow-multi-2222-222222",
+  "hasPublished": true,
+  "triggers": [
+    {
+      "id": "trigger-create-2222-222222222222",
+      "type": "record_created",
+      "name": "When Record Created",
+      "rawData": {
+        "__typename": "WorkflowRecordCreateTrigger",
+        "id": "trigger-create-2222-222222222222",
+        "name": "When Record Created",
+        "aspect": {
+          "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "name": "Test App"
+        }
+      }
+    },
+    {
+      "id": "trigger-update-2222-222222222222",
+      "type": "record_updated",
+      "name": "When Record Updated",
+      "rawData": {
+        "__typename": "WorkflowRecordUpdateTrigger",
+        "id": "trigger-update-2222-222222222222",
+        "name": "When Record Updated",
+        "aspect": {
+          "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "name": "Test App"
+        }
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task-notify-2222-222222222222",
+      "type": "notification",
+      "name": "Send Notification",
+      "parentId": "trigger-create-2222-222222222222",
+      "rawData": {
+        "__typename": "WorkflowNotificationTask",
+        "id": "task-notify-2222-222222222222",
+        "name": "Send Notification",
+        "message": {
+          "staticValue": "Record has been modified."
+        }
+      }
+    }
+  ]
+}

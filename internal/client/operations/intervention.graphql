@@ -1,0 +1,192 @@
+# Intervention queries for automation health monitoring
+
+query GetAspectInterventions(
+  $aspectId: ID!
+  $filter: Filter
+  $sort: Sort
+  $first: Int
+  $after: String
+) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      name
+      __typename
+      ... on AspectApp {
+        health {
+          automations {
+            interventions(filter: $filter, sort: $sort, first: $first, after: $after) {
+              total
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
+              edges {
+                node {
+                  id
+                  status
+                  failureCode
+                  failureReason
+                  resolution
+                  resolutionSummary
+                  notes
+                  createdAt
+                  updatedAt
+                  failureAt
+                  closedAt
+                  automation {
+                    id
+                    name
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      ... on AspectElement {
+        health {
+          automations {
+            interventions(filter: $filter, sort: $sort, first: $first, after: $after) {
+              total
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
+              edges {
+                node {
+                  id
+                  status
+                  failureCode
+                  failureReason
+                  resolution
+                  resolutionSummary
+                  notes
+                  createdAt
+                  updatedAt
+                  failureAt
+                  closedAt
+                  automation {
+                    id
+                    name
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      ... on AspectTask {
+        health {
+          automations {
+            interventions(filter: $filter, sort: $sort, first: $first, after: $after) {
+              total
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
+              edges {
+                node {
+                  id
+                  status
+                  failureCode
+                  failureReason
+                  resolution
+                  resolutionSummary
+                  notes
+                  createdAt
+                  updatedAt
+                  failureAt
+                  closedAt
+                  automation {
+                    id
+                    name
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetAspectIntervention($aspectId: ID!, $interventionId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      name
+      __typename
+      ... on AspectApp {
+        health {
+          automations {
+            intervention(id: $interventionId) {
+              id
+              status
+              failureCode
+              failureReason
+              resolution
+              resolutionSummary
+              notes
+              createdAt
+              updatedAt
+              failureAt
+              closedAt
+              automation {
+                id
+                name
+              }
+            }
+          }
+        }
+      }
+      ... on AspectElement {
+        health {
+          automations {
+            intervention(id: $interventionId) {
+              id
+              status
+              failureCode
+              failureReason
+              resolution
+              resolutionSummary
+              notes
+              createdAt
+              updatedAt
+              failureAt
+              closedAt
+              automation {
+                id
+                name
+              }
+            }
+          }
+        }
+      }
+      ... on AspectTask {
+        health {
+          automations {
+            intervention(id: $interventionId) {
+              id
+              status
+              failureCode
+              failureReason
+              resolution
+              resolutionSummary
+              notes
+              createdAt
+              updatedAt
+              failureAt
+              closedAt
+              automation {
+                id
+                name
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

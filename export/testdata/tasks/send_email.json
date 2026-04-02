@@ -1,0 +1,12 @@
+{
+  "__typename": "WorkflowSendEmailTask",
+  "id": "send-email-1111-111111111111",
+  "name": "Send Email Notification",
+  "subject": "Important Update",
+  "messageBody": {
+    "staticValue": "This is an important email notification."
+  },
+  "users": [],
+  "groups": [],
+  "externalEmails": ["external@example.com"]
+}

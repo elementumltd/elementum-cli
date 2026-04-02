@@ -1,0 +1,24 @@
+# Aspect (App, Element, Task) mutations
+
+mutation CreateAspect($input: AspectInput!) {
+  aspectCreate(input: $input) {
+    id
+    name
+    __typename
+    ... on AspectApp {
+      namespace
+    }
+  }
+}
+
+mutation UpdateAspect($id: ID!, $input: AspectInput!) {
+  aspectUpdate(id: $id, input: $input) {
+    id
+    name
+    __typename
+  }
+}
+
+mutation DeleteAspect($id: ID!) {
+  aspectDelete(id: $id)
+}

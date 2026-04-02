@@ -1,0 +1,67 @@
+# AI Provider queries
+
+# Fragment for AI feature information
+fragment AiFeatureInfo on AiFeature {
+  feature
+  name
+}
+
+# Fragment for AI model information
+fragment AiModelInfo on AiModel {
+  name
+  modelType
+  multiModal
+  legacy
+}
+
+# Fragment for AI provider information
+fragment AiProviderInfo on AiProvider {
+  id
+  name
+  availableModels {
+    ...AiModelInfo
+  }
+  availableFeatures {
+    ...AiFeatureInfo
+  }
+}
+
+# Fragment for AI provider connector information
+fragment AiProviderConnectorInfo on AiProviderConnector {
+  id
+  model {
+    ...AiModelInfo
+  }
+  provider {
+    id
+    name
+  }
+  apiType
+  costPerMillionTokens
+  availableFeatures {
+    ...AiFeatureInfo
+  }
+}
+
+# Get all AI providers in the organization
+query GetAiProviders {
+  organization {
+    aiProviders {
+      ...AiProviderInfo
+    }
+  }
+}
+
+# Get all AI provider connectors (the usable model configurations)
+query GetAiProviderConnectors($first: Int) {
+  organization {
+    aiProviderConnectors(first: $first) {
+      edges {
+        node {
+          ...AiProviderConnectorInfo
+        }
+      }
+      total
+    }
+  }
+}

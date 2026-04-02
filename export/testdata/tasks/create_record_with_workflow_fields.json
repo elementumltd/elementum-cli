@@ -1,0 +1,23 @@
+{
+  "__typename": "WorkflowCreateRecordTask",
+  "id": "create-record-2222-222222222222",
+  "name": "Create New Task",
+  "aspect": {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "name": "Test App"
+  },
+  "recordReference": null,
+  "workflowFields": [
+    {
+      "field": {
+        "id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+        "name": "Title"
+      },
+      "valueReference": {
+        "triggerReference": {
+          "name": "record.title"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "__typename": "WorkflowUpdateFieldTask",
+  "id": "update-field-2222-222222222222",
+  "name": "Update Multiple Fields",
+  "aspect": {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "name": "Test App"
+  },
+  "recordReference": {
+    "triggerReference": {
+      "name": "record.id"
+    }
+  },
+  "workflowFields": [
+    {
+      "field": {
+        "id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+        "name": "Status"
+      },
+      "valueReference": {
+        "staticValue": "COMPLETED"
+      }
+    },
+    {
+      "field": {
+        "id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+        "name": "Priority"
+      },
+      "valueReference": {
+        "staticValue": "HIGH"
+      }
+    }
+  ]
+}

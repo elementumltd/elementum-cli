@@ -1,0 +1,18 @@
+{
+  "__typename": "WorkflowApprovalStatusUpdateTask",
+  "id": "approval-status-1111-111111111111",
+  "name": "Update Approval Status",
+  "approvalChainTemplate": {
+    "id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+    "name": "Standard Approval"
+  },
+  "recordReference": {
+    "triggerReference": {
+      "name": "record.id"
+    }
+  },
+  "status": "APPROVED",
+  "reason": {
+    "staticValue": "Automatically approved by workflow"
+  }
+}

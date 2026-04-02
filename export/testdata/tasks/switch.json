@@ -1,0 +1,6 @@
+{
+  "__typename": "WorkflowSwitchTask",
+  "id": "switch-task-1111-1111-111111111111",
+  "name": "Route By Priority",
+  "children": []
+}

@@ -1,0 +1,67 @@
+# Approval operations for listing and responding to approvals
+
+# Get approval chains for a record
+query GetRecordApprovals($recordId: ID!) {
+  organization {
+    record(id: $recordId) {
+      id
+      title
+      approvalChains(first: 100) {
+        edges {
+          node {
+            id
+            status
+            name
+            reason
+            createdAt
+            approvalChainTemplate {
+              id
+              name
+            }
+            activeApprovalV2 {
+              id
+              status
+              createdAt
+              updatedAt
+              ... on ApprovalUser {
+                user {
+                  id
+                  name
+                  email
+                }
+                decision {
+                  id
+                  status
+                  reason
+                  createdAt
+                }
+              }
+              ... on ApprovalGroup {
+                group {
+                  id
+                  name
+                }
+                decisions {
+                  id
+                  status
+                  reason
+                  createdAt
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Update approval status (approve or deny)
+mutation UpdateApprovalStatus($id: ID!, $input: ApprovalStatusInput!) {
+  approvalUpdateV2(id: $id, input: $input) {
+    id
+    status
+    createdAt
+    updatedAt
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "__typename": "WorkflowBulkExcelTask",
+  "id": "bulk-excel-1111-111111111111",
+  "name": "Import Excel Data",
+  "aspect": {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "name": "Test App"
+  },
+  "documentModel": {
+    "id": "doc-model-aaaa-aaaa-aaaaaaaaaaaa",
+    "name": "Excel Template"
+  },
+  "attachmentReference": {
+    "triggerReference": {
+      "name": "Attachments"
+    }
+  },
+  "strict": false
+}

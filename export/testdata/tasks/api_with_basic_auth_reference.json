@@ -1,0 +1,22 @@
+{
+  "__typename": "WorkflowApiTask",
+  "id": "api-task-basic-ref-555555",
+  "name": "Basic Auth Reference Request",
+  "method": "GET",
+  "urlReference": {
+    "value": "https://api.example.com/basic-secure"
+  },
+  "authorization": {
+    "__typename": "ApiBasicAuthorization",
+    "username": "admin",
+    "password": null,
+    "referencePassword": {
+      "triggerReference": {
+        "name": "record.password"
+      }
+    }
+  },
+  "headers": [],
+  "responseType": "JSON",
+  "continueOnError": false
+}

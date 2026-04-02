@@ -1,0 +1,23 @@
+{
+  "__typename": "WorkflowSwitchTask",
+  "id": "switch-task-1111-1111-111111111111",
+  "name": "Route By Priority",
+  "children": [
+    {
+      "__typename": "WorkflowSwitchCase",
+      "id": "case-1111-1111-1111-111111111111",
+      "name": "High Priority",
+      "filter": {
+        "type": "equals",
+        "fieldId": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+        "value": "HIGH"
+      }
+    },
+    {
+      "__typename": "WorkflowSwitchCase",
+      "id": "case-2222-2222-2222-222222222222",
+      "name": "Default",
+      "filter": null
+    }
+  ]
+}
