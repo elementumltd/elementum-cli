@@ -32,7 +32,7 @@ const (
 	RepoOwner = "elementumltd"
 
 	// RepoName is the GitHub repository name
-	RepoName = "terraform-provider-elementum"
+	RepoName = "elementum-cli"
 
 	// AssetPrefix is the prefix for CLI release assets
 	AssetPrefix = "ei_"

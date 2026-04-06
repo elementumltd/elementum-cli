@@ -1,0 +1,41 @@
+# Copyright 2026 Elementum Ltd. All Rights Reserved.
+# Licensed under the Apache License, Version 2.0
+
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
+    commit-message:
+      prefix: "chore(deps):"
+    open-pull-requests-limit: 10
+    groups:
+      go-minor-patch:
+        update-types:
+          - minor
+          - patch
+      go-major:
+        update-types:
+          - major
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
+    commit-message:
+      prefix: "chore(deps):"
+    groups:
+      actions-minor-patch:
+        update-types:
+          - minor
+          - patch
+      actions-major:
+        update-types:
+          - major
