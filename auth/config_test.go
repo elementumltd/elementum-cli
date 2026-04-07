@@ -435,7 +435,7 @@ func TestSaveAndLoadConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create config in temp dir
 	configPath := filepath.Join(tempDir, "config.yaml")

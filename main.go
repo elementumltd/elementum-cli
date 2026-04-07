@@ -51,7 +51,7 @@ making it easy to manage your Elementum apps with Infrastructure as Code.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Show the banner when no subcommand is provided
 		fmt.Println(ui.RenderBanner(version))
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 

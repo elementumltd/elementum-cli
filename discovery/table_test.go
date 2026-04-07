@@ -15,6 +15,7 @@
 package discovery
 
 import (
+	"context"
 	"testing"
 )
 
@@ -316,7 +317,7 @@ func TestFetchTableRelatedResources_RequiresCloudLinkName(t *testing.T) {
 		// CloudLinkName intentionally not set
 	}
 
-	_, err := FetchTableRelatedResources(nil, nil, table)
+	_, err := FetchTableRelatedResources(context.TODO(), nil, table)
 	if err == nil {
 		t.Error("Expected error when CloudLinkName is empty but CloudLinkID is set")
 	}
@@ -335,7 +336,7 @@ func TestFetchTableRelatedResources_WithValidCloudLink(t *testing.T) {
 		CloudLinkName: "Production Snowflake",
 	}
 
-	resources, err := FetchTableRelatedResources(nil, nil, table)
+	resources, err := FetchTableRelatedResources(context.TODO(), nil, table)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -362,7 +363,7 @@ func TestFetchTableRelatedResources_NoCloudLink(t *testing.T) {
 		// No CloudLinkID
 	}
 
-	resources, err := FetchTableRelatedResources(nil, nil, table)
+	resources, err := FetchTableRelatedResources(context.TODO(), nil, table)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -373,7 +374,7 @@ func TestFetchTableRelatedResources_NoCloudLink(t *testing.T) {
 }
 
 func TestFetchTableRelatedResources_NilTable(t *testing.T) {
-	resources, err := FetchTableRelatedResources(nil, nil, nil)
+	resources, err := FetchTableRelatedResources(context.TODO(), nil, nil)
 	if err != nil {
 		t.Fatalf("Unexpected error for nil table: %v", err)
 	}

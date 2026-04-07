@@ -43,7 +43,7 @@ func RenderAutomationHTML(cfg *AutomationConfig) error {
 		"Title":    cfg.AutomationName,
 		"DataJSON": string(data),
 	})
-	f.Close()
+	_ = f.Close()
 	if err != nil {
 		return fmt.Errorf("failed to render template: %w", err)
 	}

@@ -142,7 +142,7 @@ var approvalsListCmd = &cobra.Command{
 
 func init() {
 	approvalsListCmd.Flags().String("record-id", "", "Record ID to list approvals for (required)")
-	approvalsListCmd.MarkFlagRequired("record-id")
+	_ = approvalsListCmd.MarkFlagRequired("record-id")
 }
 
 func ptrToStr(s *string) string {

@@ -136,7 +136,7 @@ func runListAgentTools(cmd *cobra.Command, args []string) error {
 
 	for i, edge := range tools {
 		var tool map[string]interface{}
-		json.Unmarshal(edge.Node, &tool)
+		_ = json.Unmarshal(edge.Node, &tool)
 
 		fmt.Printf("%d. %s (%s)\n", i+1, tool["name"], tool["__typename"])
 		fmt.Printf("   ID: %s\n", tool["id"])

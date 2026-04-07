@@ -167,13 +167,13 @@ func runDataminesExport(cmd *cobra.Command, args []string) error {
 	beautify, _ := cmd.Flags().GetBool("beautify")
 
 	if verbose {
-		os.Setenv("DEBUG_GRAPHQL", "1")
+		_ = os.Setenv("DEBUG_GRAPHQL", "1")
 	}
 
 	// Set GraphQL debug mode when log level is debug or trace
 	level := logger.GetCurrentLevel()
 	if level == logger.LevelDebug || level == logger.LevelTrace {
-		os.Setenv("DEBUG_GRAPHQL", "1")
+		_ = os.Setenv("DEBUG_GRAPHQL", "1")
 	}
 
 	// Get authenticated client

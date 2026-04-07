@@ -165,19 +165,19 @@ func (ec *ErrorCollector) Summary() string {
 	}
 
 	if fatals > 0 {
-		sb.WriteString(fmt.Sprintf("\n✗ Export encountered %d fatal error(s):\n", fatals))
+		fmt.Fprintf(&sb, "\n✗ Export encountered %d fatal error(s):\n", fatals)
 		for _, e := range ec.errors {
 			if e.Severity == SeverityFatal {
-				sb.WriteString(fmt.Sprintf("  • [%s] %s: %v\n", e.Phase, e.Resource, e.Err))
+				fmt.Fprintf(&sb, "  • [%s] %s: %v\n", e.Phase, e.Resource, e.Err)
 			}
 		}
 	}
 
 	if warnings > 0 {
-		sb.WriteString(fmt.Sprintf("\n⚠ Export encountered %d warning(s):\n", warnings))
+		fmt.Fprintf(&sb, "\n⚠ Export encountered %d warning(s):\n", warnings)
 		for _, e := range ec.errors {
 			if e.Severity == SeverityWarning {
-				sb.WriteString(fmt.Sprintf("  • [%s] %s: %v\n", e.Phase, e.Resource, e.Err))
+				fmt.Fprintf(&sb, "  • [%s] %s: %v\n", e.Phase, e.Resource, e.Err)
 			}
 		}
 	}

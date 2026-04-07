@@ -352,7 +352,7 @@ func runAppsExport(cmd *cobra.Command, args []string) error {
 	// Set GraphQL debug mode when log level is debug or trace
 	level := logger.GetCurrentLevel()
 	if level == logger.LevelDebug || level == logger.LevelTrace {
-		os.Setenv("DEBUG_GRAPHQL", "1")
+		_ = os.Setenv("DEBUG_GRAPHQL", "1")
 	}
 
 	// Create error collector for structured error tracking

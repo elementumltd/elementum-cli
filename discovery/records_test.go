@@ -15,6 +15,7 @@
 package discovery
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 )
@@ -389,7 +390,7 @@ func TestDeleteRecords(t *testing.T) {
 	t.Parallel()
 
 	// Test the DeleteRecords batch function with empty list
-	deleted, errors := DeleteRecords(nil, nil, []string{})
+	deleted, errors := DeleteRecords(context.TODO(), nil, []string{})
 	if deleted != 0 {
 		t.Errorf("expected 0 deleted, got %d", deleted)
 	}

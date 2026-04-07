@@ -108,9 +108,10 @@ func runFunctionsListCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		fnType := fn.Type
-		if fnType == "PROCEDURE" {
+		switch fnType {
+		case "PROCEDURE":
 			fnType = "Procedure"
-		} else if fnType == "USER_DEFINED_FUNCTION" {
+		case "USER_DEFINED_FUNCTION":
 			fnType = "UDF"
 		}
 
