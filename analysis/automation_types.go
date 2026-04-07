@@ -523,19 +523,6 @@ type basicTaskInfo interface {
 	GetName() *string
 }
 
-// convertBasicTasks converts CLITaskBasic tasks (level 2+, no further nesting)
-func convertBasicTasks(tasks []client.CLITaskBasic, counter *indexCounter) []*AutomationNode {
-	if len(tasks) == 0 {
-		return nil
-	}
-
-	var nodes []*AutomationNode
-	for _, t := range tasks {
-		nodes = append(nodes, makeBasicNode(t, counter))
-	}
-	return nodes
-}
-
 // makeBasicNode creates a basic AutomationNode from any task with basic info
 func makeBasicNode(t basicTaskInfo, counter *indexCounter) *AutomationNode {
 	taskType := mapTaskTypename(t.GetTypename())

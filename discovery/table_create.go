@@ -560,11 +560,11 @@ func GenerateTerraformHCL(resolved *ResolvedConfig) string {
 
 	// Generate CloudLink data sources
 	for clName, tfName := range cloudlinkDataSources {
-		sb.WriteString(fmt.Sprintf(`data "elementum_cloudlink" "%s" {
+		fmt.Fprintf(&sb, `data "elementum_cloudlink" "%s" {
   name = %q
 }
 
-`, tfName, clName))
+`, tfName, clName)
 	}
 
 	// Generate base tables for CloudLink sources
@@ -588,7 +588,7 @@ func generateBaseTableHCL(source *ResolvedSource, categoryID string, cloudlinkTf
 	tableName := source.CloudLinkPath.Table
 	tfName := source.TerraformName
 
-	sb.WriteString(fmt.Sprintf(`resource "elementum_table" "%s" {
+	fmt.Fprintf(&sb, `resource "elementum_table" "%s" {
   category_id = %q
   source_id   = data.elementum_cloudlink.%s.id
   name        = %q
@@ -601,19 +601,19 @@ func generateBaseTableHCL(source *ResolvedSource, categoryID string, cloudlinkTf
 
   fields = [
 `, tfName, categoryID, cloudlinkTfName, tableName, strings.ToLower(tableName),
-		cloudlinkTfName, source.CloudLinkPath.Database, source.CloudLinkPath.Schema, source.CloudLinkPath.Table))
+		cloudlinkTfName, source.CloudLinkPath.Database, source.CloudLinkPath.Schema, source.CloudLinkPath.Table)
 
 	for i, f := range source.Fields {
 		comma := ","
 		if i == len(source.Fields)-1 {
 			comma = ""
 		}
-		sb.WriteString(fmt.Sprintf(`    {
+		fmt.Fprintf(&sb, `    {
       name              = %q
       cloud_column_name = %q
       cloud_type        = %q
     }%s
-`, f.Name, f.Name, f.CloudType, comma))
+`, f.Name, f.Name, f.CloudType, comma)
 	}
 
 	sb.WriteString(`  ]
@@ -631,16 +631,16 @@ func generateJoinTableHCL(resolved *ResolvedConfig, cloudlinkDataSources map[str
 	// Determine source_id reference
 	sourceRef := getSourceRef(resolved.PrimarySource, cloudlinkDataSources)
 
-	sb.WriteString(fmt.Sprintf(`resource "elementum_table" "%s" {
+	fmt.Fprintf(&sb, `resource "elementum_table" "%s" {
   category_id = %q
   source_id   = %s
   name        = %q
   handle      = %q
-`, tfName, resolved.CategoryID, sourceRef, config.Name, config.Handle))
+`, tfName, resolved.CategoryID, sourceRef, config.Name, config.Handle)
 
 	if config.Description != "" {
-		sb.WriteString(fmt.Sprintf(`  description = %q
-`, config.Description))
+		fmt.Fprintf(&sb, `  description = %q
+`, config.Description)
 	}
 
 	// Generate fields
@@ -654,11 +654,11 @@ func generateJoinTableHCL(resolved *ResolvedConfig, cloudlinkDataSources map[str
 		source := resolved.Sources[f.SourceName]
 		fieldRef := getFieldRef(source, f, cloudlinkDataSources)
 
-		sb.WriteString(fmt.Sprintf(`    {
+		fmt.Fprintf(&sb, `    {
       name               = %q
       reference_field_id = %s
     }%s
-`, f.Alias, fieldRef, comma))
+`, f.Alias, fieldRef, comma)
 	}
 	sb.WriteString("  ]\n")
 
@@ -678,7 +678,7 @@ func generateJoinTableHCL(resolved *ResolvedConfig, cloudlinkDataSources map[str
 			leftFieldRef := findFieldRefByID(resolved, j.LeftFieldID, cloudlinkDataSources)
 			rightFieldRef := findFieldRefByID(resolved, j.RightFieldID, cloudlinkDataSources)
 
-			sb.WriteString(fmt.Sprintf(`    {
+			fmt.Fprintf(&sb, `    {
       type      = %q
       source_id = %s
       join_on = [
@@ -688,7 +688,7 @@ func generateJoinTableHCL(resolved *ResolvedConfig, cloudlinkDataSources map[str
         }
       ]
     }%s
-`, j.Type, joinSourceRef, leftFieldRef, rightFieldRef, comma))
+`, j.Type, joinSourceRef, leftFieldRef, rightFieldRef, comma)
 		}
 		sb.WriteString("  ]\n")
 	}

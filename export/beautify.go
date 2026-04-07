@@ -496,9 +496,10 @@ func buildUUIDMap(imports []ImportBlock, app *discovery.App) map[string]string {
 		}
 
 		dataSourceType := "data.elementum_app"
-		if relatedObj.Type == "Element" {
+		switch relatedObj.Type {
+		case "Element":
 			dataSourceType = "data.elementum_element"
-		} else if relatedObj.Type == "Task" {
+		case "Task":
 			dataSourceType = "data.elementum_task"
 		}
 
@@ -1240,7 +1241,6 @@ func stripReferenceFieldIDFromTableBlock(hcl string, resourceName string) string
 			braceCount--
 			if braceCount == 0 {
 				blockEnd = i + 1
-				break
 			}
 		}
 		if blockEnd != -1 {
@@ -1911,80 +1911,3 @@ func findDropdownFieldImports(imports []ImportBlock) []ImportBlock {
 	return dropdowns
 }
 
-// beautifyAutomationIDs applies ID resolution to all automation resources.
-//
-// Deprecated: This function is no longer called from PostProcessHCL because the IR pipeline's
-// ResolveUUIDs transform already handles UUID→reference resolution at the block level.
-// Kept for backward compatibility with any external callers.
-func beautifyAutomationIDs(hcl string, uuidMap map[string]string, imports []ImportBlock, automations []discovery.Automation) string {
-	// Resolve automation_id, parent_id, object_id, field_id references
-	for _, automation := range automations {
-		automationResourceName := ""
-		for _, imp := range imports {
-			if imp.ResourceType == "elementum_automation" && strings.Contains(imp.ID, automation.ID) {
-				automationResourceName = imp.ResourceName
-				break
-			}
-		}
-
-		// Beautify triggers
-		for _, trigger := range automation.Triggers {
-			hcl = beautifyTriggerIDs(hcl, &trigger, automationResourceName, uuidMap, imports)
-		}
-
-		// Beautify tasks
-		for _, task := range automation.Tasks {
-			hcl = beautifyTaskIDs(hcl, &task, uuidMap, imports)
-		}
-	}
-
-	return hcl
-}
-
-// beautifyTriggerIDs resolves IDs in a trigger resource block
-func beautifyTriggerIDs(hcl string, trigger *discovery.Trigger, automationResourceName string, uuidMap map[string]string, imports []ImportBlock) string {
-	triggerType := trigger.Type
-	resourceType := "elementum_" + triggerType + "_trigger"
-
-	triggerResourceName := ""
-	for _, imp := range imports {
-		if imp.ResourceType == resourceType && strings.HasSuffix(imp.ID, ":"+trigger.ID) {
-			triggerResourceName = imp.ResourceName
-			break
-		}
-	}
-	if triggerResourceName == "" {
-		return hcl
-	}
-
-	// Replace UUIDs with references in this specific resource block
-	for uuid, ref := range uuidMap {
-		hcl = strings.ReplaceAll(hcl, fmt.Sprintf("%q", uuid), ref)
-	}
-
-	return hcl
-}
-
-// beautifyTaskIDs resolves IDs in a task resource block
-func beautifyTaskIDs(hcl string, task *discovery.Task, uuidMap map[string]string, imports []ImportBlock) string {
-	taskType := task.Type
-	resourceType := "elementum_" + taskType + "_task"
-
-	taskResourceName := ""
-	for _, imp := range imports {
-		if imp.ResourceType == resourceType && strings.HasSuffix(imp.ID, ":"+task.ID) {
-			taskResourceName = imp.ResourceName
-			break
-		}
-	}
-	if taskResourceName == "" {
-		return hcl
-	}
-
-	// Replace UUIDs with references in this specific resource block
-	for uuid, ref := range uuidMap {
-		hcl = strings.ReplaceAll(hcl, fmt.Sprintf("%q", uuid), ref)
-	}
-
-	return hcl
-}

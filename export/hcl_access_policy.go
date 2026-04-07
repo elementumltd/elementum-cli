@@ -125,7 +125,7 @@ func (g *AccessPolicyHCLGenerator) GenerateAccessPolicyIR(policy *discovery.Acce
 	b.SetAttr("object_id", Ref("elementum_app."+appResourceName+".id"))
 
 	// Generate filter - if policy has a filter, convert it; otherwise use default "true" filter
-	if policy.Filter != nil && len(policy.Filter) > 0 {
+	if len(policy.Filter) > 0 {
 		filterVal := GenerateFilterIR(policy.Filter, g.uuidMap)
 		if filterVal != nil {
 			b.SetAttr("filter", filterVal)

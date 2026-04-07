@@ -202,7 +202,7 @@ func (s *ExecutionServer) handleActionIO(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	_ = json.NewEncoder(w).Encode(result)
 }
 
 func truncateID(id string, length int) string {

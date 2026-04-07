@@ -46,9 +46,10 @@ func convertStoredFunctionData(sf *client.StoredFunctionData) StoredFunction {
 
 	// Convert return type
 	if sf.Output != nil {
-		if sf.Output.OutputType == "simple" {
+		switch sf.Output.OutputType {
+		case "simple":
 			result.ReturnType = sf.Output.ReturnType
-		} else if sf.Output.OutputType == "table" {
+		case "table":
 			result.ReturnType = "TABLE"
 		}
 	}

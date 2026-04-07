@@ -30,13 +30,6 @@ import (
 // CLI-specific queries for discovering app resources
 // Note: Trigger and task type registries are now shared via internal/client package
 
-// getAppAutomationsWithWorkflowsQuery returns the query for fetching app automations
-// with complete trigger and task fragments from the shared registries.
-// NOTE: This query can timeout on large apps. Consider using the two-phase approach instead.
-func getAppAutomationsWithWorkflowsQuery() string {
-	return client.BuildAppAutomationsQuery()
-}
-
 // extractTriggerFromDiscovery converts genqlient DiscoveryTriggerFields to Trigger
 // This is a lightweight extraction that only populates fields available in the discovery fragment.
 func extractTriggerFromDiscovery(trigger client.DiscoveryTriggerFields) Trigger {
@@ -1340,7 +1333,6 @@ func getAppFields(ctx context.Context, c *client.Client, app *App) error {
 	type fieldInfo struct {
 		index            int
 		isStaticPicklist bool
-		relatedAspectID  string // for dynamic picklists
 	}
 	var staticPicklistFields []fieldInfo
 	dynamicAspectIDs := make(map[string]bool)
@@ -1898,119 +1890,6 @@ func extractWorkflowData(result map[string]interface{}) map[string]interface{} {
 		return nil
 	}
 	return workflow
-}
-
-// extractTrigger extracts a Trigger from the raw GraphQL response, including all type-specific fields
-func extractTrigger(triggerData map[string]interface{}) Trigger {
-	triggerType := mapTriggerType(getString(triggerData, "__typename"))
-
-	t := Trigger{
-		ID:      getString(triggerData, "id"),
-		Type:    triggerType,
-		Name:    triggerType, // Use type as name since triggers don't have explicit names
-		RawData: triggerData, // Store the full raw data for type-specific extraction
-	}
-
-	// Extract datamine ID for datamine triggers
-	if datamine, ok := triggerData["datamine"].(map[string]interface{}); ok && datamine != nil {
-		t.DatamineID = getString(datamine, "id")
-	}
-
-	return t
-}
-
-// extractTask extracts a Task from the raw GraphQL response, including all type-specific fields
-func extractTask(taskData map[string]interface{}, workflowID string) Task {
-	// Extract parent_id from previous task
-	parentID := ""
-	if previous, ok := taskData["previous"].(map[string]interface{}); ok && previous != nil {
-		parentID = getString(previous, "id")
-	}
-
-	// Extract object_id from aspect
-	objectID := ""
-	if aspect, ok := taskData["aspect"].(map[string]interface{}); ok && aspect != nil {
-		objectID = getString(aspect, "id")
-	}
-
-	// Extract related_object_id from relatedAspect (for find_related_records task)
-	relatedObjectID := ""
-	if relatedAspect, ok := taskData["relatedAspect"].(map[string]interface{}); ok && relatedAspect != nil {
-		relatedObjectID = getString(relatedAspect, "id")
-	}
-
-	// Extract document_model_id from documentModel (for ai_file_read and bulk_excel tasks)
-	documentModelID := ""
-	if documentModel, ok := taskData["documentModel"].(map[string]interface{}); ok && documentModel != nil {
-		documentModelID = getString(documentModel, "id")
-	}
-
-	// Extract dynamic_category_source aspect ID from categorySource (for ai_classify task)
-	dynamicCategoryAspectID := ""
-	if categorySource, ok := taskData["categorySource"].(map[string]interface{}); ok && categorySource != nil {
-		if typename := getString(categorySource, "__typename"); typename == "AiClassifyCategoryDynamicSource" {
-			if aspect, ok := categorySource["aspect"].(map[string]interface{}); ok && aspect != nil {
-				dynamicCategoryAspectID = getString(aspect, "id")
-			}
-		}
-	}
-
-	// Extract AI provider connector info for AI tasks (ai_file_read, ai_classify, ai_summarize, etc.)
-	var aiProviderConnectorID, aiProviderConnectorModelName, aiProviderConnectorProvider string
-	if aiConnector, ok := taskData["aiProviderConnector"].(map[string]interface{}); ok && aiConnector != nil {
-		aiProviderConnectorID = getString(aiConnector, "id")
-		if model, ok := aiConnector["model"].(map[string]interface{}); ok && model != nil {
-			aiProviderConnectorModelName = getString(model, "name")
-		}
-		if provider, ok := aiConnector["provider"].(map[string]interface{}); ok && provider != nil {
-			aiProviderConnectorProvider = getString(provider, "name")
-		}
-	}
-
-	// Extract stored function info for procedure tasks
-	var storedFunctionID, storedFunctionName, cloudLinkID string
-	if storedFunction, ok := taskData["storedFunction"].(map[string]interface{}); ok && storedFunction != nil {
-		storedFunctionID = getString(storedFunction, "id")
-		storedFunctionName = getString(storedFunction, "displayName")
-		if storedFunctionName == "" {
-			storedFunctionName = getString(storedFunction, "name")
-		}
-	}
-	// Extract cloudLinkId for procedure tasks
-	cloudLinkID = getString(taskData, "cloudLinkId")
-
-	// Extract field IDs from workflowFields
-	var fieldIDs []string
-	if wfFields, ok := taskData["workflowFields"].([]interface{}); ok {
-		fieldIDs = make([]string, 0, len(wfFields))
-		for _, wfInterface := range wfFields {
-			if wf, ok := wfInterface.(map[string]interface{}); ok {
-				if field, ok := wf["field"].(map[string]interface{}); ok {
-					fieldIDs = append(fieldIDs, getString(field, "id"))
-				}
-			}
-		}
-	}
-
-	return Task{
-		ID:                           getString(taskData, "id"),
-		Type:                         determineTaskType(taskData),
-		Name:                         getString(taskData, "name"),
-		WorkflowID:                   workflowID,
-		ParentID:                     parentID,
-		ObjectID:                     objectID,
-		RelatedObjectID:              relatedObjectID,
-		DocumentModelID:              documentModelID,
-		DynamicCategoryAspectID:      dynamicCategoryAspectID,
-		FieldIDs:                     fieldIDs,
-		RawData:                      taskData, // Store the full raw data for type-specific extraction
-		AiProviderConnectorID:        aiProviderConnectorID,
-		AiProviderConnectorModelName: aiProviderConnectorModelName,
-		AiProviderConnectorProvider:  aiProviderConnectorProvider,
-		StoredFunctionID:             storedFunctionID,
-		StoredFunctionName:           storedFunctionName,
-		CloudLinkID:                  cloudLinkID,
-	}
 }
 
 // getString safely extracts a string from a map

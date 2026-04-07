@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GO_VERSION: "1.25.5"
+  GO_VERSION: "1.25.8"
 
 jobs:
   # ---------- 1. License header check (shell-only, cheapest) ----------

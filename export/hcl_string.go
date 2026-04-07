@@ -127,9 +127,10 @@ func escapeHCLStringWithInterpolations(s string) string {
 
 		// Track brace depth in interpolation
 		if inInterpolation {
-			if c == '{' {
+			switch c {
+			case '{':
 				braceDepth++
-			} else if c == '}' {
+			case '}':
 				braceDepth--
 				if braceDepth == 0 {
 					inInterpolation = false
@@ -158,11 +159,4 @@ func escapeHCLStringWithInterpolations(s string) string {
 
 	result.WriteString(`"`)
 	return result.String()
-}
-
-// escapeHCLString properly escapes all special characters in a string
-// for double-quoted HCL format.
-func escapeHCLString(s string) string {
-	// Use Go's %q format which handles all escaping correctly
-	return fmt.Sprintf("%q", s)
 }

@@ -286,7 +286,7 @@ func (c *Client) refreshToken(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to execute oauth request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -443,7 +443,7 @@ func (c *Client) Execute(ctx context.Context, query string, variables map[string
 		}
 
 		body, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if err != nil {
 			return nil, fmt.Errorf("failed to read response: %w", err)
 		}
@@ -547,7 +547,7 @@ func (c *Client) ExecuteWithWarnings(ctx context.Context, query string, variable
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to execute request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

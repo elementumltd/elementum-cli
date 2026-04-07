@@ -141,7 +141,7 @@ func (g *GenqlientClient) MakeRequest(
 		}
 
 		body, err := io.ReadAll(httpResp.Body)
-		httpResp.Body.Close()
+		_ = httpResp.Body.Close()
 		if err != nil {
 			return fmt.Errorf("failed to read response: %w", err)
 		}
