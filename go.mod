@@ -4,7 +4,7 @@ go 1.25.5
 
 require (
 	github.com/Khan/genqlient v0.8.1
-	github.com/charmbracelet/huh v0.8.0
+	github.com/charmbracelet/huh v1.0.0
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/creativeprojects/go-selfupdate v1.5.2
 	github.com/google/uuid v1.6.0
