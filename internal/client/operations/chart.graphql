@@ -1,0 +1,95 @@
+# Chart queries and mutations
+
+# Chart fragments
+fragment ChartInfo on Chart {
+  id
+  name
+  type
+  target
+  template
+  properties {
+    beginAtZero
+    fill
+    horizontal
+    legend
+    stacked
+    target
+  }
+  subscriptions {
+    datasourceId
+    filter
+    sort
+    limit
+    tags
+    columns {
+      columnId
+      aggregation
+      name
+      value
+      valueType
+      expression
+    }
+    groupBys {
+      columnId
+      expression
+    }
+    joins {
+      datasourceId
+      leftColumnId
+      rightColumnId
+      leftExpression
+      rightExpression
+      type
+    }
+  }
+}
+
+# Chart Queries
+query GetChart($id: ID!) {
+  organization {
+    chart(id: $id) {
+      ...ChartInfo
+    }
+  }
+}
+
+query GetCharts($filter: Filter) {
+  organization {
+    charts(filter: $filter) {
+      edges {
+        node {
+          ...ChartInfo
+        }
+      }
+    }
+  }
+}
+
+# Chart Mutations
+mutation CreateChart($chart: ChartTemplateInput!) {
+  chartCreateFromTemplate(chart: $chart) {
+    ...ChartInfo
+  }
+}
+
+mutation UpdateChart($id: ID!, $chart: ChartInput!) {
+  chartUpdate(id: $id, chart: $chart) {
+    ...ChartInfo
+  }
+}
+
+mutation DeleteChart($id: ID!) {
+  chartDelete(id: $id)
+}
+
+mutation UpdateChartTarget($id: ID!, $target: Float!) {
+  chartTargetUpdate(id: $id, target: $target) {
+    ...ChartInfo
+  }
+}
+
+mutation DeleteChartTarget($id: ID!) {
+  chartTargetDelete(id: $id) {
+    ...ChartInfo
+  }
+}

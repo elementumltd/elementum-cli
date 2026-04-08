@@ -1,0 +1,101 @@
+# Relationship (AutoRelation) mutations
+
+mutation CreateAutoRelation($input: AutoRelationInput!) {
+  aspectAutoRelationCreate(input: $input) {
+    id
+    filter
+    aspect {
+      id
+      name
+    }
+    columns {
+      aspectField {
+        id
+        name
+      }
+      relatedAspectTableField {
+        __typename
+        ... on AspectField {
+          aspectFieldId: id
+          aspectFieldName: name
+        }
+        ... on TableField {
+          tableFieldId: id
+          tableFieldName: name
+        }
+      }
+    }
+    # @genqlient(typename: "CreateAutoRelationTarget")
+    relatedAspectTable {
+      __typename
+      ... on AspectApp {
+        appId: id
+        appName: name
+      }
+      ... on AspectElement {
+        elementId: id
+        elementName: name
+      }
+      ... on AspectTask {
+        taskId: id
+        taskName: name
+      }
+      ... on Table {
+        tableId: id
+        tableName: name
+      }
+    }
+  }
+}
+
+mutation UpdateAutoRelation($id: ID!, $input: AutoRelationUpdateInput!) {
+  aspectAutoRelationUpdate(id: $id, input: $input) {
+    id
+    filter
+    aspect {
+      id
+      name
+    }
+    columns {
+      aspectField {
+        id
+        name
+      }
+      relatedAspectTableField {
+        __typename
+        ... on AspectField {
+          aspectFieldId: id
+          aspectFieldName: name
+        }
+        ... on TableField {
+          tableFieldId: id
+          tableFieldName: name
+        }
+      }
+    }
+    # @genqlient(typename: "UpdateAutoRelationTarget")
+    relatedAspectTable {
+      __typename
+      ... on AspectApp {
+        appId: id
+        appName: name
+      }
+      ... on AspectElement {
+        elementId: id
+        elementName: name
+      }
+      ... on AspectTask {
+        taskId: id
+        taskName: name
+      }
+      ... on Table {
+        tableId: id
+        tableName: name
+      }
+    }
+  }
+}
+
+mutation DeleteAutoRelation($id: ID!) {
+  aspectAutoRelationDelete(id: $id)
+}

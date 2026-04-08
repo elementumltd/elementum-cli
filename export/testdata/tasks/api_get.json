@@ -1,0 +1,11 @@
+{
+  "__typename": "WorkflowApiTask",
+  "id": "api-task-1111-111111111111",
+  "name": "GET Request",
+  "method": "GET",
+  "url": {
+    "staticValue": "https://api.example.com/users"
+  },
+  "body": null,
+  "headers": []
+}

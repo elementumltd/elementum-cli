@@ -1,0 +1,119 @@
+# AI Search Table queries and mutations
+
+# Fragment for AspectSearchTable common fields (legacy, without status/errorMessage)
+fragment AspectSearchTableFields on AspectSearchTable {
+  __typename
+  id
+  field {
+    id
+    name
+  }
+  aiProviderConnector {
+    id
+  }
+  attributeFields {
+    id
+    name
+  }
+  duration
+  targetLag
+  warehouse
+  aspect {
+    id
+  }
+}
+
+# Extended fragment with status/errorMessage for V3 API
+fragment AspectSearchTableFieldsV3 on AspectSearchTable {
+  __typename
+  id
+  status
+  errorMessage
+  field {
+    id
+    name
+  }
+  aiProviderConnector {
+    id
+  }
+  attributeFields {
+    id
+    name
+  }
+  duration
+  targetLag
+  warehouse
+  aspect {
+    id
+  }
+}
+
+# Create a search table (async) - returns an async task that must be polled
+mutation CreateAspectSearchTable($aspectId: ID!, $input: AspectSearchTableCreateInput!) {
+  aspectSearchTableCreateV2(aspectId: $aspectId, input: $input) {
+    id
+    status
+    name
+    errors
+    completedAt
+    createdAt
+    searchTable {
+      ...AspectSearchTableFields
+    }
+  }
+}
+
+# Delete a search table
+mutation DeleteAspectSearchTable($id: ID!) {
+  aspectSearchTableDelete(id: $id) {
+    id
+  }
+}
+
+# Update a search table
+mutation UpdateAspectSearchTable($id: ID!, $input: AspectSearchTableUpdateInput!) {
+  aspectSearchTableUpdate(id: $id, input: $input) {
+    ...AspectSearchTableFieldsV3
+  }
+}
+
+# Create V3 - synchronous with status
+mutation CreateAspectSearchTableV3($aspectId: ID!, $input: AspectSearchTableCreateInput!) {
+  aspectSearchTableCreateV3(aspectId: $aspectId, input: $input) {
+    ...AspectSearchTableFieldsV3
+  }
+}
+
+# Refresh status from Snowflake
+mutation RefreshAspectSearchTableStatus($id: ID!) {
+  aspectSearchTableRefreshStatus(id: $id) {
+    ...AspectSearchTableFieldsV3
+  }
+}
+
+# Retry failed creation (idempotent)
+mutation RetryAspectSearchTable($id: ID!) {
+  aspectSearchTableRetry(id: $id) {
+    ...AspectSearchTableFieldsV3
+  }
+}
+
+# Get a single search table by ID through the aspect
+# Note: searchTable(id:) is on AspectApp and AspectElement, not Organization
+query GetAspectSearchTableById($aspectId: ID!, $searchTableId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      ... on AspectApp {
+        searchTable(id: $searchTableId) {
+          ...AspectSearchTableFieldsV3
+        }
+      }
+      ... on AspectElement {
+        searchTable(id: $searchTableId) {
+          ...AspectSearchTableFieldsV3
+        }
+      }
+    }
+  }
+}

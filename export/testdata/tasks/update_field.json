@@ -1,0 +1,15 @@
+{
+  "__typename": "WorkflowUpdateFieldTask",
+  "id": "update-field-1111-111111111111",
+  "name": "Update Record Status",
+  "aspect": {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "name": "Test App"
+  },
+  "recordReference": {
+    "triggerReference": {
+      "name": "record.id"
+    }
+  },
+  "workflowFields": []
+}

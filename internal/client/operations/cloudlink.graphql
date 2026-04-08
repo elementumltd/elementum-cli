@@ -1,0 +1,180 @@
+# CloudLink queries
+
+query GetCloudLink($id: ID!) {
+  organization {
+    cloudLink(id: $id) {
+      id
+      name
+      cache
+      encryptCache
+      system
+      usageType
+      valid
+      __typename
+      ... on CloudLinkApi {
+        baseUrl
+      }
+    ... on CloudLinkBigQuery {
+      projectId
+      datasetId
+      location
+      readOnly
+      bigQuerySchedule: schedule {
+        interval
+        unit
+      }
+    }
+    ... on CloudLinkDatabricks {
+      hostname
+      port
+      database
+      schema
+      readOnly
+      databricksSchedule: schedule {
+        interval
+        unit
+      }
+    }
+    ... on CloudLinkElementumSnowflake {
+      accountIdentifier
+      warehouseSize
+      elementumSnowflakeSchedule: schedule {
+        interval
+        unit
+      }
+    }
+    ... on CloudLinkSnowflake {
+      url
+      account
+      warehouse
+      role
+      createDatabase
+      createSchema
+      readOnly
+      gzip
+      snowflakeSchedule: schedule {
+        interval
+        unit
+      }
+    }
+    }
+  }
+}
+
+query ListCloudLinks {
+  organization {
+    cloudLinks {
+      edges {
+        node {
+          id
+          name
+          cache
+          encryptCache
+          system
+          usageType
+          valid
+          __typename
+        }
+      }
+    }
+  }
+}
+
+# Queries for exploring Snowflake hierarchy (databases, schemas, tables)
+
+query ListSnowflakeDatabases($cloudLinkId: ID!) {
+  organization {
+    cloudLink(id: $cloudLinkId) {
+      id
+      name
+      __typename
+      ... on CloudLinkSnowflake {
+        databases { name owner comment }
+      }
+      ... on CloudLinkElementumSnowflake {
+        databases { name owner comment }
+      }
+    }
+  }
+}
+
+query ListSnowflakeSchemas($cloudLinkId: ID!) {
+  organization {
+    cloudLink(id: $cloudLinkId) {
+      id
+      name
+      __typename
+      ... on CloudLinkSnowflake {
+        schemas { name databaseName owner comment }
+      }
+      ... on CloudLinkElementumSnowflake {
+        schemas { name databaseName owner comment }
+      }
+    }
+  }
+}
+
+query ListSnowflakeTables($cloudLinkId: ID!) {
+  organization {
+    cloudLink(id: $cloudLinkId) {
+      id
+      name
+      __typename
+      ... on CloudLinkSnowflake {
+        tables { name databaseName schemaName type rows bytes }
+      }
+      ... on CloudLinkElementumSnowflake {
+        tables { name databaseName schemaName type rows bytes }
+      }
+    }
+  }
+}
+
+# Query to discover Snowflake table schema (columns) from a CloudLink
+query GetSnowflakeTableSchema($cloudLinkId: ID!, $databaseName: String!, $schemaName: String!, $tableName: String!) {
+  organization {
+    cloudLink(id: $cloudLinkId) {
+      id
+      name
+      __typename
+      ... on CloudLinkSnowflake {
+        table(databaseName: $databaseName, schemaName: $schemaName, tableName: $tableName) {
+          name
+          databaseName
+          schemaName
+          rows
+          bytes
+          type
+          columns {
+            name
+            databaseType
+            type
+            nullable
+            primaryKey
+            uniqueKey
+            comment
+          }
+        }
+      }
+      ... on CloudLinkElementumSnowflake {
+        table(databaseName: $databaseName, schemaName: $schemaName, tableName: $tableName) {
+          name
+          databaseName
+          schemaName
+          rows
+          bytes
+          type
+          columns {
+            name
+            databaseType
+            type
+            nullable
+            primaryKey
+            uniqueKey
+            comment
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,71 @@
+# Record Create Form queries and mutations
+# These manage the display blocks shown in the "New Record" dialog
+
+query GetRecordCreateDisplayBlocks($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      recordCreateDisplayBlocks {
+        edges {
+          node {
+            id
+            name
+            icon
+            color
+            displayOrder
+            displayLocation
+            hidden
+            sideNavItem
+            maxColumns
+            agent {
+              id
+            }
+            blocks {
+              edges {
+                node {
+                  __typename
+                  id
+                  displayOrder
+                  displayLocation
+                  hidden
+                  ... on AspectFieldDisplayBlock {
+                    field {
+                      id
+                      name
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+mutation CreateRecordDisplayBlock($aspectId: ID!, $input: AspectDisplayBlockRecordCreateInput!) {
+  aspectRecordDisplayBlockCreate(aspectId: $aspectId, input: $input) {
+    __typename
+    id
+    ... on AspectGroupDisplayBlock {
+      name
+      icon
+      color
+      displayOrder
+      displayLocation
+    }
+    ... on AspectFieldDisplayBlock {
+      field {
+        id
+      }
+      displayOrder
+    }
+  }
+}
+
+mutation DeleteRecordDisplayBlock($id: ID!) {
+  aspectRecordDisplayBlockDeleteV2(id: $id) {
+    id
+  }
+}

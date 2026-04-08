@@ -1,0 +1,7 @@
+{
+  "__typename": "WorkflowWebhookTrigger",
+  "id": "55555555-5555-5555-5555-555555555555",
+  "name": "Webhook Trigger",
+  "authenticated": false,
+  "webhookUrl": "https://app.elementum.io/webhook/55555555-5555-5555-5555-555555555555"
+}

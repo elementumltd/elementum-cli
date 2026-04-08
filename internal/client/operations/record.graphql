@@ -1,0 +1,44 @@
+# Record CRUD operations for elementum_record resource
+
+fragment RecordInfo on AspectRecord {
+  id
+  handle
+  title
+  data(format: ALL_BY_ID)
+  createdAt
+  updatedAt
+  url(relative: false)
+  aspect {
+    id
+  }
+}
+
+mutation CreateRecord($aspectId: ID!, $input: AspectRecordData!) {
+  aspectRecordCreate(aspectId: $aspectId, input: $input) {
+    ...RecordInfo
+  }
+}
+
+mutation CreateRecordWithAttachments($aspectId: ID!, $input: AspectRecordData!, $attachments: [AspectRecordAttachmentInput!]) {
+  aspectRecordCreate(aspectId: $aspectId, input: $input, attachments: $attachments) {
+    ...RecordInfo
+  }
+}
+
+mutation UpdateRecord($id: ID!, $input: AspectRecordData!) {
+  aspectRecordUpdate(id: $id, input: $input) {
+    ...RecordInfo
+  }
+}
+
+mutation DeleteRecord($id: ID!) {
+  aspectRecordDelete(id: $id)
+}
+
+query GetRecord($id: ID!) {
+  organization {
+    record(id: $id) {
+      ...RecordInfo
+    }
+  }
+}

@@ -1,0 +1,36 @@
+# Agentic Skill mutations
+
+mutation CreateAgenticSkill($input: AgenticSkillCreateInput!) {
+  agenticSkillCreate(input: $input) {
+    id
+    name
+    description
+    instructions
+    status
+    type
+    properties
+  }
+}
+
+mutation UpdateAgenticSkill($id: ID!, $input: AgenticSkillUpdateInput!) {
+  agenticSkillUpdate(id: $id, input: $input) {
+    id
+    name
+    description
+    instructions
+    status
+    type
+    properties
+  }
+}
+
+mutation DeleteAgenticSkill($id: ID!) {
+  agenticSkillDelete(id: $id) {
+    id
+  }
+}
+
+# Note: AgenticSkillTool mutations use the ExecuteInto pattern (raw GraphQL in
+# mutations.go) instead of genqlient, because the AgenticSkillTool interface has
+# no concrete implementations enumerated in the schema. See mutations.go for the
+# CreateAgenticSkillToolMutation, UpdateAgenticSkillToolMutation, etc.

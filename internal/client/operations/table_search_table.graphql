@@ -1,0 +1,127 @@
+# Table Search Table queries and mutations (semantic search on Tables)
+
+# Fragment for TableSearchTable common fields (legacy, without status/errorMessage)
+fragment TableSearchTableFields on TableSearchTable {
+  __typename
+  id
+  field {
+    id
+    name
+  }
+  aiProviderConnector {
+    id
+  }
+  attributeFields {
+    id
+    name
+  }
+  duration
+  targetLag
+  warehouse
+  table {
+    id
+  }
+}
+
+# Extended fragment with status/errorMessage for V2 API
+fragment TableSearchTableFieldsV2 on TableSearchTable {
+  __typename
+  id
+  status
+  errorMessage
+  field {
+    id
+    name
+  }
+  aiProviderConnector {
+    id
+  }
+  attributeFields {
+    id
+    name
+  }
+  duration
+  targetLag
+  warehouse
+  table {
+    id
+  }
+}
+
+# Create a table search table (async) - returns an async task that must be polled
+mutation CreateTableSearchTable($tableId: ID!, $input: TableSearchTableCreateInput!) {
+  tableSearchTableCreate(tableId: $tableId, input: $input) {
+    id
+    status
+    name
+    errors
+    completedAt
+    createdAt
+    searchTable {
+      ...TableSearchTableFields
+    }
+  }
+}
+
+# Update a table search table (mutable: duration, targetLag, warehouse)
+mutation UpdateTableSearchTable($id: ID!, $input: TableSearchTableUpdateInput!) {
+  tableSearchTableUpdate(id: $id, input: $input) {
+    ...TableSearchTableFieldsV2
+  }
+}
+
+# Delete a table search table
+mutation DeleteTableSearchTable($id: ID!) {
+  tableSearchTableDelete(id: $id) {
+    id
+  }
+}
+
+# Create V2 - synchronous with status
+mutation CreateTableSearchTableV2($tableId: ID!, $input: TableSearchTableCreateInput!) {
+  tableSearchTableCreateV2(tableId: $tableId, input: $input) {
+    ...TableSearchTableFieldsV2
+  }
+}
+
+# Refresh status from Snowflake
+mutation RefreshTableSearchTableStatus($id: ID!) {
+  tableSearchTableRefreshStatus(id: $id) {
+    ...TableSearchTableFieldsV2
+  }
+}
+
+# Retry failed creation (idempotent)
+mutation RetryTableSearchTable($id: ID!) {
+  tableSearchTableRetry(id: $id) {
+    ...TableSearchTableFieldsV2
+  }
+}
+
+# Get a single table search table by ID
+query GetTableSearchTableById($tableId: ID!, $searchTableId: ID!) {
+  organization {
+    table(id: $tableId) {
+      id
+      searchTable(id: $searchTableId) {
+        ...TableSearchTableFieldsV2
+      }
+    }
+  }
+}
+
+# Get all search tables for a table (for field-based lookup/recovery)
+query GetTableSearchTables($tableId: ID!) {
+  organization {
+    table(id: $tableId) {
+      id
+      searchTables {
+        edges {
+          node {
+            ...TableSearchTableFieldsV2
+          }
+        }
+      }
+    }
+  }
+}

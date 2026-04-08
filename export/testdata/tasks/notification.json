@@ -1,0 +1,12 @@
+{
+  "__typename": "WorkflowNotificationTask",
+  "id": "notification-1111-111111111111",
+  "name": "Send In-App Notification",
+  "message": {
+    "staticValue": "You have a new task to review."
+  },
+  "title": null,
+  "notifyWatchers": false,
+  "userValueReferences": [],
+  "groupValueReferences": []
+}

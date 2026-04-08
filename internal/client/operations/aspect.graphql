@@ -1,0 +1,603 @@
+# Aspect (App, Element, Task) queries
+
+query GetAspectDependencies($id: ID!) {
+  organization {
+    aspect(id: $id) {
+      id
+      name
+      __typename
+      usage {
+        automations {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+        agentTools {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+        fields {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+        relations {
+          edges {
+            node {
+              id
+              aspect {
+                id
+                name
+              }
+            }
+          }
+        }
+        searchTables {
+          edges {
+            node {
+              id
+              field {
+                name
+              }
+            }
+          }
+        }
+        agents {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+        tables {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+        datamines {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+        displayWidgets {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetAspectRequiredTags($aspectType: AspectType!) {
+  aspectRequiredTags(type: $aspectType) {
+    name
+    required
+    semanticTag
+    system
+    types
+  }
+}
+
+query CheckAspectAvailability($name: String!, $handle: String!, $namespace: String!) {
+  aspectNameAvailable(name: $name)
+  aspectHandleAvailable(handle: $handle)
+  aspectNamespaceAvailable(namespace: $namespace)
+}
+
+query SearchAspects($filter: Filter) {
+  organization {
+    id
+    aspects(filter: $filter) {
+      edges {
+        node {
+          id
+          name
+          __typename
+          ... on AspectApp {
+            namespace
+            handle
+          }
+          ... on AspectElement {
+            namespace
+            handle
+          }
+          ... on AspectTask {
+            namespace
+            handle
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetAspectType($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      __typename
+      id
+    }
+  }
+}
+
+query GetAspectInitiateStage($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        stages {
+          id
+          name
+        }
+      }
+      ... on AspectElement {
+        stages {
+          id
+          name
+        }
+      }
+      ... on AspectTask {
+        stages {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+
+query GetAspectFieldsAndWidgets($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      fields {
+        edges {
+          node {
+            id
+            name
+            ... on AspectField {
+              semanticTags
+            }
+          }
+        }
+      }
+      displayWidgets {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetElement($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      name
+      __typename
+      ... on AspectElement {
+        handle
+        namespace
+        description
+        icon
+        color
+        cloudLink {
+          id
+          name
+        }
+        cloudConnection {
+          __typename
+          readOnly
+          ... on SnowflakeConnection {
+            databaseName
+            schemaName
+            tableName
+          }
+        }
+        category {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+
+query GetTask($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      name
+      __typename
+      ... on AspectTask {
+        handle
+        namespace
+        description
+        icon
+        color
+        cloudLink {
+          id
+          name
+        }
+        category {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+
+# CLI-specific queries for app discovery
+
+query GetAppBasicInfo($appId: ID!) {
+  organization {
+    aspect(id: $appId) {
+      id
+      name
+      ... on AspectApp {
+        namespace
+        category {
+          id
+          name
+        }
+        cloudLink {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+
+query GetAspectStagesWithDisplayBlocks($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        stages {
+          id
+          name
+          displayBlocks {
+            edges {
+              node {
+                id
+                __typename
+                ... on AspectGroupDisplayBlock {
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetAspectDisplayWidgets($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        displayWidgets {
+          edges {
+            node {
+              __typename
+              id
+              name
+              ... on DisplayWidgetRelatedAspect {
+                aspect {
+                  id
+                }
+                columns
+                rows
+              }
+              ... on DisplayWidgetRelatedLinkAction {
+                aspect {
+                  id
+                }
+                buttonType
+                color
+                icon
+                fullWidth
+                columns
+                rows
+              }
+              ... on DisplayWidgetRelatedCreateAction {
+                aspect {
+                  id
+                }
+                buttonType
+                color
+                icon
+                fullWidth
+              }
+            }
+          }
+        }
+      }
+      ... on AspectElement {
+        displayWidgets {
+          edges {
+            node {
+              __typename
+              id
+              name
+              ... on DisplayWidgetRelatedAspect {
+                aspect {
+                  id
+                }
+                columns
+                rows
+              }
+              ... on DisplayWidgetRelatedLinkAction {
+                aspect {
+                  id
+                }
+                buttonType
+                color
+                icon
+                fullWidth
+                columns
+                rows
+              }
+              ... on DisplayWidgetRelatedCreateAction {
+                aspect {
+                  id
+                }
+                buttonType
+                color
+                icon
+                fullWidth
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetAspectFlowBlocks($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      name
+      ... on AspectApp {
+        stages {
+          id
+          name
+          flowBlock {
+            id
+            nodes {
+              id
+            }
+            edges {
+              id
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetAspectApprovalChainTemplates($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        approvalChainTemplates {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetRelatedAspect($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      name
+      __typename
+      ... on AspectApp {
+        namespace
+      }
+      ... on AspectElement {
+        namespace
+      }
+      fields {
+        edges {
+          node {
+            id
+            name
+            __typename
+            ... on AspectField {
+              semanticTags
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Lightweight query to get just the name of an aspect (for dynamic picklist config resolution)
+query GetAspectName($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      name
+    }
+  }
+}
+
+# Lightweight query to get just the storage type of an aspect (for hybrid table validation)
+query GetAspectStorageType($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      __typename
+      ... on AspectApp {
+        storageType
+      }
+      ... on AspectElement {
+        storageType
+      }
+    }
+  }
+}
+
+# Query to get detailed object information by namespace (for ei objects show command)
+query GetAspectDetails($namespace: String!) {
+  organization {
+    aspects(filter: {type: "EQUALS", field: "namespace", value: {type: "TEXT", value: $namespace}}) {
+      edges {
+        node {
+          id
+          name
+          __typename
+          ... on AspectApp {
+            namespace
+            handle
+            description
+            icon
+            color
+            sourceType
+            storageType
+            category { id name }
+            cloudLink { id name __typename }
+            cloudConnection {
+              readOnly
+              ... on SnowflakeConnection {
+                databaseName
+                schemaName
+                tableName
+              }
+            }
+          }
+          ... on AspectElement {
+            namespace
+            handle
+            description
+            icon
+            color
+            sourceType
+            storageType
+            category { id name }
+            cloudLink { id name __typename }
+            cloudConnection {
+              readOnly
+              ... on SnowflakeConnection {
+                databaseName
+                schemaName
+                tableName
+              }
+            }
+          }
+          ... on AspectTask {
+            namespace
+            handle
+            description
+            icon
+            color
+            sourceType
+            storageType
+            category { id name }
+            cloudLink { id name __typename }
+            cloudConnection {
+              readOnly
+              ... on SnowflakeConnection {
+                databaseName
+                schemaName
+                tableName
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Query search tables for an aspect (App, Element) by namespace
+query GetAspectSearchTablesByNamespace($namespace: String!) {
+  organization {
+    aspects(filter: {type: "EQUALS", field: "namespace", value: {type: "TEXT", value: $namespace}}) {
+      edges {
+        node {
+          id
+          name
+          __typename
+          ... on AspectApp {
+            namespace
+            searchTables {
+              edges {
+                node {
+                  id
+                  status
+                  errorMessage
+                  field {
+                    id
+                    name
+                  }
+                  attributeFields {
+                    id
+                    name
+                  }
+                }
+              }
+            }
+          }
+          ... on AspectElement {
+            namespace
+            searchTables {
+              edges {
+                node {
+                  id
+                  status
+                  errorMessage
+                  field {
+                    id
+                    name
+                  }
+                  attributeFields {
+                    id
+                    name
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

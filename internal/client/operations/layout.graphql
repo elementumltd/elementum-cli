@@ -1,0 +1,114 @@
+# Layout and Stage queries
+
+query GetStageLayout($aspectId: ID!, $stageId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      stage(id: $stageId) {
+        id
+        displayBlocks {
+          edges {
+            node {
+              id
+              __typename
+              displayOrder
+              displayLocation
+              sideNavItem
+              ... on AspectGroupDisplayBlock {
+                name
+                icon
+                color
+                blocks {
+                  edges {
+                    node {
+                      __typename
+                      ... on AspectFieldDisplayBlock {
+                        field {
+                          id
+                        }
+                      }
+                      ... on AspectWidgetDisplayBlock {
+                        widget {
+                          id
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              ... on AspectCommentsDisplayBlock {
+                channelNames {
+                  name
+                  channel
+                }
+                channels
+              }
+              ... on AspectRelatedTasksDisplayBlock {
+                id
+              }
+              ... on AspectRelatedItemsDisplayBlock {
+                id
+              }
+              ... on AspectRelatedCreateDisplayBlock {
+                relatedCreateName: name
+                modules {
+                  aspect {
+                    id
+                  }
+                  buttonName
+                  buttonIcon
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetDisplayWidget($aspectId: ID!, $widgetId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      displayWidget(id: $widgetId) {
+        __typename
+        id
+        name
+        ... on DisplayWidgetRelatedAspect {
+          aspect {
+            __typename
+            id
+          }
+          columns
+          filter
+          rows
+          sort
+        }
+        ... on DisplayWidgetRelatedLinkAction {
+          aspect {
+            __typename
+            id
+          }
+          buttonType
+          color
+          icon
+          fullWidth
+          columns
+          filter
+          rows
+          sort
+        }
+        ... on DisplayWidgetRelatedCreateAction {
+          aspect {
+            __typename
+            id
+          }
+          buttonType
+          color
+          icon
+          fullWidth
+        }
+      }
+    }
+  }
+}

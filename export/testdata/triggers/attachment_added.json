@@ -1,0 +1,9 @@
+{
+  "__typename": "WorkflowAttachmentTrigger",
+  "id": "33333333-3333-3333-3333-333333333333",
+  "name": "When Attachment Added",
+  "aspect": {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "name": "Test App"
+  }
+}

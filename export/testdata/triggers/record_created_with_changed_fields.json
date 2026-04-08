@@ -1,0 +1,13 @@
+{
+  "__typename": "WorkflowRecordCreateTrigger",
+  "id": "11111111-1111-1111-1111-111111111111",
+  "name": "When Record Created With Fields",
+  "aspect": {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "name": "Test App"
+  },
+  "changedFields": [
+    {"id": "ffffffff-ffff-ffff-ffff-ffffffffffff"},
+    {"id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"}
+  ]
+}

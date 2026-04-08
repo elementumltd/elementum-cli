@@ -1,0 +1,16 @@
+{
+  "__typename": "WorkflowApiTask",
+  "id": "api-task-bearer-22222222222",
+  "name": "Bearer Auth Request",
+  "method": "GET",
+  "urlReference": {
+    "value": "https://api.example.com/secure"
+  },
+  "authorization": {
+    "__typename": "ApiBearerAuthorization",
+    "token": "my-static-token-123"
+  },
+  "headers": [],
+  "responseType": "JSON",
+  "continueOnError": false
+}

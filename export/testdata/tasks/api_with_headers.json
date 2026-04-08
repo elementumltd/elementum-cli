@@ -1,0 +1,24 @@
+{
+  "__typename": "WorkflowApiTask",
+  "id": "api-task-4444-444444444444",
+  "name": "API with Headers",
+  "method": "GET",
+  "url": {
+    "staticValue": "https://api.example.com/secure"
+  },
+  "body": null,
+  "headers": [
+    {
+      "key": "Authorization",
+      "value": {
+        "staticValue": "Bearer token123"
+      }
+    },
+    {
+      "key": "X-Custom-Header",
+      "value": {
+        "staticValue": "custom-value"
+      }
+    }
+  ]
+}

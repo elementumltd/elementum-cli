@@ -1,0 +1,440 @@
+# Role and Access Policy queries
+
+query GetRoleByID($aspectId: ID!, $roleId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      __typename
+      ... on AspectApp {
+        role(id: $roleId) {
+          id
+          name
+          description
+          autoShare
+          managed
+          tags
+          permissions {
+            edges {
+              node {
+                permission
+                description
+                group {
+                  group
+                  name
+                }
+                level {
+                  level
+                  name
+                }
+              }
+            }
+          }
+          permissionsV2 {
+            edges {
+              node {
+                group {
+                  group
+                  name
+                }
+                level {
+                  level
+                  name
+                }
+                assignedPermissions {
+                  permission
+                  description
+                }
+              }
+            }
+          }
+          users(first: 1000) {
+            edges {
+              node {
+                id
+              }
+            }
+          }
+          groups(first: 1000) {
+            edges {
+              node {
+                id
+              }
+            }
+          }
+        }
+      }
+      ... on AspectElement {
+        role(id: $roleId) {
+          id
+          name
+          description
+          autoShare
+          managed
+          tags
+          permissions {
+            edges {
+              node {
+                permission
+                description
+                group {
+                  group
+                  name
+                }
+                level {
+                  level
+                  name
+                }
+              }
+            }
+          }
+          permissionsV2 {
+            edges {
+              node {
+                group {
+                  group
+                  name
+                }
+                level {
+                  level
+                  name
+                }
+                assignedPermissions {
+                  permission
+                  description
+                }
+              }
+            }
+          }
+          users(first: 1000) {
+            edges {
+              node {
+                id
+              }
+            }
+          }
+          groups(first: 1000) {
+            edges {
+              node {
+                id
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetRoles($aspectId: ID!, $filter: Filter) {
+  organization {
+    aspect(id: $aspectId) {
+      __typename
+      ... on AspectApp {
+        roles(filter: $filter, first: 1000) {
+          edges {
+            node {
+              id
+              name
+              description
+              autoShare
+              managed
+              tags
+              permissionsV2 {
+                edges {
+                  node {
+                    group {
+                      group
+                      name
+                    }
+                    level {
+                      level
+                      name
+                    }
+                  }
+                }
+              }
+              users {
+                total
+              }
+              groups {
+                total
+              }
+            }
+          }
+        }
+      }
+      ... on AspectElement {
+        roles(filter: $filter, first: 1000) {
+          edges {
+            node {
+              id
+              name
+              description
+              autoShare
+              managed
+              tags
+              permissionsV2 {
+                edges {
+                  node {
+                    group {
+                      group
+                      name
+                    }
+                    level {
+                      level
+                      name
+                    }
+                  }
+                }
+              }
+              users {
+                total
+              }
+              groups {
+                total
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# GetRolesWithMembers - returns roles with full user/group details for export
+query GetRolesWithMembers($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      __typename
+      ... on AspectApp {
+        roles(first: 1000) {
+          edges {
+            node {
+              id
+              name
+              description
+              autoShare
+              managed
+              tags
+              permissionsV2 {
+                edges {
+                  node {
+                    group {
+                      group
+                      name
+                    }
+                    level {
+                      level
+                      name
+                    }
+                    assignedPermissions {
+                      permission
+                      description
+                    }
+                  }
+                }
+              }
+              users(first: 1000) {
+                edges {
+                  node {
+                    id
+                    email
+                  }
+                }
+              }
+              groups(first: 1000) {
+                edges {
+                  node {
+                    id
+                    name
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      ... on AspectElement {
+        roles(first: 1000) {
+          edges {
+            node {
+              id
+              name
+              description
+              autoShare
+              managed
+              tags
+              permissionsV2 {
+                edges {
+                  node {
+                    group {
+                      group
+                      name
+                    }
+                    level {
+                      level
+                      name
+                    }
+                    assignedPermissions {
+                      permission
+                      description
+                    }
+                  }
+                }
+              }
+              users(first: 1000) {
+                edges {
+                  node {
+                    id
+                    email
+                  }
+                }
+              }
+              groups(first: 1000) {
+                edges {
+                  node {
+                    id
+                    name
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      ... on AspectTask {
+        roles(first: 1000) {
+          edges {
+            node {
+              id
+              name
+              description
+              autoShare
+              managed
+              tags
+              permissionsV2 {
+                edges {
+                  node {
+                    group {
+                      group
+                      name
+                    }
+                    level {
+                      level
+                      name
+                    }
+                    assignedPermissions {
+                      permission
+                      description
+                    }
+                  }
+                }
+              }
+              users(first: 1000) {
+                edges {
+                  node {
+                    id
+                    email
+                  }
+                }
+              }
+              groups(first: 1000) {
+                edges {
+                  node {
+                    id
+                    name
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetAccessPolicies($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      __typename
+      ... on AspectApp {
+        accessPolicies(first: 1000) {
+          edges {
+            node {
+              id
+              filter
+              users(first: 1000) {
+                edges {
+                  node {
+                    id
+                    email
+                  }
+                }
+              }
+              groups(first: 1000) {
+                edges {
+                  node {
+                    id
+                    name
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      ... on AspectElement {
+        accessPolicies(first: 1000) {
+          edges {
+            node {
+              id
+              filter
+              users(first: 1000) {
+                edges {
+                  node {
+                    id
+                    email
+                  }
+                }
+              }
+              groups(first: 1000) {
+                edges {
+                  node {
+                    id
+                    name
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      ... on AspectTask {
+        accessPolicies(first: 1000) {
+          edges {
+            node {
+              id
+              filter
+              users(first: 1000) {
+                edges {
+                  node {
+                    id
+                    email
+                  }
+                }
+              }
+              groups(first: 1000) {
+                edges {
+                  node {
+                    id
+                    name
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

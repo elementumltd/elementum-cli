@@ -1,0 +1,132 @@
+{
+  "id": "auto-chain-3333-333333333333",
+  "name": "Complex Task Chain Workflow",
+  "status": "ACTIVE",
+  "workflowId": "workflow-chain-3333-333333",
+  "hasPublished": true,
+  "triggers": [
+    {
+      "id": "trigger-3333-3333-3333-333333333333",
+      "type": "record_created",
+      "name": "When High Priority Created",
+      "rawData": {
+        "__typename": "WorkflowRecordCreateTrigger",
+        "id": "trigger-3333-3333-3333-333333333333",
+        "name": "When High Priority Created",
+        "aspect": {
+          "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "name": "Test App"
+        },
+        "filter": {
+          "type": "equals",
+          "fieldId": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+          "value": "HIGH"
+        }
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task-1-search-3333-333333333333",
+      "type": "record_search",
+      "name": "Search Related",
+      "parentId": "trigger-3333-3333-3333-333333333333",
+      "rawData": {
+        "__typename": "WorkflowRecordSearchTask",
+        "id": "task-1-search-3333-333333333333",
+        "name": "Search Related",
+        "aspect": {
+          "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+          "name": "Related App"
+        }
+      }
+    },
+    {
+      "id": "task-2-variable-3333-333333333333",
+      "type": "variable",
+      "name": "Set Counter",
+      "parentId": "task-1-search-3333-333333333333",
+      "rawData": {
+        "__typename": "WorkflowVariableTask",
+        "id": "task-2-variable-3333-333333333333",
+        "name": "Set Counter",
+        "variableName": "count",
+        "variableType": "NUMBER",
+        "valueReference": {
+          "taskReference": {
+            "taskId": "task-1-search-3333-333333333333",
+            "propertyPath": "count"
+          }
+        }
+      }
+    },
+    {
+      "id": "task-3-update-3333-333333333333",
+      "type": "update_field",
+      "name": "Update Status",
+      "parentId": "task-2-variable-3333-333333333333",
+      "rawData": {
+        "__typename": "WorkflowUpdateFieldTask",
+        "id": "task-3-update-3333-333333333333",
+        "name": "Update Status",
+        "aspect": {
+          "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "name": "Test App"
+        },
+        "recordReference": {
+          "triggerReference": {
+            "name": "record.id"
+          }
+        },
+        "workflowFields": [
+          {
+            "field": {
+              "id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+              "name": "Status"
+            },
+            "valueReference": {
+              "staticValue": "PROCESSED"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "task-4-email-3333-333333333333",
+      "type": "send_email",
+      "name": "Notify Team",
+      "parentId": "task-3-update-3333-333333333333",
+      "rawData": {
+        "__typename": "WorkflowSendEmailTask",
+        "id": "task-4-email-3333-333333333333",
+        "name": "Notify Team",
+        "subject": "High Priority Record Processed",
+        "messageBody": {
+          "triggerReference": {
+            "name": "record.title"
+          }
+        },
+        "externalEmails": ["team@example.com"]
+      }
+    },
+    {
+      "id": "task-5-message-3333-333333333333",
+      "type": "message",
+      "name": "Post Comment",
+      "parentId": "task-4-email-3333-333333333333",
+      "rawData": {
+        "__typename": "WorkflowMessageTask",
+        "id": "task-5-message-3333-333333333333",
+        "name": "Post Comment",
+        "contentsReference": {
+          "staticValue": "Record has been fully processed."
+        },
+        "recordReference": {
+          "triggerReference": {
+            "name": "record.id"
+          }
+        }
+      }
+    }
+  ]
+}
