@@ -1,3 +1,12 @@
 {
-   "signedContributors": []
+  "signedContributors": [
+    {
+      "name": "jmckeever-elementum",
+      "id": 272272417,
+      "comment_id": 4208655145,
+      "created_at": "2026-04-08T18:39:42Z",
+      "repoId": 1185544306,
+      "pullRequestNo": 15
+    }
+  ]
 }
