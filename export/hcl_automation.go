@@ -407,11 +407,6 @@ func (g *AspectAutomationHCLGenerator) GenerateAll() string {
 	return SerializeBlocks(g.GenerateAllIR())
 }
 
-// generateAutomationsOnly generates HCL for automation resources without triggers and tasks
-func (g *AspectAutomationHCLGenerator) generateAutomationsOnly() string {
-	return SerializeBlocks(g.generateAutomationsOnlyIR())
-}
-
 // getAutomationResourceName finds the resource name from imports for an automation ID
 func (g *AspectAutomationHCLGenerator) getAutomationResourceName(automationID string) string {
 	for _, imp := range g.imports {

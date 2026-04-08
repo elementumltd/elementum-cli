@@ -53,7 +53,7 @@ func serializeBlock(sb *strings.Builder, block *HCLBlock, indent int) {
 	sb.WriteString(indentStr)
 	sb.WriteString(block.Type)
 	for _, label := range block.Labels {
-		sb.WriteString(fmt.Sprintf(" %q", label))
+		fmt.Fprintf(sb, " %q", label)
 	}
 	sb.WriteString(" {\n")
 
@@ -99,7 +99,7 @@ func serializeBody(sb *strings.Builder, body *HCLBody, indent int) {
 func serializeValue(sb *strings.Builder, value HCLValue, indent int) {
 	switch v := value.(type) {
 	case HCLString:
-		sb.WriteString(fmt.Sprintf("%q", v.Value))
+		fmt.Fprintf(sb, "%q", v.Value)
 
 	case HCLHeredoc:
 		delimiter := v.Delimiter
@@ -127,9 +127,9 @@ func serializeValue(sb *strings.Builder, value HCLValue, indent int) {
 	case HCLNumber:
 		// Format as integer if it's a whole number, otherwise as float
 		if v.Value == math.Trunc(v.Value) && !math.IsInf(v.Value, 0) {
-			sb.WriteString(fmt.Sprintf("%d", int64(v.Value)))
+			fmt.Fprintf(sb, "%d", int64(v.Value))
 		} else {
-			sb.WriteString(fmt.Sprintf("%g", v.Value))
+			fmt.Fprintf(sb, "%g", v.Value)
 		}
 
 	case HCLBool:

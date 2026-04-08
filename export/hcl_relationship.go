@@ -98,7 +98,7 @@ func (g *RelationshipHCLGenerator) GenerateRelationshipIR(rel *discovery.Relatio
 	}
 
 	// Filter
-	if rel.Filter != nil && len(rel.Filter) > 0 {
+	if len(rel.Filter) > 0 {
 		filterVal := GenerateFilterIR(rel.Filter, g.uuidMap)
 		if filterVal != nil {
 			b.SetAttr("filter", filterVal)

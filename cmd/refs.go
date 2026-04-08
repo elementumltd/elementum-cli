@@ -17,12 +17,11 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/elementumltd/elementum-cli/auth"
+	"github.com/elementumltd/elementum-cli/internal/client"
 	"github.com/elementumltd/elementum-cli/state"
 	"github.com/elementumltd/elementum-cli/ui"
-	"github.com/elementumltd/elementum-cli/internal/client"
 	"github.com/spf13/cobra"
 )
 
@@ -326,13 +325,4 @@ func renderResourceRefs(resource state.ResourceRefs) {
 		fmt.Printf("%s %-24s %s\n", prefix, ref.Name, ui.MutedStyle.Render(typeStr))
 	}
 	fmt.Println()
-}
-
-// Helper function to format resource type for display
-func formatResourceTypeShort(resourceType string) string {
-	// Remove elementum_ prefix and _trigger/_task suffix for cleaner display
-	short := strings.TrimPrefix(resourceType, "elementum_")
-	short = strings.TrimSuffix(short, "_trigger")
-	short = strings.TrimSuffix(short, "_task")
-	return short
 }

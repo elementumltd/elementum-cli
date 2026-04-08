@@ -52,16 +52,16 @@ func NewFilterHCLGenerator(uuidMap map[string]string) *FilterHCLGenerator {
 // Returns empty string if filter is nil or empty.
 // The indent parameter specifies the base indentation level (typically 1 for a resource attribute).
 func (g *FilterHCLGenerator) Generate(filter map[string]interface{}, indent int) string {
-	if filter == nil || len(filter) == 0 {
+	if len(filter) == 0 {
 		return ""
 	}
 
 	var sb strings.Builder
 	indentStr := strings.Repeat("  ", indent)
 
-	sb.WriteString(fmt.Sprintf("%sfilter = {\n", indentStr))
+	fmt.Fprintf(&sb, "%sfilter = {\n", indentStr)
 	sb.WriteString(g.generateContent(filter, indent+1))
-	sb.WriteString(fmt.Sprintf("%s}\n", indentStr))
+	fmt.Fprintf(&sb, "%s}\n", indentStr)
 
 	return sb.String()
 }
@@ -69,7 +69,7 @@ func (g *FilterHCLGenerator) Generate(filter map[string]interface{}, indent int)
 // GenerateInline generates the filter content without the "filter = {" wrapper.
 // Useful when the filter needs to be embedded in a different context.
 func (g *FilterHCLGenerator) GenerateInline(filter map[string]interface{}, indent int) string {
-	if filter == nil || len(filter) == 0 {
+	if len(filter) == 0 {
 		return ""
 	}
 	return g.generateContent(filter, indent)
@@ -87,26 +87,26 @@ func (g *FilterHCLGenerator) generateContent(filter map[string]interface{}, inde
 	// Get and normalize filter type (API returns UPPER_SNAKE_CASE, we output lowercase)
 	filterType := g.getFilterType(filter)
 	if filterType != "" {
-		sb.WriteString(fmt.Sprintf("%stype = %q\n", indentStr, filterType))
+		fmt.Fprintf(&sb, "%stype = %q\n", indentStr, filterType)
 	}
 
 	// Handle 'not' attribute
 	if not, ok := filter["not"].(bool); ok && not {
-		sb.WriteString(fmt.Sprintf("%snot = true\n", indentStr))
+		fmt.Fprintf(&sb, "%snot = true\n", indentStr)
 	}
 
 	// Handle field_id (API uses 'fieldId' or 'field')
 	if fieldID := g.getStringField(filter, "fieldId", "field_id", "field"); fieldID != "" {
-		sb.WriteString(fmt.Sprintf("%sfield_id = %s\n", indentStr, g.resolveRef(fieldID)))
+		fmt.Fprintf(&sb, "%sfield_id = %s\n", indentStr, g.resolveRef(fieldID))
 	}
 
 	// Handle left_value (API uses 'leftValue')
 	if leftValue := g.getMapField(filter, "leftValue", "left_value"); leftValue != nil {
 		content := g.generateLeftValueContent(leftValue, indent+1)
 		if content != "" {
-			sb.WriteString(fmt.Sprintf("%sleft_value = {\n", indentStr))
+			fmt.Fprintf(&sb, "%sleft_value = {\n", indentStr)
 			sb.WriteString(content)
-			sb.WriteString(fmt.Sprintf("%s}\n", indentStr))
+			fmt.Fprintf(&sb, "%s}\n", indentStr)
 		}
 	}
 
@@ -114,9 +114,9 @@ func (g *FilterHCLGenerator) generateContent(filter map[string]interface{}, inde
 	if value := g.getMapField(filter, "value"); value != nil {
 		content := g.generateValueContent(value, indent+1)
 		if content != "" {
-			sb.WriteString(fmt.Sprintf("%svalue = {\n", indentStr))
+			fmt.Fprintf(&sb, "%svalue = {\n", indentStr)
 			sb.WriteString(content)
-			sb.WriteString(fmt.Sprintf("%s}\n", indentStr))
+			fmt.Fprintf(&sb, "%s}\n", indentStr)
 		}
 	}
 
@@ -124,9 +124,9 @@ func (g *FilterHCLGenerator) generateContent(filter map[string]interface{}, inde
 	if values := g.getArrayField(filter, "values"); values != nil {
 		content := g.generateValuesArray(values, indent+1)
 		if content != "" {
-			sb.WriteString(fmt.Sprintf("%svalues = [\n", indentStr))
+			fmt.Fprintf(&sb, "%svalues = [\n", indentStr)
 			sb.WriteString(content)
-			sb.WriteString(fmt.Sprintf("%s]\n", indentStr))
+			fmt.Fprintf(&sb, "%s]\n", indentStr)
 		}
 	}
 
@@ -134,9 +134,9 @@ func (g *FilterHCLGenerator) generateContent(filter map[string]interface{}, inde
 	if relValue := g.getMapField(filter, "relativeValue", "relative_value"); relValue != nil {
 		content := g.generateRelativeValueContent(relValue, indent+1)
 		if content != "" {
-			sb.WriteString(fmt.Sprintf("%srelative_value = {\n", indentStr))
+			fmt.Fprintf(&sb, "%srelative_value = {\n", indentStr)
 			sb.WriteString(content)
-			sb.WriteString(fmt.Sprintf("%s}\n", indentStr))
+			fmt.Fprintf(&sb, "%s}\n", indentStr)
 		}
 	}
 
@@ -144,20 +144,20 @@ func (g *FilterHCLGenerator) generateContent(filter map[string]interface{}, inde
 	if children := g.getArrayField(filter, "children"); children != nil {
 		content := g.generateChildrenArray(children, indent+1)
 		if content != "" {
-			sb.WriteString(fmt.Sprintf("%schildren = [\n", indentStr))
+			fmt.Fprintf(&sb, "%schildren = [\n", indentStr)
 			sb.WriteString(content)
-			sb.WriteString(fmt.Sprintf("%s]\n", indentStr))
+			fmt.Fprintf(&sb, "%s]\n", indentStr)
 		}
 	}
 
 	// Handle mode (for LIKE filters)
 	if mode := g.getStringField(filter, "mode"); mode != "" {
-		sb.WriteString(fmt.Sprintf("%smode = %q\n", indentStr, strings.ToLower(mode)))
+		fmt.Fprintf(&sb, "%smode = %q\n", indentStr, strings.ToLower(mode))
 	}
 
 	// Handle value_reference at the filter level (shorthand)
 	if vr := g.getStringField(filter, "valueReference", "value_reference"); vr != "" {
-		sb.WriteString(fmt.Sprintf("%svalue_reference = %q\n", indentStr, vr))
+		fmt.Fprintf(&sb, "%svalue_reference = %q\n", indentStr, vr)
 	}
 
 	return sb.String()
@@ -175,7 +175,7 @@ func (g *FilterHCLGenerator) generateLeftValueContent(value map[string]interface
 	case "FIELD":
 		// API format: {"type": "FIELD", "field": "field-uuid"}
 		if field := g.getStringField(value, "field"); field != "" {
-			sb.WriteString(fmt.Sprintf("%sfield_id = %s\n", indentStr, g.resolveRef(field)))
+			fmt.Fprintf(&sb, "%sfield_id = %s\n", indentStr, g.resolveRef(field))
 		}
 		return sb.String()
 
@@ -186,33 +186,33 @@ func (g *FilterHCLGenerator) generateLeftValueContent(value map[string]interface
 			switch refType {
 			case "TRIGGER":
 				if name := g.getStringField(nestedValue, "name"); name != "" {
-					sb.WriteString(fmt.Sprintf("%svalue_reference = %q\n", indentStr, "trigger."+name))
+					fmt.Fprintf(&sb, "%svalue_reference = %q\n", indentStr, "trigger."+name)
 				}
 			case "TASK":
 				taskID := g.getStringField(nestedValue, "taskId")
 				name := g.getStringField(nestedValue, "name")
 				if taskID != "" && name != "" {
-					sb.WriteString(fmt.Sprintf("%svalue_reference = %q\n", indentStr, "task."+taskID+"."+name))
+					fmt.Fprintf(&sb, "%svalue_reference = %q\n", indentStr, "task."+taskID+"."+name)
 				}
 			case "VARIABLE":
 				if name := g.getStringField(nestedValue, "name"); name != "" {
-					sb.WriteString(fmt.Sprintf("%svalue_reference = %q\n", indentStr, "variable."+name))
+					fmt.Fprintf(&sb, "%svalue_reference = %q\n", indentStr, "variable."+name)
 				}
 			case "FOR_EACH":
 				forEachTaskID := g.getStringField(nestedValue, "forEachTaskId")
 				name := g.getStringField(nestedValue, "name")
 				if name != "" {
 					if forEachTaskID != "" {
-						sb.WriteString(fmt.Sprintf("%svalue_reference = %q\n", indentStr, "for_each."+forEachTaskID+"."+name))
+						fmt.Fprintf(&sb, "%svalue_reference = %q\n", indentStr, "for_each."+forEachTaskID+"."+name)
 					} else {
-						sb.WriteString(fmt.Sprintf("%svalue_reference = %q\n", indentStr, "for_each."+name))
+						fmt.Fprintf(&sb, "%svalue_reference = %q\n", indentStr, "for_each."+name)
 					}
 				}
 			}
 		}
 		// Handle real_type for REFERENCE type
 		if rt := g.getStringField(value, "realType", "real_type"); rt != "" {
-			sb.WriteString(fmt.Sprintf("%sreal_type = %q\n", indentStr, strings.ToLower(rt)))
+			fmt.Fprintf(&sb, "%sreal_type = %q\n", indentStr, strings.ToLower(rt))
 		}
 		return sb.String()
 	}
@@ -221,18 +221,18 @@ func (g *FilterHCLGenerator) generateLeftValueContent(value map[string]interface
 
 	// Handle field_id (legacy format: {"fieldId": "..."})
 	if fieldID := g.getStringField(value, "fieldId", "field_id"); fieldID != "" {
-		sb.WriteString(fmt.Sprintf("%sfield_id = %s\n", indentStr, g.resolveRef(fieldID)))
+		fmt.Fprintf(&sb, "%sfield_id = %s\n", indentStr, g.resolveRef(fieldID))
 	}
 
 	// Handle value_reference (legacy format: {"valueReference": "..."})
 	if vr := g.getStringField(value, "valueReference", "value_reference"); vr != "" {
-		sb.WriteString(fmt.Sprintf("%svalue_reference = %q\n", indentStr, vr))
+		fmt.Fprintf(&sb, "%svalue_reference = %q\n", indentStr, vr)
 	}
 
 	// Handle triggerReference -> value_reference (legacy nested format)
 	if triggerRef := g.getMapField(value, "triggerReference"); triggerRef != nil {
 		if name := g.getStringField(triggerRef, "name"); name != "" {
-			sb.WriteString(fmt.Sprintf("%svalue_reference = %q\n", indentStr, "trigger."+name))
+			fmt.Fprintf(&sb, "%svalue_reference = %q\n", indentStr, "trigger."+name)
 		}
 	}
 
@@ -240,13 +240,13 @@ func (g *FilterHCLGenerator) generateLeftValueContent(value map[string]interface
 	if taskRef := g.getMapField(value, "taskReference"); taskRef != nil {
 		vr := g.buildTaskReference(taskRef)
 		if vr != "" {
-			sb.WriteString(fmt.Sprintf("%svalue_reference = %q\n", indentStr, vr))
+			fmt.Fprintf(&sb, "%svalue_reference = %q\n", indentStr, vr)
 		}
 	}
 
 	// Handle real_type (for legacy format)
 	if rt := g.getStringField(value, "realType", "real_type"); rt != "" {
-		sb.WriteString(fmt.Sprintf("%sreal_type = %q\n", indentStr, strings.ToLower(rt)))
+		fmt.Fprintf(&sb, "%sreal_type = %q\n", indentStr, strings.ToLower(rt))
 	}
 
 	return sb.String()
@@ -267,7 +267,7 @@ func (g *FilterHCLGenerator) generateValueContent(value map[string]interface{}, 
 
 	// Handle REFERENCE type with nested value structure (API format)
 	if strings.ToUpper(valueType) == "REFERENCE" {
-		sb.WriteString(fmt.Sprintf("%stype = \"reference\"\n", indentStr))
+		fmt.Fprintf(&sb, "%stype = \"reference\"\n", indentStr)
 
 		// Handle nested value containing the reference
 		if nestedValue := g.getMapField(value, "value"); nestedValue != nil {
@@ -275,26 +275,26 @@ func (g *FilterHCLGenerator) generateValueContent(value map[string]interface{}, 
 			switch refType {
 			case "TRIGGER":
 				if name := g.getStringField(nestedValue, "name"); name != "" {
-					sb.WriteString(fmt.Sprintf("%svalue_reference = %q\n", indentStr, "trigger."+name))
+					fmt.Fprintf(&sb, "%svalue_reference = %q\n", indentStr, "trigger."+name)
 				}
 			case "TASK":
 				taskID := g.getStringField(nestedValue, "taskId")
 				name := g.getStringField(nestedValue, "name")
 				if taskID != "" && name != "" {
-					sb.WriteString(fmt.Sprintf("%svalue_reference = %q\n", indentStr, "task."+taskID+"."+name))
+					fmt.Fprintf(&sb, "%svalue_reference = %q\n", indentStr, "task."+taskID+"."+name)
 				}
 			case "VARIABLE":
 				if name := g.getStringField(nestedValue, "name"); name != "" {
-					sb.WriteString(fmt.Sprintf("%svalue_reference = %q\n", indentStr, "variable."+name))
+					fmt.Fprintf(&sb, "%svalue_reference = %q\n", indentStr, "variable."+name)
 				}
 			case "FOR_EACH":
 				forEachTaskID := g.getStringField(nestedValue, "forEachTaskId")
 				name := g.getStringField(nestedValue, "name")
 				if name != "" {
 					if forEachTaskID != "" {
-						sb.WriteString(fmt.Sprintf("%svalue_reference = %q\n", indentStr, "for_each."+forEachTaskID+"."+name))
+						fmt.Fprintf(&sb, "%svalue_reference = %q\n", indentStr, "for_each."+forEachTaskID+"."+name)
 					} else {
-						sb.WriteString(fmt.Sprintf("%svalue_reference = %q\n", indentStr, "for_each."+name))
+						fmt.Fprintf(&sb, "%svalue_reference = %q\n", indentStr, "for_each."+name)
 					}
 				}
 			}
@@ -302,16 +302,16 @@ func (g *FilterHCLGenerator) generateValueContent(value map[string]interface{}, 
 
 		// Handle real_type for REFERENCE type
 		if rt := g.getStringField(value, "realType", "real_type"); rt != "" {
-			sb.WriteString(fmt.Sprintf("%sreal_type = %q\n", indentStr, strings.ToLower(rt)))
+			fmt.Fprintf(&sb, "%sreal_type = %q\n", indentStr, strings.ToLower(rt))
 		}
 		return sb.String()
 	}
 
 	// Handle FIELD type with field key (API format)
 	if strings.ToUpper(valueType) == "FIELD" {
-		sb.WriteString(fmt.Sprintf("%stype = \"field\"\n", indentStr))
+		fmt.Fprintf(&sb, "%stype = \"field\"\n", indentStr)
 		if field := g.getStringField(value, "field"); field != "" {
-			sb.WriteString(fmt.Sprintf("%sfield_id = %s\n", indentStr, g.resolveRef(field)))
+			fmt.Fprintf(&sb, "%sfield_id = %s\n", indentStr, g.resolveRef(field))
 		}
 		return sb.String()
 	}
@@ -320,30 +320,30 @@ func (g *FilterHCLGenerator) generateValueContent(value map[string]interface{}, 
 
 	// Handle type
 	if valueType != "" {
-		sb.WriteString(fmt.Sprintf("%stype = %q\n", indentStr, strings.ToLower(valueType)))
+		fmt.Fprintf(&sb, "%stype = %q\n", indentStr, strings.ToLower(valueType))
 	}
 
 	// Handle value (primitive types only - nested maps are handled above)
 	if v := value["value"]; v != nil {
 		switch val := v.(type) {
 		case string:
-			sb.WriteString(fmt.Sprintf("%svalue = %q\n", indentStr, val))
+			fmt.Fprintf(&sb, "%svalue = %q\n", indentStr, val)
 		case float64:
-			sb.WriteString(fmt.Sprintf("%svalue = %q\n", indentStr, fmt.Sprintf("%v", val)))
+			fmt.Fprintf(&sb, "%svalue = %q\n", indentStr, fmt.Sprintf("%v", val))
 		case bool:
-			sb.WriteString(fmt.Sprintf("%svalue = %q\n", indentStr, fmt.Sprintf("%v", val)))
+			fmt.Fprintf(&sb, "%svalue = %q\n", indentStr, fmt.Sprintf("%v", val))
 		}
 	}
 
 	// Handle value_reference (legacy format)
 	if vr := g.getStringField(value, "valueReference", "value_reference"); vr != "" {
-		sb.WriteString(fmt.Sprintf("%svalue_reference = %q\n", indentStr, vr))
+		fmt.Fprintf(&sb, "%svalue_reference = %q\n", indentStr, vr)
 	}
 
 	// Handle triggerReference -> value_reference (legacy nested format)
 	if triggerRef := g.getMapField(value, "triggerReference"); triggerRef != nil {
 		if name := g.getStringField(triggerRef, "name"); name != "" {
-			sb.WriteString(fmt.Sprintf("%svalue_reference = %q\n", indentStr, "trigger."+name))
+			fmt.Fprintf(&sb, "%svalue_reference = %q\n", indentStr, "trigger."+name)
 		}
 	}
 
@@ -351,43 +351,43 @@ func (g *FilterHCLGenerator) generateValueContent(value map[string]interface{}, 
 	if taskRef := g.getMapField(value, "taskReference"); taskRef != nil {
 		vr := g.buildTaskReference(taskRef)
 		if vr != "" {
-			sb.WriteString(fmt.Sprintf("%svalue_reference = %q\n", indentStr, vr))
+			fmt.Fprintf(&sb, "%svalue_reference = %q\n", indentStr, vr)
 		}
 	}
 
 	// Handle field_id (for 'field' type - legacy format)
 	if fieldID := g.getStringField(value, "fieldId", "field_id"); fieldID != "" {
-		sb.WriteString(fmt.Sprintf("%sfield_id = %s\n", indentStr, g.resolveRef(fieldID)))
+		fmt.Fprintf(&sb, "%sfield_id = %s\n", indentStr, g.resolveRef(fieldID))
 	}
 
 	// Handle current_user_type
 	if cut := g.getStringField(value, "currentUserType", "current_user_type"); cut != "" {
-		sb.WriteString(fmt.Sprintf("%scurrent_user_type = %q\n", indentStr, strings.ToLower(cut)))
+		fmt.Fprintf(&sb, "%scurrent_user_type = %q\n", indentStr, strings.ToLower(cut))
 	}
 
 	// Handle real_type
 	if rt := g.getStringField(value, "realType", "real_type"); rt != "" {
-		sb.WriteString(fmt.Sprintf("%sreal_type = %q\n", indentStr, strings.ToLower(rt)))
+		fmt.Fprintf(&sb, "%sreal_type = %q\n", indentStr, strings.ToLower(rt))
 	}
 
 	// Handle record_field specific attributes
 	if field := g.getStringField(value, "field"); field != "" {
-		sb.WriteString(fmt.Sprintf("%sfield = %s\n", indentStr, g.resolveRef(field)))
+		fmt.Fprintf(&sb, "%sfield = %s\n", indentStr, g.resolveRef(field))
 	}
 	if object := g.getStringField(value, "object"); object != "" {
-		sb.WriteString(fmt.Sprintf("%sobject = %s\n", indentStr, g.resolveRef(object)))
+		fmt.Fprintf(&sb, "%sobject = %s\n", indentStr, g.resolveRef(object))
 	}
 	if dynamicField := g.getStringField(value, "dynamicField", "dynamic_field"); dynamicField != "" {
-		sb.WriteString(fmt.Sprintf("%sdynamic_field = %s\n", indentStr, g.resolveRef(dynamicField)))
+		fmt.Fprintf(&sb, "%sdynamic_field = %s\n", indentStr, g.resolveRef(dynamicField))
 	}
 	if dynamicFieldObject := g.getStringField(value, "dynamicFieldObject", "dynamic_field_object"); dynamicFieldObject != "" {
-		sb.WriteString(fmt.Sprintf("%sdynamic_field_object = %s\n", indentStr, g.resolveRef(dynamicFieldObject)))
+		fmt.Fprintf(&sb, "%sdynamic_field_object = %s\n", indentStr, g.resolveRef(dynamicFieldObject))
 	}
 	if sourceFieldType := g.getStringField(value, "sourceFieldType", "source_field_type"); sourceFieldType != "" {
-		sb.WriteString(fmt.Sprintf("%ssource_field_type = %q\n", indentStr, strings.ToLower(sourceFieldType)))
+		fmt.Fprintf(&sb, "%ssource_field_type = %q\n", indentStr, strings.ToLower(sourceFieldType))
 	}
 	if required, ok := value["required"].(bool); ok {
-		sb.WriteString(fmt.Sprintf("%srequired = %v\n", indentStr, required))
+		fmt.Fprintf(&sb, "%srequired = %v\n", indentStr, required)
 	}
 
 	return sb.String()
@@ -426,9 +426,9 @@ func (g *FilterHCLGenerator) generateValuesArray(values []interface{}, indent in
 		if vMap, ok := v.(map[string]interface{}); ok {
 			content := g.generateValueContent(vMap, indent+1)
 			if content != "" {
-				sb.WriteString(fmt.Sprintf("%s{\n", indentStr))
+				fmt.Fprintf(&sb, "%s{\n", indentStr)
 				sb.WriteString(content)
-				sb.WriteString(fmt.Sprintf("%s},\n", indentStr))
+				fmt.Fprintf(&sb, "%s},\n", indentStr)
 			}
 		}
 	}
@@ -449,9 +449,9 @@ func (g *FilterHCLGenerator) generateChildrenArray(children []interface{}, inden
 		if childMap, ok := child.(map[string]interface{}); ok {
 			content := g.generateContent(childMap, indent+1)
 			if content != "" {
-				sb.WriteString(fmt.Sprintf("%s{\n", indentStr))
+				fmt.Fprintf(&sb, "%s{\n", indentStr)
 				sb.WriteString(content)
-				sb.WriteString(fmt.Sprintf("%s},\n", indentStr))
+				fmt.Fprintf(&sb, "%s},\n", indentStr)
 			}
 		}
 	}
@@ -465,13 +465,13 @@ func (g *FilterHCLGenerator) generateRelativeValueContent(relValue map[string]in
 	indentStr := strings.Repeat("  ", indent)
 
 	if operator := g.getStringField(relValue, "operator"); operator != "" {
-		sb.WriteString(fmt.Sprintf("%soperator = %q\n", indentStr, strings.ToLower(operator)))
+		fmt.Fprintf(&sb, "%soperator = %q\n", indentStr, strings.ToLower(operator))
 	}
 	if unit := g.getStringField(relValue, "unit"); unit != "" {
-		sb.WriteString(fmt.Sprintf("%sunit = %q\n", indentStr, strings.ToLower(unit)))
+		fmt.Fprintf(&sb, "%sunit = %q\n", indentStr, strings.ToLower(unit))
 	}
 	if amount, ok := relValue["amount"].(float64); ok {
-		sb.WriteString(fmt.Sprintf("%samount = %d\n", indentStr, int(amount)))
+		fmt.Fprintf(&sb, "%samount = %d\n", indentStr, int(amount))
 	}
 
 	return sb.String()
@@ -556,7 +556,7 @@ func GenerateFilterHCL(filter map[string]interface{}, uuidMap map[string]string,
 // GenerateIR generates an HCLObject representing the filter.
 // Returns nil if the filter is nil or empty.
 func (g *FilterHCLGenerator) GenerateIR(filter map[string]interface{}) HCLValue {
-	if filter == nil || len(filter) == 0 {
+	if len(filter) == 0 {
 		return nil
 	}
 	return g.generateContentIR(filter)

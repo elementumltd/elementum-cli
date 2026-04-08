@@ -367,7 +367,7 @@ func loadRecordsFromCSV(path string) ([]map[string]interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	reader := csv.NewReader(f)
 
@@ -451,7 +451,7 @@ func loadRecordsFromJSONL(path string) ([]map[string]interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	var records []map[string]interface{}
 	decoder := json.NewDecoder(f)
@@ -543,7 +543,7 @@ func exportRecordsToCSV(records []Record, path string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	writer := csv.NewWriter(f)
 	defer writer.Flush()
@@ -584,7 +584,7 @@ func exportRecordsToJSONL(records []Record, path string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	encoder := json.NewEncoder(f)
 	for _, rec := range records {

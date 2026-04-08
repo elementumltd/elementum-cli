@@ -216,22 +216,6 @@ func graphQLTypeToCliType(typeName string) string {
 	}
 }
 
-// cliTypeToGraphQLType converts CLI type names to GraphQL type names
-func cliTypeToGraphQLType(cliType string) string {
-	switch cliType {
-	case "ai":
-		return "DocumentModelAi"
-	case "text":
-		return "DocumentModelOCR"
-	case "json":
-		return "DocumentModelJson"
-	case "xml":
-		return "DocumentModelXml"
-	default:
-		return ""
-	}
-}
-
 // resolveFileReaderID resolves a file reader name or ID to a UUID.
 func resolveFileReaderID(ctx context.Context, apiClient *client.Client, aspectID, nameOrID string) (string, string, error) {
 	if looksLikeUUID(nameOrID) {

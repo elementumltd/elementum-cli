@@ -566,9 +566,10 @@ func injectStatusOptionsForApp(hcl string, app *discovery.App, imports []ImportB
 	endIdx := startIdx + len(resourceStart)
 	braceCount := 1
 	for endIdx < len(hcl) && braceCount > 0 {
-		if hcl[endIdx] == '{' {
+		switch hcl[endIdx] {
+		case '{':
 			braceCount++
-		} else if hcl[endIdx] == '}' {
+		case '}':
 			braceCount--
 		}
 		endIdx++
@@ -608,9 +609,9 @@ func generateStatusOptionsHCL(options []discovery.FieldOption) string {
 
 	for i, opt := range options {
 		sb.WriteString("    {\n")
-		sb.WriteString(fmt.Sprintf("      label = %q\n", opt.Label))
+		fmt.Fprintf(&sb, "      label = %q\n", opt.Label)
 		if opt.Color != "" {
-			sb.WriteString(fmt.Sprintf("      color = %q\n", opt.Color))
+			fmt.Fprintf(&sb, "      color = %q\n", opt.Color)
 		}
 		// Format tags
 		if len(opt.Tags) == 0 {
@@ -620,7 +621,7 @@ func generateStatusOptionsHCL(options []discovery.FieldOption) string {
 			for j, tag := range opt.Tags {
 				tagStrings[j] = fmt.Sprintf("%q", tag)
 			}
-			sb.WriteString(fmt.Sprintf("      tags = [%s]\n", strings.Join(tagStrings, ", ")))
+			fmt.Fprintf(&sb, "      tags = [%s]\n", strings.Join(tagStrings, ", "))
 		}
 		if i < len(options)-1 {
 			sb.WriteString("    },\n")
@@ -663,9 +664,10 @@ func injectLockStagesForApp(hcl string, app *discovery.App, imports []ImportBloc
 	endIdx := startIdx + len(resourceStart)
 	braceCount := 1
 	for endIdx < len(hcl) && braceCount > 0 {
-		if hcl[endIdx] == '{' {
+		switch hcl[endIdx] {
+		case '{':
 			braceCount++
-		} else if hcl[endIdx] == '}' {
+		case '}':
 			braceCount--
 		}
 		endIdx++

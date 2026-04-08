@@ -321,7 +321,7 @@ func TestExportRecordsToCSV(t *testing.T) {
 
 	// Read and verify
 	f, _ := os.Open(outPath)
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	reader := csv.NewReader(f)
 	rows, err := reader.ReadAll()
 	if err != nil {

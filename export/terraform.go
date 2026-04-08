@@ -122,8 +122,8 @@ func (tr *TerraformRunner) Init() error {
 			// Dev overrides are likely active - skip init as it will fail
 			// The provider binary will be found via dev_overrides
 			// Remove any existing .terraform directory and lock file that might conflict
-			os.RemoveAll(filepath.Join(tr.WorkDir, ".terraform"))
-			os.Remove(filepath.Join(tr.WorkDir, ".terraform.lock.hcl"))
+			_ = os.RemoveAll(filepath.Join(tr.WorkDir, ".terraform"))
+			_ = os.Remove(filepath.Join(tr.WorkDir, ".terraform.lock.hcl"))
 			fmt.Println("✓ Using provider dev_overrides (skipping init)")
 			return nil
 		}
@@ -166,7 +166,7 @@ func (tr *TerraformRunner) GenerateConfig(outputFile string) (string, error) {
 	// Remove the output file if it exists (terraform refuses to overwrite)
 	outputPath := filepath.Join(tr.WorkDir, outputFile)
 	if _, err := os.Stat(outputPath); err == nil {
-		os.Remove(outputPath)
+		_ = os.Remove(outputPath)
 	}
 
 	// Try tofu first, fall back to terraform
@@ -189,7 +189,7 @@ func (tr *TerraformRunner) GenerateConfig(outputFile string) (string, error) {
 	if _, statErr := os.Stat(outputPath); statErr == nil {
 		// File was generated, consider it a success
 		if showOutput {
-			os.Stdout.Write(stdout)
+			_, _ = os.Stdout.Write(stdout)
 		}
 		return string(stdout), nil
 	}
@@ -206,21 +206,20 @@ func (tr *TerraformRunner) GenerateConfig(outputFile string) (string, error) {
 		// Check if file was generated
 		if _, statErr := os.Stat(outputPath); statErr == nil {
 			if showOutput {
-				os.Stdout.Write(stdout)
+				_, _ = os.Stdout.Write(stdout)
 			}
 			return string(stdout), nil
 		}
 
 		if err != nil {
-			// Still print output even on error for debugging
-			os.Stdout.Write(stdout)
+			_, _ = os.Stdout.Write(stdout)
 			return string(stdout), fmt.Errorf("terraform/tofu plan failed: %w", err)
 		}
 	}
 
 	// Print the output only at trace level
 	if showOutput {
-		os.Stdout.Write(stdout)
+		_, _ = os.Stdout.Write(stdout)
 	}
 
 	return string(stdout), nil

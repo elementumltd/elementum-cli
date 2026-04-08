@@ -92,7 +92,7 @@ func runApply(cmd *cobra.Command, args []string) error {
 
 func runInteractiveApply(cmd *cobra.Command, binary string, args []string) error {
 	planFile := ".ei-plan.tmp"
-	defer os.Remove(planFile)
+	defer func() { _ = os.Remove(planFile) }()
 
 	// Step 1: Run plan and save to temp file
 	fmt.Println(ui.InfoStyle.Render("Planning changes..."))

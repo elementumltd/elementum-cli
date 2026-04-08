@@ -47,10 +47,6 @@ func GenerateRecordsForAspect(fields []AspectFieldInfo, count int, seed int64, a
 	return records
 }
 
-func generateSingleRecord(fields []AspectFieldInfo, index int, rng *rand.Rand) map[string]interface{} {
-	return generateSingleRecordForAspect(fields, index, rng, AspectTypeApp)
-}
-
 func generateSingleRecordForAspect(fields []AspectFieldInfo, index int, rng *rand.Rand, aspectType AspectType) map[string]interface{} {
 	rec := make(map[string]interface{})
 

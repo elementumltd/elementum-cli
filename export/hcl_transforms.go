@@ -286,7 +286,7 @@ func isUUID(s string) bool {
 				return false
 			}
 		} else {
-			if !((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F')) {
+			if (ch < '0' || ch > '9') && (ch < 'a' || ch > 'f') && (ch < 'A' || ch > 'F') {
 				return false
 			}
 		}

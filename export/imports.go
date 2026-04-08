@@ -2115,8 +2115,8 @@ func GenerateCategoryCloudLinkDataSources(app *discovery.App) string {
 	if app.CategoryID != "" && app.CategoryName != "" {
 		sb.WriteString("# Category data source\n")
 		catName := SanitizeName(app.CategoryName)
-		sb.WriteString(fmt.Sprintf("data \"elementum_category\" %q {\n", catName))
-		sb.WriteString(fmt.Sprintf("  name = %q\n", app.CategoryName))
+		fmt.Fprintf(&sb, "data \"elementum_category\" %q {\n", catName)
+		fmt.Fprintf(&sb, "  name = %q\n", app.CategoryName)
 		sb.WriteString("}\n\n")
 		generatedCategories[app.CategoryID] = true
 	}
@@ -2125,8 +2125,8 @@ func GenerateCategoryCloudLinkDataSources(app *discovery.App) string {
 	if app.CloudLinkID != "" && app.CloudLinkName != "" {
 		sb.WriteString("# CloudLink data source\n")
 		cloudLinkName := SanitizeName(app.CloudLinkName)
-		sb.WriteString(fmt.Sprintf("data \"elementum_cloudlink\" %q {\n", cloudLinkName))
-		sb.WriteString(fmt.Sprintf("  name = %q\n", app.CloudLinkName))
+		fmt.Fprintf(&sb, "data \"elementum_cloudlink\" %q {\n", cloudLinkName)
+		fmt.Fprintf(&sb, "  name = %q\n", app.CloudLinkName)
 		sb.WriteString("}\n\n")
 		generatedCloudLinks[app.CloudLinkID] = true
 	}
@@ -2136,8 +2136,8 @@ func GenerateCategoryCloudLinkDataSources(app *discovery.App) string {
 		// Generate category data source if discovered app has a category not already generated
 		if discoveredApp.CategoryID != "" && discoveredApp.CategoryName != "" && !generatedCategories[discoveredApp.CategoryID] {
 			catName := SanitizeName(discoveredApp.CategoryName)
-			sb.WriteString(fmt.Sprintf("data \"elementum_category\" %q {\n", catName))
-			sb.WriteString(fmt.Sprintf("  name = %q\n", discoveredApp.CategoryName))
+			fmt.Fprintf(&sb, "data \"elementum_category\" %q {\n", catName)
+			fmt.Fprintf(&sb, "  name = %q\n", discoveredApp.CategoryName)
 			sb.WriteString("}\n\n")
 			generatedCategories[discoveredApp.CategoryID] = true
 		}
@@ -2145,8 +2145,8 @@ func GenerateCategoryCloudLinkDataSources(app *discovery.App) string {
 		// Generate cloudlink data source if discovered app has a cloudlink not already generated
 		if discoveredApp.CloudLinkID != "" && discoveredApp.CloudLinkName != "" && !generatedCloudLinks[discoveredApp.CloudLinkID] {
 			cloudLinkName := SanitizeName(discoveredApp.CloudLinkName)
-			sb.WriteString(fmt.Sprintf("data \"elementum_cloudlink\" %q {\n", cloudLinkName))
-			sb.WriteString(fmt.Sprintf("  name = %q\n", discoveredApp.CloudLinkName))
+			fmt.Fprintf(&sb, "data \"elementum_cloudlink\" %q {\n", cloudLinkName)
+			fmt.Fprintf(&sb, "  name = %q\n", discoveredApp.CloudLinkName)
 			sb.WriteString("}\n\n")
 			generatedCloudLinks[discoveredApp.CloudLinkID] = true
 		}
@@ -2157,8 +2157,8 @@ func GenerateCategoryCloudLinkDataSources(app *discovery.App) string {
 		// Generate category data source if element has a category not already generated
 		if elem.CategoryID != "" && elem.CategoryName != "" && !generatedCategories[elem.CategoryID] {
 			catName := SanitizeName(elem.CategoryName)
-			sb.WriteString(fmt.Sprintf("data \"elementum_category\" %q {\n", catName))
-			sb.WriteString(fmt.Sprintf("  name = %q\n", elem.CategoryName))
+			fmt.Fprintf(&sb, "data \"elementum_category\" %q {\n", catName)
+			fmt.Fprintf(&sb, "  name = %q\n", elem.CategoryName)
 			sb.WriteString("}\n\n")
 			generatedCategories[elem.CategoryID] = true
 		}
@@ -2166,8 +2166,8 @@ func GenerateCategoryCloudLinkDataSources(app *discovery.App) string {
 		// Generate cloudlink data source if element has a cloudlink not already generated
 		if elem.CloudLinkID != "" && elem.CloudLinkName != "" && !generatedCloudLinks[elem.CloudLinkID] {
 			cloudLinkName := SanitizeName(elem.CloudLinkName)
-			sb.WriteString(fmt.Sprintf("data \"elementum_cloudlink\" %q {\n", cloudLinkName))
-			sb.WriteString(fmt.Sprintf("  name = %q\n", elem.CloudLinkName))
+			fmt.Fprintf(&sb, "data \"elementum_cloudlink\" %q {\n", cloudLinkName)
+			fmt.Fprintf(&sb, "  name = %q\n", elem.CloudLinkName)
 			sb.WriteString("}\n\n")
 			generatedCloudLinks[elem.CloudLinkID] = true
 		}
@@ -2257,20 +2257,20 @@ func GenerateRelationshipDataSources(app *discovery.App) string {
 
 		switch relatedObj.Type {
 		case "App":
-			sb.WriteString(fmt.Sprintf("data \"elementum_app\" %q {\n", name))
-			sb.WriteString(fmt.Sprintf("  name = %q\n", relatedObj.Name))
+			fmt.Fprintf(&sb, "data \"elementum_app\" %q {\n", name)
+			fmt.Fprintf(&sb, "  name = %q\n", relatedObj.Name)
 			sb.WriteString("}\n\n")
 			hasContent = true
 			generatedAppIDs[relatedObj.ID] = true
 		case "Element":
-			sb.WriteString(fmt.Sprintf("data \"elementum_element\" %q {\n", name))
-			sb.WriteString(fmt.Sprintf("  name = %q\n", relatedObj.Name))
+			fmt.Fprintf(&sb, "data \"elementum_element\" %q {\n", name)
+			fmt.Fprintf(&sb, "  name = %q\n", relatedObj.Name)
 			sb.WriteString("}\n\n")
 			hasContent = true
 			generatedElementIDs[relatedObj.ID] = true
 		case "Task":
-			sb.WriteString(fmt.Sprintf("data \"elementum_task\" %q {\n", name))
-			sb.WriteString(fmt.Sprintf("  name = %q\n", relatedObj.Name))
+			fmt.Fprintf(&sb, "data \"elementum_task\" %q {\n", name)
+			fmt.Fprintf(&sb, "  name = %q\n", relatedObj.Name)
 			sb.WriteString("}\n\n")
 			hasContent = true
 		}
@@ -2349,8 +2349,8 @@ func GenerateRoleDataSourceBlocks(app *discovery.App, appResourceRef string) str
 				name = fmt.Sprintf("%s_%d", baseName, count)
 			}
 
-			sb.WriteString(fmt.Sprintf("data \"elementum_user\" %q {\n", name))
-			sb.WriteString(fmt.Sprintf("  email = %q\n", email))
+			fmt.Fprintf(&sb, "data \"elementum_user\" %q {\n", name)
+			fmt.Fprintf(&sb, "  email = %q\n", email)
 			sb.WriteString("}\n\n")
 		}
 	}
@@ -2369,8 +2369,8 @@ func GenerateRoleDataSourceBlocks(app *discovery.App, appResourceRef string) str
 				name = fmt.Sprintf("%s_%d", baseName, count)
 			}
 
-			sb.WriteString(fmt.Sprintf("data \"elementum_group\" %q {\n", name))
-			sb.WriteString(fmt.Sprintf("  name = %q\n", groupName))
+			fmt.Fprintf(&sb, "data \"elementum_group\" %q {\n", name)
+			fmt.Fprintf(&sb, "  name = %q\n", groupName)
 			sb.WriteString("}\n\n")
 		}
 	}
@@ -2400,9 +2400,9 @@ func GenerateRoleDataSourceBlocks(app *discovery.App, appResourceRef string) str
 				name = fmt.Sprintf("%s_%d", baseName, count)
 			}
 
-			sb.WriteString(fmt.Sprintf("data \"elementum_role\" %q {\n", name))
-			sb.WriteString(fmt.Sprintf("  object_id = %s\n", appResourceRef))
-			sb.WriteString(fmt.Sprintf("  name      = %q\n", role.Name))
+			fmt.Fprintf(&sb, "data \"elementum_role\" %q {\n", name)
+			fmt.Fprintf(&sb, "  object_id = %s\n", appResourceRef)
+			fmt.Fprintf(&sb, "  name      = %q\n", role.Name)
 			sb.WriteString("}\n\n")
 		}
 	}
@@ -2422,7 +2422,7 @@ func GenerateRoleDataSourceBlocks(app *discovery.App, appResourceRef string) str
 				prefix = SanitizeName(discoveredApp.Name)
 			}
 
-			sb.WriteString(fmt.Sprintf("# Managed role data sources for discovered app: %s\n", discoveredApp.Name))
+			fmt.Fprintf(&sb, "# Managed role data sources for discovered app: %s\n", discoveredApp.Name)
 			roleNames := make(map[string]int)
 			for _, role := range discoveredApp.Roles {
 				if !role.Managed {
@@ -2438,9 +2438,9 @@ func GenerateRoleDataSourceBlocks(app *discovery.App, appResourceRef string) str
 					name = fmt.Sprintf("%s_%d", baseName, count)
 				}
 
-				sb.WriteString(fmt.Sprintf("data \"elementum_role\" %q {\n", name))
-				sb.WriteString(fmt.Sprintf("  object_id = elementum_app.%s.id\n", prefix))
-				sb.WriteString(fmt.Sprintf("  name      = %q\n", role.Name))
+				fmt.Fprintf(&sb, "data \"elementum_role\" %q {\n", name)
+				fmt.Fprintf(&sb, "  object_id = elementum_app.%s.id\n", prefix)
+				fmt.Fprintf(&sb, "  name      = %q\n", role.Name)
 				sb.WriteString("}\n\n")
 			}
 		}
@@ -2489,8 +2489,8 @@ func GenerateAiProviderConnectorDataSources(connectors []discovery.AiProviderCon
 			name = fmt.Sprintf("%s_%d", baseName, count)
 		}
 
-		sb.WriteString(fmt.Sprintf("data \"elementum_ai_provider_connector\" %q {\n", name))
-		sb.WriteString(fmt.Sprintf("  model_name = %q\n", conn.ModelName))
+		fmt.Fprintf(&sb, "data \"elementum_ai_provider_connector\" %q {\n", name)
+		fmt.Fprintf(&sb, "  model_name = %q\n", conn.ModelName)
 		sb.WriteString("}\n\n")
 	}
 
@@ -2517,8 +2517,8 @@ func GenerateCloudLinkDataSourcesFromMap(cloudlinks map[string]*discovery.CloudL
 			name = fmt.Sprintf("%s_%d", baseName, count)
 		}
 
-		sb.WriteString(fmt.Sprintf("data \"elementum_cloudlink\" %q {\n", name))
-		sb.WriteString(fmt.Sprintf("  name = %q\n", cl.Name))
+		fmt.Fprintf(&sb, "data \"elementum_cloudlink\" %q {\n", name)
+		fmt.Fprintf(&sb, "  name = %q\n", cl.Name)
 		sb.WriteString("}\n\n")
 	}
 
@@ -2550,9 +2550,9 @@ func GenerateStoredFunctionDataSources(functions []*discovery.StoredFunction) st
 			name = fmt.Sprintf("%s_%d", baseName, count)
 		}
 
-		sb.WriteString(fmt.Sprintf("data \"elementum_stored_function\" %q {\n", name))
-		sb.WriteString(fmt.Sprintf("  cloudlink_id = data.elementum_cloudlink.%s.id\n", SanitizeName(sf.CloudLinkName)))
-		sb.WriteString(fmt.Sprintf("  name         = %q\n", sf.DisplayName))
+		fmt.Fprintf(&sb, "data \"elementum_stored_function\" %q {\n", name)
+		fmt.Fprintf(&sb, "  cloudlink_id = data.elementum_cloudlink.%s.id\n", SanitizeName(sf.CloudLinkName))
+		fmt.Fprintf(&sb, "  name         = %q\n", sf.DisplayName)
 		sb.WriteString("}\n\n")
 	}
 
@@ -2568,8 +2568,8 @@ func RenderImportBlocks(blocks []ImportBlock) string {
 
 	for _, block := range blocks {
 		sb.WriteString("import {\n")
-		sb.WriteString(fmt.Sprintf("  id = %q\n", block.ID))
-		sb.WriteString(fmt.Sprintf("  to = %s.%s\n", block.ResourceType, block.ResourceName))
+		fmt.Fprintf(&sb, "  id = %q\n", block.ID)
+		fmt.Fprintf(&sb, "  to = %s.%s\n", block.ResourceType, block.ResourceName)
 		sb.WriteString("}\n\n")
 	}
 
@@ -2592,17 +2592,17 @@ func RenderProviderConfig(organization, instance, environment, clientID, clientS
 	sb.WriteString("}\n\n")
 
 	sb.WriteString("provider \"elementum\" {\n")
-	sb.WriteString(fmt.Sprintf("  organization  = %q\n", organization))
+	fmt.Fprintf(&sb, "  organization  = %q\n", organization)
 	// Only include instance if it's not "us" (the default)
 	if instance != "" && instance != "us" {
-		sb.WriteString(fmt.Sprintf("  instance      = %q\n", instance))
+		fmt.Fprintf(&sb, "  instance      = %q\n", instance)
 	}
 	// Only include environment if it's set (some orgs don't use environments)
 	if environment != "" {
-		sb.WriteString(fmt.Sprintf("  environment   = %q\n", environment))
+		fmt.Fprintf(&sb, "  environment   = %q\n", environment)
 	}
-	sb.WriteString(fmt.Sprintf("  client_id     = %q\n", clientID))
-	sb.WriteString(fmt.Sprintf("  client_secret = %q\n", clientSecret))
+	fmt.Fprintf(&sb, "  client_id     = %q\n", clientID)
+	fmt.Fprintf(&sb, "  client_secret = %q\n", clientSecret)
 	sb.WriteString("}\n\n")
 
 	return sb.String()
@@ -2866,8 +2866,8 @@ func GenerateDataSourceBlocksForElement(elem *discovery.Element) string {
 	if elem.CategoryID != "" && elem.CategoryName != "" {
 		sb.WriteString("# Category data source\n")
 		catName := SanitizeName(elem.CategoryName)
-		sb.WriteString(fmt.Sprintf("data \"elementum_category\" %q {\n", catName))
-		sb.WriteString(fmt.Sprintf("  name = %q\n", elem.CategoryName))
+		fmt.Fprintf(&sb, "data \"elementum_category\" %q {\n", catName)
+		fmt.Fprintf(&sb, "  name = %q\n", elem.CategoryName)
 		sb.WriteString("}\n\n")
 	}
 
@@ -2875,8 +2875,8 @@ func GenerateDataSourceBlocksForElement(elem *discovery.Element) string {
 	if elem.CloudLinkID != "" && elem.CloudLinkName != "" {
 		sb.WriteString("# CloudLink data source\n")
 		cloudLinkName := SanitizeName(elem.CloudLinkName)
-		sb.WriteString(fmt.Sprintf("data \"elementum_cloudlink\" %q {\n", cloudLinkName))
-		sb.WriteString(fmt.Sprintf("  name = %q\n", elem.CloudLinkName))
+		fmt.Fprintf(&sb, "data \"elementum_cloudlink\" %q {\n", cloudLinkName)
+		fmt.Fprintf(&sb, "  name = %q\n", elem.CloudLinkName)
 		sb.WriteString("}\n\n")
 	}
 
@@ -2931,9 +2931,9 @@ func GenerateElementSystemFieldDataSources(app *discovery.App) string {
 		for tag, fieldName := range systemFieldNames {
 			if neededFields[tag] {
 				dsName := prefix + "_" + strings.ToLower(strings.ReplaceAll(tag, "_", "_"))
-				sb.WriteString(fmt.Sprintf("data \"elementum_field\" %q {\n", dsName))
-				sb.WriteString(fmt.Sprintf("  object_id = elementum_element.%s.id\n", prefix))
-				sb.WriteString(fmt.Sprintf("  name      = %q\n", fieldName))
+				fmt.Fprintf(&sb, "data \"elementum_field\" %q {\n", dsName)
+				fmt.Fprintf(&sb, "  object_id = elementum_element.%s.id\n", prefix)
+				fmt.Fprintf(&sb, "  name      = %q\n", fieldName)
 				sb.WriteString("}\n\n")
 				hasContent = true
 			}
