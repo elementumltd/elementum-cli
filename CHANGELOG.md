@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.0.0 (2026-04-08)
+
+
+### Bug Fixes
+
+* bump Go to 1.25.9 to resolve stdlib vulnerabilities ([#17](https://github.com/elementumltd/elementum-cli/issues/17)) ([87fb709](https://github.com/elementumltd/elementum-cli/commit/87fb7090b37f0f0e852a04a373c3bed29a617850))
+* remove generated code check from CI ([#15](https://github.com/elementumltd/elementum-cli/issues/15)) ([7b1950b](https://github.com/elementumltd/elementum-cli/commit/7b1950bf6b3e11370410147e77c0ae63494198e7))
+
 ## [Unreleased]
 
 ### Added
