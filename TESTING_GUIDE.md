@@ -55,7 +55,7 @@ ei auth login
 #### 1. List Objects
 
 ```bash
-ei list objects
+ei objects list
 ```
 
 Expected output:
@@ -66,10 +66,10 @@ Expected output:
 
 ```bash
 # By namespace
-ei show app dealclosingprocess
+ei apps show dealclosingprocess
 
 # By URL
-ei show app "https://appdemo.elementum.io/admin/apps/dealclosingprocess/flow"
+ei apps show "https://appdemo.elementum.io/admin/apps/dealclosingprocess/flow"
 ```
 
 Expected output:
@@ -101,7 +101,7 @@ Summary
 #### 3. Export App (Interactive)
 
 ```bash
-ei export app dealclosingprocess
+ei apps export dealclosingprocess
 ```
 
 Expected behavior:
@@ -113,7 +113,7 @@ Expected behavior:
 #### 4. Export App (All Resources)
 
 ```bash
-ei export app dealclosingprocess --all -o dealclosingprocess.tf
+ei apps export dealclosingprocess --all -o dealclosingprocess.tf
 ```
 
 Expected behavior:
@@ -134,19 +134,19 @@ Expected behavior:
 
 ```bash
 # Create a test element first, then:
-ei export element <namespace-or-id>
+ei elements export <namespace-or-id>
 ```
 
 #### 6. Export Group
 
 ```bash
-ei export group "Engineering Team"
+ei groups export "Engineering Team"
 ```
 
 #### 7. Export CloudLink
 
 ```bash
-ei export cloudlink "Production API"
+ei cloudlinks export "Production API"
 ```
 
 ### Verification Steps
@@ -202,12 +202,12 @@ terraform plan
 
 ### CLI Commands
 
-- [ ] `show app` displays all resources in tree
-- [ ] `export app` includes all resource types in interactive mode
-- [ ] `export app --all` exports everything
-- [ ] `export element` works for elements
-- [ ] `export group` works for groups
-- [ ] `export cloudlink` works for cloudlinks
+- [ ] `apps show` displays all resources in tree
+- [ ] `apps export` includes all resource types in interactive mode
+- [ ] `apps export --all` exports everything
+- [ ] `elements export` works for elements
+- [ ] `groups export` works for groups
+- [ ] `cloudlinks export` works for cloudlinks
 - [ ] Help text is accurate
 - [ ] Error messages are helpful
 
@@ -255,8 +255,8 @@ For comprehensive testing, create an app with:
 ### Enable Verbose Mode
 
 ```bash
-ei show app dealclosingprocess -v
-ei export app dealclosingprocess --verbose
+ei apps show dealclosingprocess -v
+ei apps export dealclosingprocess --verbose
 ```
 
 ### Check GraphQL Queries
@@ -264,7 +264,7 @@ ei export app dealclosingprocess --verbose
 ```bash
 # Set debug env var
 export DEBUG_GRAPHQL=1
-ei show app dealclosingprocess
+ei apps show dealclosingprocess
 ```
 
 ### Check Terraform Working Directory

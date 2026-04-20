@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial open source release of the Elementum CLI (`ei`)
 - Authentication with OS keychain integration (`ei auth login`)
 - App discovery and tree view (`ei show app`)
-- Export to Terraform/OpenTofu import configurations (`ei export app`)
+- Export to Terraform/OpenTofu import configurations (`ei apps export`)
 - Element, group, and CloudLink export support
 - Terraform/Tofu helper commands (`ei plan`, `ei apply`, `ei destroy`)
 - Stored Snowflake function management (`ei functions list`, `ei functions delete`)

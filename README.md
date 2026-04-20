@@ -49,7 +49,7 @@ Credentials are securely stored in your OS keychain.
 ### 2. List Objects
 
 ```bash
-ei list objects
+ei objects list
 ```
 
 Shows a table of all objects (apps and elements) with their types, names, and namespaces.
@@ -58,10 +58,10 @@ Shows a table of all objects (apps and elements) with their types, names, and na
 
 ```bash
 # By namespace
-ei show app accountassignment
+ei apps show accountassignment
 
 # By URL (in quotes)
-ei show app "https://appdemo.elementum.io/app/accountassignment/records"
+ei apps show "https://appdemo.elementum.io/app/accountassignment"
 ```
 
 Displays a tree view of the app's structure including:
@@ -78,29 +78,33 @@ Displays a tree view of the app's structure including:
 ### 4. Export to Terraform
 
 ```bash
-# Export apps (interactive selection)
-ei export app accountassignment
+# apps exports (interactive selection)
+ei apps export accountassignment
 
-# Export apps by URL (in quotes)
-ei export app "https://appdemo.elementum.io/app/accountassignment/records"
-
-# Export everything without prompting
-ei export app accountassignment --all
-
-# Export elements
-ei export element products                # By namespace
-ei export element elem_12345678           # By ID
-
-# Export groups
-ei export group "Engineering Team"        # By name
-ei export group grp_12345678              # By ID
-
-# Export CloudLinks
-ei export cloudlink "Production API"      # By name
-ei export cloudlink cl_12345678           # By ID
+# apps exports by URL (in quotes)
+ei apps export "https://appdemo.elementum.io/app/accountassignment"
 
 # Custom output file
-ei export app accountassignment -o my-app.tf
+ei apps export accountassignment --output my-app.tf
+
+# Multiple output files
+ei apps export accountassignment --directory my/custom/directory
+
+# Export everything without prompting
+ei apps export accountassignment --all
+
+# Export elements
+ei elements export products                # By namespace
+ei elements export elem_12345678           # By ID
+
+# Export groups
+ei groups export "Engineering Team"        # By name
+ei groups export grp_12345678              # By ID
+
+# Export CloudLinks
+ei cloudlinks export "Production API"      # By name
+ei cloudlinks export cl_12345678           # By ID
+
 ```
 
 The CLI will:
@@ -132,43 +136,44 @@ terraform plan -generate-config-out=generated.tf
 ### Authentication
 
 ```bash
-ei auth login              # Interactive sign-in
+ei auth login                  # Interactive sign-in
 ei auth login --profile work   # Save as named profile
-ei auth status             # Show current auth status
-ei auth logout             # Clear stored credentials
-ei auth switch <profile>   # Switch between profiles
+ei auth status                 # Show current auth status
+ei auth logout                 # Clear stored credentials
+ei auth switch <profile>       # Switch between profiles
 ```
 
 ### Discovery
 
 ```bash
-ei list objects                     # List all objects (apps and elements)
-ei show app accountassignment       # Show app details by namespace
-ei show app "https://..."           # Show app details by URL
+ei objects list                      # List all objects (apps and elements)
+ei apps show accountassignment       # Show app details by namespace
+ei apps show "https://..."           # Show app details by URL
 ```
 
 ### Export
 
 ```bash
-# Export apps
-ei export app accountassignment                   # Interactive selection
-ei export app accountassignment --all             # Export everything
-ei export app accountassignment -o my-app.tf      # Custom output file
+# apps exports
+ei apps export accountassignment                    # Interactive selection
+ei apps export accountassignment --all              # Export everything
+ei apps export accountassignment --output my-app.tf # Custom output file
+ei apps export accountassignment --directory my/custom/directory # Multiple output files
 
 # Export elements
-ei export element products                        # By namespace
-ei export element elem_12345678                   # By ID
-ei export element products -o element.tf          # Custom output file
+ei elements export products                        # By namespace
+ei elements export elem_12345678                   # By ID
+ei elements export products -o element.tf          # Custom output file
 
 # Export groups
-ei export group "Engineering Team"                # By name
-ei export group grp_12345678                      # By ID
-ei export group "Engineering Team" -o group.tf    # Custom output file
+ei groups export "Engineering Team"                # By name
+ei groups export grp_12345678                      # By ID
+ei groups export "Engineering Team" -o group.tf    # Custom output file
 
 # Export CloudLinks
-ei export cloudlink "Production API"              # By name
-ei export cloudlink cl_12345678                   # By ID
-ei export cloudlink "Production API" -o cloudlink.tf  # Custom output file
+ei cloudlinks export "Production API"              # By name
+ei cloudlinks export cl_12345678                   # By ID
+ei cloudlinks export "Production API" -o cloudlink.tf  # Custom output file
 ```
 
 ### Stored Functions
@@ -201,7 +206,7 @@ ei destroy -auto-approve   # Destroy without confirmation
 These commands automatically:
 
 - Detect whether to use `terraform` or `tofu` (prefers tofu if both are available)
-- Inject your stored Elementum credentials as environment variables
+- Inject your stored Elementum credentials from currently active `ei auth` profile as environment variables (`ELEMENTUM_ORGANIZATION`, `ELEMENTUM_CLIENT_ID`, `ELEMENTUM_CLIENT_SECRET`, `ELEMENTUM_ENVIRONMENT`)
 - Pass through all flags to the underlying terraform/tofu command
 - Provide enhanced, colored output for better readability
 
@@ -209,8 +214,8 @@ These commands automatically:
 
 ### Config File Location
 
-- **macOS/Linux:** `~/.config/elementum/config.yaml`
-- **Windows:** `%APPDATA%\elementum\config.yaml`
+- **macOS/Linux:** `~/.config/ei/config.yaml`
+- **Windows:** `%APPDATA%\ei\config.yaml`
 
 ### Multiple Profiles
 
@@ -224,7 +229,7 @@ ei auth login --profile staging
 ei auth switch staging
 
 # Use a specific profile for a command
-ei list objects --profile staging
+ei objects list --profile staging
 ```
 
 ### Credential Priority
@@ -315,13 +320,13 @@ The CLI generates import IDs in the same format expected by the Terraform provid
 ei auth login
 
 # Find your app
-ei list objects
+ei objects list
 
 # View app structure (by namespace)
-ei show app accountassignment
+ei apps show accountassignment
 
 # Export everything
-ei export app accountassignment --all
+ei apps export accountassignment --all --directory my/custom/directory
 
 # Generate Terraform config
 terraform plan -generate-config-out=generated.tf
@@ -337,13 +342,13 @@ cat generated.tf
 ei auth login
 
 # List all objects to find your element
-ei list objects
+ei objects list 
 
 # Export element by namespace
-ei export element products
+ei elements export products
 
 # Or by ID
-ei export element elem_12345678
+ei elements export  elem_12345678
 
 # Review the generated config
 cat generated.tf
@@ -356,10 +361,10 @@ cat generated.tf
 ei auth login
 
 # Export group by name (use quotes if name has spaces)
-ei export group "Engineering Team"
+ei groups export "Engineering Team"
 
 # Or by ID
-ei export group grp_12345678
+ei groups export  grp_12345678
 
 # Review the generated config
 cat generated.tf
@@ -372,10 +377,10 @@ cat generated.tf
 ei auth login
 
 # Export CloudLink by name (use quotes if name has spaces)
-ei export cloudlink "Production API"
+ei cloudlinks export "Production API"
 
 # Or by ID
-ei export cloudlink cl_12345678
+ei cloudlinks export cl_12345678
 
 # Review the generated config
 cat generated.tf
@@ -388,7 +393,7 @@ cat generated.tf
 ei auth login
 
 # Export an app
-ei export app myapp --all
+ei apps export myapp --all
 
 # Review the plan (credentials auto-injected)
 ei plan -generate-config-out=generated.tf
@@ -407,7 +412,7 @@ ei destroy
 
 ```bash
 # Export with interactive selection
-ei export app accountassignment
+ei apps export accountassignment
 
 # Select:
 # [x] Fields
@@ -423,11 +428,11 @@ ei export app accountassignment
 ```bash
 # Production
 ei auth login --profile prod
-ei export app app_prod_123 --all -o prod-imports.tf
+ei apps export app_prod_123 --all -o prod-imports.tf
 
 # Staging
 ei auth login --profile staging
-ei export app app_staging_456 --all -o staging-imports.tf
+ei apps export app_staging_456 --all -o staging-imports.tf
 ```
 
 ## Development
