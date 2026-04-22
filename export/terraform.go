@@ -124,8 +124,20 @@ func (tr *TerraformRunner) Init() error {
 			// Remove any existing .terraform directory and lock file that might conflict
 			_ = os.RemoveAll(filepath.Join(tr.WorkDir, ".terraform"))
 			_ = os.Remove(filepath.Join(tr.WorkDir, ".terraform.lock.hcl"))
-			fmt.Println("✓ Using provider dev_overrides (skipping init)")
+			fmt.Println("✓ Using provider dev_overrides [.tofurc] (skipping init)")
 			return nil
+		}
+	} else {
+		// .tofurc did not indicate dev_overrides — check .terraformrc as fallback
+		terraformrcPath := filepath.Join(os.Getenv("HOME"), ".terraformrc")
+		if _, err := os.Stat(terraformrcPath); err == nil {
+			content, err := os.ReadFile(terraformrcPath)
+			if err == nil && containsString(string(content), "elementumltd/elementum") {
+				_ = os.RemoveAll(filepath.Join(tr.WorkDir, ".terraform"))
+				_ = os.Remove(filepath.Join(tr.WorkDir, ".terraform.lock.hcl"))
+				fmt.Println("✓ Using provider dev_overrides [.terraformrc] (skipping init)")
+				return nil
+			}
 		}
 	}
 
