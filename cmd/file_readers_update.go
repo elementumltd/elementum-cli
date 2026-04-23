@@ -17,6 +17,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/elementumltd/elementum-cli/auth"
 	"github.com/elementumltd/elementum-cli/internal/client"
@@ -171,3 +172,55 @@ func runFileReadersUpdateCmd(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// parseFieldDefinitionsForUpdate is similar to parseFieldDefinitions but handles the case
+// where we need to preserve existing field IDs for updates (not currently implemented)
+func parseFieldDefinitionsForUpdate(fields []string) ([]client.DocumentModelAiFieldInput, error) {
+	var result []client.DocumentModelAiFieldInput
+
+	for _, f := range fields {
+		parts := strings.SplitN(f, ":", 4)
+		if len(parts) < 2 {
+			return nil, fmt.Errorf("invalid field format %q. Expected: name:type:description:required", f)
+		}
+
+		name := parts[0]
+		fieldType := strings.ToUpper(parts[1])
+		description := ""
+		required := false
+
+		if len(parts) >= 3 {
+			description = parts[2]
+		}
+		if len(parts) >= 4 {
+			required = strings.ToLower(parts[3]) == "true"
+		}
+
+		// Validate field type
+		var aiFieldType client.DocumentModelAiFieldType
+		switch fieldType {
+		case "TEXT":
+			aiFieldType = client.DocumentModelAiFieldTypeText
+		case "NUMBER":
+			aiFieldType = client.DocumentModelAiFieldTypeNumber
+		case "DECIMAL":
+			aiFieldType = client.DocumentModelAiFieldTypeDecimal
+		case "BOOLEAN":
+			aiFieldType = client.DocumentModelAiFieldTypeBoolean
+		case "DATE":
+			aiFieldType = client.DocumentModelAiFieldTypeDate
+		case "DATETIME":
+			aiFieldType = client.DocumentModelAiFieldTypeDatetime
+		default:
+			return nil, fmt.Errorf("invalid field type %q. Supported: text, number, decimal, boolean, date, datetime", fieldType)
+		}
+
+		result = append(result, client.DocumentModelAiFieldInput{
+			Name:        name,
+			Type:        aiFieldType,
+			Description: description,
+			Required:    required,
+		})
+	}
+
+	return result, nil
+}

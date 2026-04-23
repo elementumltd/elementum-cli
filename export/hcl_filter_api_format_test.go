@@ -754,3 +754,10 @@ func assertContains(t *testing.T, result, expected, message string) {
 		t.Errorf("%s: expected %q in result:\n%s", message, expected, result)
 	}
 }
+
+func assertNotContains(t *testing.T, result, unexpected, message string) {
+	t.Helper()
+	if strings.Contains(result, unexpected) {
+		t.Errorf("%s: unexpected %q in result:\n%s", message, unexpected, result)
+	}
+}

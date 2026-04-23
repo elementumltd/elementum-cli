@@ -72,10 +72,9 @@ func convertAvailableFunctionData(af *client.AvailableFunctionData) AvailableFun
 
 	// Convert return type
 	if af.Output != nil {
-		switch af.Output.OutputType {
-		case "simple":
+		if af.Output.OutputType == "simple" {
 			result.ReturnType = af.Output.ReturnType
-		case "table":
+		} else if af.Output.OutputType == "table" {
 			result.ReturnType = "TABLE"
 		}
 	}
@@ -123,42 +122,55 @@ type CloudLinkFunctionsResult struct {
 }
 
 // ListCloudLinkFunctions retrieves both stored (configured) and available functions for a CloudLink.
-// Supports optional database, schema, and functionType filters for available functions.
+// Requires database and schema filters to scope the Snowflake query and avoid timeouts.
 func ListCloudLinkFunctions(ctx context.Context, c *client.Client, cloudLinkID, database, schema, functionType string) (*CloudLinkFunctionsResult, error) {
-	// Build filter when database/schema provided
-	var filterPtr *json.RawMessage
-	if database != "" || schema != "" {
-		var children []map[string]any
-		if database != "" {
-			children = append(children, map[string]any{
-				"type":  "EQUALS",
-				"field": "database",
-				"value": map[string]any{"type": "TEXT", "value": database},
-			})
-		}
-		if schema != "" {
-			children = append(children, map[string]any{
-				"type":  "EQUALS",
-				"field": "schema",
-				"value": map[string]any{"type": "TEXT", "value": schema},
-			})
-		}
-		var filter any
-		if len(children) == 1 {
-			filter = children[0]
-		} else {
-			filter = map[string]any{
-				"type":     "AND",
-				"children": children,
-			}
-		}
-		filterJSON, err := json.Marshal(filter)
-		if err != nil {
-			return nil, fmt.Errorf("failed to build filter: %w", err)
-		}
-		raw := json.RawMessage(filterJSON)
-		filterPtr = &raw
+	result := &CloudLinkFunctionsResult{}
+
+	// Always fetch stored functions first (fast query, doesn't hit live Snowflake)
+	storedResp, err := client.ListStoredFunctions(ctx, c.Genqlient(), cloudLinkID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list stored functions: %w", err)
 	}
+	storedFunctions := client.ExtractStoredFunctionsFromList(storedResp)
+	for _, sf := range storedFunctions {
+		result.StoredFunctions = append(result.StoredFunctions, client.CloudLinkStoredFunction{
+			ID:          sf.ID,
+			Name:        sf.Name,
+			DisplayName: sf.DisplayName,
+		})
+	}
+
+	// Build filter for available functions (required to avoid slow unfiltered queries)
+	var children []map[string]any
+	if database != "" {
+		children = append(children, map[string]any{
+			"type":  "EQUALS",
+			"field": "database",
+			"value": map[string]any{"type": "TEXT", "value": database},
+		})
+	}
+	if schema != "" {
+		children = append(children, map[string]any{
+			"type":  "EQUALS",
+			"field": "schema",
+			"value": map[string]any{"type": "TEXT", "value": schema},
+		})
+	}
+	var filter any
+	if len(children) == 1 {
+		filter = children[0]
+	} else {
+		filter = map[string]any{
+			"type":     "AND",
+			"children": children,
+		}
+	}
+	filterJSON, err := json.Marshal(filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build filter: %w", err)
+	}
+	raw := json.RawMessage(filterJSON)
+	filterPtr := &raw
 
 	// Convert function type string to GraphQL enum pointer
 	var typePtr *client.SnowflakeFunctionType
@@ -177,13 +189,10 @@ func ListCloudLinkFunctions(ctx context.Context, c *client.Client, cloudLinkID, 
 
 	resp, err := client.ListCloudLinkFunctions(ctx, c.Genqlient(), cloudLinkID, filterPtr, typePtr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list cloudlink functions: %w", err)
+		return nil, fmt.Errorf("failed to list available functions: %w", err)
 	}
 
 	extracted := client.ExtractCloudLinkFunctions(resp)
-	result := &CloudLinkFunctionsResult{
-		StoredFunctions: extracted.StoredFunctions,
-	}
 	for _, af := range extracted.AvailableFunctions {
 		result.AvailableFunctions = append(result.AvailableFunctions, convertAvailableFunctionData(&af))
 	}

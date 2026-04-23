@@ -334,6 +334,15 @@ query GetAspectDisplayWidgets($aspectId: ID!) {
                 icon
                 fullWidth
               }
+              ... on DisplayWidgetRunAutomationAction {
+                automation {
+                  id
+                }
+                buttonType
+                color
+                icon
+                fullWidth
+              }
             }
           }
         }
@@ -365,6 +374,15 @@ query GetAspectDisplayWidgets($aspectId: ID!) {
               }
               ... on DisplayWidgetRelatedCreateAction {
                 aspect {
+                  id
+                }
+                buttonType
+                color
+                icon
+                fullWidth
+              }
+              ... on DisplayWidgetRunAutomationAction {
+                automation {
                   id
                 }
                 buttonType

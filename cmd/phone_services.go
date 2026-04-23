@@ -20,6 +20,7 @@ import (
 
 	"github.com/elementumltd/elementum-cli/auth"
 	"github.com/elementumltd/elementum-cli/discovery"
+	"github.com/elementumltd/elementum-cli/internal/client"
 	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/spf13/cobra"
 )
@@ -38,8 +39,18 @@ var phoneServicesListCmd = &cobra.Command{
 	RunE:  runPhoneServicesList,
 }
 
+var phoneServicesDeleteCmd = &cobra.Command{
+	Use:   "delete <phone-service-id>",
+	Short: "Delete a phone service",
+	Long:  "Delete a phone service by its ID. Use 'ei phone-services list <app>' to find the ID.",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runPhoneServicesDelete,
+}
+
 func init() {
 	phoneServicesCmd.AddCommand(phoneServicesListCmd)
+	phoneServicesCmd.AddCommand(phoneServicesDeleteCmd)
+	phoneServicesDeleteCmd.Flags().BoolP("force", "f", false, "Skip confirmation prompt")
 }
 
 // GetPhoneServicesCmd returns the phone-services command for registration
@@ -112,5 +123,53 @@ func runPhoneServicesList(cmd *cobra.Command, args []string) error {
 	fmt.Println(ui.MutedStyle.Render(fmt.Sprintf("Total: %d services", len(services))))
 	fmt.Println()
 
+	return nil
+}
+
+func runPhoneServicesDelete(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+	phoneServiceID := args[0]
+
+	// Get authenticated client
+	c, err := auth.GetClientFromCmd(cmd)
+	if err != nil {
+		return err
+	}
+
+	// Check for force flag
+	force, _ := cmd.Flags().GetBool("force")
+
+	if !force {
+		confirmed, err := ui.Confirm(
+			fmt.Sprintf("Delete phone service %s?", phoneServiceID),
+			"This will permanently delete the phone service.\nThis action cannot be undone.",
+		)
+		if err != nil {
+			return err
+		}
+		if !confirmed {
+			fmt.Println(ui.MutedStyle.Render("Cancelled."))
+			return nil
+		}
+	}
+
+	if !isJSONOutput(cmd) {
+		fmt.Println(ui.InfoStyle.Render("Deleting phone service..."))
+	}
+
+	// Delete the phone service
+	_, err = client.DeletePhoneService(ctx, c.Genqlient(), phoneServiceID)
+	if err != nil {
+		return fmt.Errorf("failed to delete phone service: %w", err)
+	}
+
+	if isJSONOutput(cmd) {
+		return outputJSON(map[string]string{
+			"id":      phoneServiceID,
+			"deleted": "true",
+		})
+	}
+
+	fmt.Println(ui.SuccessStyle.Render("Deleted phone service:") + fmt.Sprintf(" %s", phoneServiceID))
 	return nil
 }

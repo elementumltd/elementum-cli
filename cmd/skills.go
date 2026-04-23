@@ -19,8 +19,8 @@ import (
 	"fmt"
 
 	"github.com/elementumltd/elementum-cli/auth"
-	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -31,19 +31,27 @@ var skillsCmd = &cobra.Command{
 }
 
 var skillsListCmd = &cobra.Command{
-	Use:   "list [app-namespace]",
-	Short: "List agentic skills",
-	Long:  "List agentic skills, optionally filtered by app namespace.",
-	Args:  cobra.MaximumNArgs(1),
-	RunE:  runListSkills,
+	Use:   "list <namespace>",
+	Short: "List agentic skills in an app",
+	Long: `List agentic skills belonging to an app.
+
+Examples:
+  ei skills list support-tickets
+  ei skills list clm --json`,
+	Args: cobra.ExactArgs(1),
+	RunE: runListSkills,
 }
 
 var skillsDeleteCmd = &cobra.Command{
-	Use:   "delete <skill-id-or-name>",
+	Use:   "delete <namespace> <skill-name>",
 	Short: "Delete an agentic skill",
-	Long:  "Delete an agentic skill by ID or name. Also deletes all tools on the skill.",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runDeleteSkill,
+	Long: `Delete an agentic skill by name within an app. Also deletes all tools on the skill.
+
+Examples:
+  ei skills delete support-tickets "Ticket Triage"
+  ei skills delete clm escalation-handler`,
+	Args: cobra.ExactArgs(2),
+	RunE: runDeleteSkill,
 }
 
 func init() {
@@ -68,34 +76,40 @@ type skillInfo struct {
 
 func runListSkills(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
+	namespace := args[0]
 
 	apiClient, err := auth.GetClientFromCmd(cmd)
 	if err != nil {
 		return err
 	}
 
-	var appNamespace string
-	if len(args) > 0 {
-		appNamespace = args[0]
+	// Resolve namespace to aspect ID
+	aspectID, _, err := resolveAspectByNamespace(ctx, apiClient, namespace)
+	if err != nil {
+		return fmt.Errorf("failed to resolve app %q: %w", namespace, err)
 	}
 
-	skills, err := listSkills(ctx, apiClient, appNamespace)
+	skills, err := listSkillsInApp(ctx, apiClient, aspectID)
 	if err != nil {
 		return err
 	}
 
+	if isJSONOutput(cmd) {
+		return outputJSON(skills)
+	}
+
 	if len(skills) == 0 {
-		fmt.Println(ui.WarningStyle.Render("No skills found."))
+		fmt.Println(ui.WarningStyle.Render(fmt.Sprintf("No skills found in app %q.", namespace)))
 		return nil
 	}
 
-	table := ui.NewTable([]string{"NAME", "ID", "STATUS", "OWNER", "TOOLS"})
+	table := ui.NewTable([]string{"NAME", "ID", "STATUS", "TOOLS"})
 	for _, skill := range skills {
-		table.AddRow(skill.Name, skill.ID, skill.Status, skill.OwnerName, fmt.Sprintf("%d", skill.ToolCount))
+		table.AddRow(skill.Name, skill.ID, skill.Status, fmt.Sprintf("%d", skill.ToolCount))
 	}
 
 	fmt.Println()
-	fmt.Println(ui.TitleStyle.Render("Agentic Skills"))
+	fmt.Println(ui.TitleStyle.Render(fmt.Sprintf("Skills in %s", namespace)))
 	fmt.Println()
 	fmt.Println(table.Render())
 	fmt.Println()
@@ -107,26 +121,32 @@ func runListSkills(cmd *cobra.Command, args []string) error {
 
 func runDeleteSkill(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
-	skillIDOrName := args[0]
+	namespace := args[0]
+	skillName := args[1]
 
 	apiClient, err := auth.GetClientFromCmd(cmd)
 	if err != nil {
 		return err
 	}
 
-	// Try to find skill by name first if it doesn't look like a UUID
-	skillID := skillIDOrName
-	if !isUUID(skillIDOrName) {
-		skill, err := findSkillByName(ctx, apiClient, skillIDOrName)
-		if err != nil {
-			return fmt.Errorf("failed to find skill '%s': %w", skillIDOrName, err)
-		}
-		skillID = skill.ID
+	// Resolve namespace to aspect ID
+	aspectID, _, err := resolveAspectByNamespace(ctx, apiClient, namespace)
+	if err != nil {
+		return fmt.Errorf("failed to resolve app %q: %w", namespace, err)
+	}
+
+	// Find skill by name in the app
+	skill, err := findSkillByNameInApp(ctx, apiClient, aspectID, skillName)
+	if err != nil {
+		return fmt.Errorf("failed to find skill %q in app %q: %w", skillName, namespace, err)
+	}
+
+	if !isJSONOutput(cmd) {
 		fmt.Println(ui.InfoStyle.Render(fmt.Sprintf("Found skill: %s (%s)", skill.Name, skill.ID)))
 	}
 
 	// First delete all tools on the skill
-	tools, err := getSkillTools(ctx, apiClient, skillID)
+	tools, err := getSkillTools(ctx, apiClient, skill.ID)
 	if err != nil {
 		fmt.Println(ui.WarningStyle.Render(fmt.Sprintf("Could not list tools: %v", err)))
 	} else if len(tools) > 0 {
@@ -142,55 +162,58 @@ func runDeleteSkill(cmd *cobra.Command, args []string) error {
 	}
 
 	// Now delete the skill
-	err = deleteSkill(ctx, apiClient, skillID)
+	err = deleteSkill(ctx, apiClient, skill.ID)
 	if err != nil {
 		return fmt.Errorf("failed to delete skill: %w", err)
 	}
 
-	fmt.Println(ui.SuccessStyle.Render(fmt.Sprintf("Deleted skill %s", skillID)))
+	fmt.Println(ui.SuccessStyle.Render(fmt.Sprintf("Deleted skill %s", skill.ID)))
 	return nil
 }
 
-func listSkills(ctx context.Context, apiClient *client.Client, appNamespace string) ([]skillInfo, error) {
-	// Note: appNamespace filtering is not implemented since AgenticSkill doesn't have owner field
-	_ = appNamespace
-
+func listSkillsInApp(ctx context.Context, apiClient *client.Client, aspectID string) ([]skillInfo, error) {
 	var result struct {
 		Organization struct {
-			AgenticSkills struct {
-				Edges []struct {
-					Node struct {
-						ID          string `json:"id"`
-						Name        string `json:"name"`
-						Description string `json:"description"`
-						Status      string `json:"status"`
-						Tools       struct {
-							Edges []struct {
-								Node struct {
-									ID string `json:"id"`
-								} `json:"node"`
-							} `json:"edges"`
-						} `json:"tools"`
-					} `json:"node"`
-				} `json:"edges"`
-			} `json:"agenticSkills"`
+			Aspect *struct {
+				AgenticSkills struct {
+					Edges []struct {
+						Node struct {
+							ID          string `json:"id"`
+							Name        string `json:"name"`
+							Description string `json:"description"`
+							Status      string `json:"status"`
+							Tools       struct {
+								Edges []struct {
+									Node struct {
+										ID string `json:"id"`
+									} `json:"node"`
+								} `json:"edges"`
+							} `json:"tools"`
+						} `json:"node"`
+					} `json:"edges"`
+				} `json:"agenticSkills"`
+			} `json:"aspect"`
 		} `json:"organization"`
 	}
 
 	query := `
-		query ListAgenticSkills {
+		query ListAppSkills($aspectId: ID!) {
 			organization {
-				agenticSkills {
-					edges {
-						node {
-							id
-							name
-							description
-							status
-							tools {
-								edges {
-									node {
-										id
+				aspect(id: $aspectId) {
+					... on AspectApp {
+						agenticSkills {
+							edges {
+								node {
+									id
+									name
+									description
+									status
+									tools {
+										edges {
+											node {
+												id
+											}
+										}
 									}
 								}
 							}
@@ -201,13 +224,17 @@ func listSkills(ctx context.Context, apiClient *client.Client, appNamespace stri
 		}
 	`
 
-	err := apiClient.ExecuteInto(ctx, query, nil, &result)
+	err := apiClient.ExecuteInto(ctx, query, map[string]interface{}{"aspectId": aspectID}, &result)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query skills: %w", err)
 	}
 
+	if result.Organization.Aspect == nil {
+		return nil, fmt.Errorf("app not found")
+	}
+
 	var skills []skillInfo
-	for _, edge := range result.Organization.AgenticSkills.Edges {
+	for _, edge := range result.Organization.Aspect.AgenticSkills.Edges {
 		skill := skillInfo{
 			ID:          edge.Node.ID,
 			Name:        edge.Node.Name,
@@ -221,8 +248,8 @@ func listSkills(ctx context.Context, apiClient *client.Client, appNamespace stri
 	return skills, nil
 }
 
-func findSkillByName(ctx context.Context, apiClient *client.Client, name string) (*skillInfo, error) {
-	skills, err := listSkills(ctx, apiClient, "")
+func findSkillByNameInApp(ctx context.Context, apiClient *client.Client, aspectID, name string) (*skillInfo, error) {
+	skills, err := listSkillsInApp(ctx, apiClient, aspectID)
 	if err != nil {
 		return nil, err
 	}

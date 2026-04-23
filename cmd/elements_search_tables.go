@@ -20,8 +20,8 @@ import (
 	"strings"
 
 	"github.com/elementumltd/elementum-cli/auth"
-	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -119,10 +119,16 @@ func runElementsSearchTablesList(cmd *cobra.Command, args []string) error {
 			if st.GetErrorMessage() != nil {
 				errMsg = *st.GetErrorMessage()
 			}
+			var fieldName, fieldID string
+			if fieldPtr := st.GetField(); fieldPtr != nil {
+				field := *fieldPtr
+				fieldName = field.GetName()
+				fieldID = field.GetId()
+			}
 			tables = append(tables, searchTableInfo{
 				ID:              st.GetId(),
-				Field:           st.GetField().GetName(),
-				FieldID:         st.GetField().GetId(),
+				Field:           fieldName,
+				FieldID:         fieldID,
 				Status:          string(st.GetStatus()),
 				ErrorMessage:    errMsg,
 				AttributeFields: attrs,
@@ -163,9 +169,15 @@ func runElementsSearchTablesList(cmd *cobra.Command, args []string) error {
 			status = fmt.Sprintf("%s: %s", status, *errMsg)
 		}
 
+		var fieldNameForTable string
+		if fp := st.GetField(); fp != nil {
+			f := *fp
+			fieldNameForTable = f.GetName()
+		}
+
 		table.AddRow(
 			st.GetId(),
-			st.GetField().GetName(),
+			fieldNameForTable,
 			status,
 			attrsStr,
 		)
@@ -215,6 +227,17 @@ func runSearchTableDelete(cmd *cobra.Command, args []string) error {
 
 	_, err = client.DeleteAspectSearchTable(ctx, c.Genqlient(), searchTableID)
 	if err != nil {
+		// Delete failed - fetch usages to explain why
+		usages := fetchSearchTableUsages(ctx, c, searchTableID)
+		if len(usages) > 0 {
+			fmt.Println(ui.ErrorStyle.Render(fmt.Sprintf("Cannot delete search table %s - the following resources are using it:", searchTableID)))
+			for _, u := range usages {
+				fmt.Printf("  - %s\n", u)
+			}
+			fmt.Println()
+			fmt.Println(ui.MutedStyle.Render("Remove or update these resources first."))
+			return fmt.Errorf("delete blocked by usages")
+		}
 		return fmt.Errorf("failed to delete search table: %w", err)
 	}
 
@@ -227,4 +250,43 @@ func runSearchTableDelete(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(ui.SuccessStyle.Render("Deleted search table:") + fmt.Sprintf(" %s", searchTableID))
 	return nil
+}
+
+// fetchSearchTableUsages retrieves all resources that use the given search table.
+func fetchSearchTableUsages(ctx context.Context, c *client.Client, searchTableID string) []string {
+	result, err := client.GetAspectSearchTableDependencies(ctx, c.Genqlient(), searchTableID)
+	if err != nil {
+		return nil
+	}
+
+	var usages []string
+	st := result.AspectSearchTableRefreshStatus
+	if st == nil {
+		return usages
+	}
+
+	usage := st.GetUsage()
+
+	// Agent Tools (includes skill tools)
+	for _, edge := range usage.AgentTools.Edges {
+		node := edge.Node
+		if node != nil {
+			usages = append(usages, fmt.Sprintf("agent tool: %q (id: %s)", node.GetName(), node.GetId()))
+		}
+	}
+
+	// Agents
+	for _, edge := range usage.Agents.Edges {
+		node := edge.Node
+		if node != nil {
+			usages = append(usages, fmt.Sprintf("agent: %q (id: %s)", node.GetName(), node.GetId()))
+		}
+	}
+
+	// Automations
+	for _, edge := range usage.Automations.Edges {
+		usages = append(usages, fmt.Sprintf("automation: %q (id: %s)", edge.Node.Name, edge.Node.Id))
+	}
+
+	return usages
 }

@@ -30,6 +30,123 @@ query GetAspectAutomations($aspectId: ID!, $filter: Filter) {
   }
 }
 
+# Shared workflow fields for automation current + draft (triggers + published output properties).
+fragment AutomationWorkflowAspectDetail on Workflow {
+  id
+  version
+  status
+  terminal
+  triggers {
+    id
+    __typename
+    updatedAt
+    ... on WorkflowRecordCreateTrigger {
+      filter
+      changedFields {
+        id
+        name
+      }
+    }
+    ... on WorkflowRecordUpdateTrigger {
+      filter
+      changedFields {
+        id
+        name
+      }
+    }
+    ... on WorkflowOnDemandTrigger {
+      showTriggeredBy
+      parameters {
+        id
+        name
+        fieldType
+        required
+        defaultValue
+        multiple
+      }
+    }
+    ... on WorkflowWebhookTrigger {
+      authenticated
+      url
+      customResponse {
+        success {
+          body
+          enabled
+          format
+          statusCode
+        }
+        failure {
+          body
+          enabled
+          format
+          statusCode
+        }
+      }
+    }
+    ... on WorkflowApprovalChainTrigger {
+      approvalChainTemplate {
+        id
+        name
+      }
+      status
+      filter
+    }
+    ... on WorkflowAttachmentTrigger {
+      filter
+    }
+    ... on WorkflowCommentAddedTrigger {
+      commentConversationType: conversationType
+      filter
+    }
+    ... on WorkflowSlackMessageTrigger {
+      filter
+    }
+    ... on WorkflowEmailIngestionTrigger {
+      emailAlias {
+        id
+        alias
+      }
+    }
+    ... on WorkflowConversationEndTrigger {
+      endConversationType: conversationType
+      filter
+    }
+    ... on WorkflowDatamineTrigger {
+      datamine {
+        id
+      }
+      fireOnAlert
+      fireOnRecovery
+      filter
+    }
+  }
+  outputs {
+    id
+    name
+    referenceId
+  }
+}
+
+query GetAutomationDetailsViaAspect($aspectId: ID!, $automationId: ID!) {
+  organization {
+    id
+    aspect(id: $aspectId) {
+      id
+      automation(id: $automationId) {
+        id
+        name
+        status
+        current {
+          ...AutomationWorkflowAspectDetail
+        }
+        draft {
+          ...AutomationWorkflowAspectDetail
+        }
+      }
+    }
+  }
+}
+
 query GetAutomationDetails($automationId: ID!) {
   organization {
     id
@@ -422,9 +539,124 @@ query GetWorkflowAvailableReferences(
   }
 }
 
-# Lightweight version of GetWorkflowAvailableReferences for refs beautification.
-# Skips the expensive 'entity' field (large union type with many fragments).
-# For beautification we only need: name, reference value, and reference source.
+# Alternative query that goes through automation.draft for fetching available references.
+# Use this when aspect.workflow(id:) doesn't find the draft workflow.
+query GetDraftWorkflowAvailableReferences(
+  $aspectId: ID!
+  $automationId: ID!
+  $parentTaskId: ID
+  $fieldTypes: [WorkflowFieldType!]
+  $isOperatorChild: Boolean
+) {
+  organization {
+    aspect(id: $aspectId) {
+      __typename
+      automation(id: $automationId) {
+        id
+        draft {
+          id
+          availableReferences(
+            parentTaskId: $parentTaskId
+            fieldTypes: $fieldTypes
+            isChild: $isOperatorChild
+          ) {
+            name
+            properties {
+              fieldType
+              name
+              multiple
+              deprecated
+              reference {
+                id
+                value
+                taskReference {
+                  name
+                  task {
+                    id
+                  }
+                }
+                triggerReference {
+                  name
+                }
+                variableReference {
+                  variableId
+                  name
+                  type
+                }
+                forEachReference {
+                  name
+                  forEachTask {
+                    id
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Lightweight query for available references via automation.current (published workflow).
+# Use this for export to ensure we query the same workflow consistently.
+# Skips the expensive 'entity' field to avoid timeouts.
+query GetCurrentWorkflowAvailableReferencesLightweight(
+  $aspectId: ID!
+  $automationId: ID!
+  $parentTaskId: ID
+  $isOperatorChild: Boolean
+) {
+  organization {
+    aspect(id: $aspectId) {
+      __typename
+      automation(id: $automationId) {
+        id
+        current {
+          id
+          availableReferences(
+            parentTaskId: $parentTaskId
+            isChild: $isOperatorChild
+          ) {
+            name
+            properties {
+              name
+              deprecated
+              reference {
+                id
+                value
+                taskReference {
+                  name
+                  task {
+                    id
+                  }
+                }
+                triggerReference {
+                  name
+                }
+                forEachReference {
+                  name
+                  forEachTask {
+                    id
+                  }
+                }
+                variableReference {
+                  variableId
+                  name
+                  type
+                }
+              }
+            }
+          }
+        }
+      }
+      id
+    }
+    id
+  }
+}
+
+# Legacy lightweight query - use GetCurrentWorkflowAvailableReferencesLightweight instead
 query GetWorkflowAvailableReferencesLightweight(
   $workflowId: ID!
   $parentTaskId: ID
@@ -546,6 +778,12 @@ fragment DiscoveryTaskFields on WorkflowTask {
   }
   ... on WorkflowBulkExcelTask {
     aspect { id name }
+  }
+  ... on WorkflowAiSearchTableTask {
+    searchTable {
+      id
+      aspect { __typename id name }
+    }
   }
 }
 
@@ -880,6 +1118,7 @@ query GetWorkflowDetailsForDiscovery($aspectId: ID!, $workflowId: ID!) {
       id
       workflow(id: $workflowId) {
         id
+        terminal
         triggers {
           ...DiscoveryTriggerFields
         }
@@ -1135,6 +1374,62 @@ query GetAspectAutomationsForDiscovery($aspectId: ID!, $filter: Filter) {
               }
               draft {
                 id
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# ==============================================================================
+# Task Detail Queries (for Read/drift detection)
+# ==============================================================================
+
+query GetExecuteScriptTaskDetails($aspectId: ID!, $automationId: ID!, $taskId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      automation(id: $automationId) {
+        draft {
+          task(id: $taskId) {
+            __typename
+            ... on WorkflowExecuteScriptTask {
+              id
+              name
+              code
+              inputs {
+                name
+                fieldMappings {
+                  alias
+                  field {
+                    __typename
+                    id
+                  }
+                }
+                value {
+                  id
+                }
+              }
+              outputSchema {
+                __typename
+                name
+                ... on JsonSchemaObject {
+                  id
+                  properties {
+                    __typename
+                    name
+                    ... on JsonSchemaString {
+                      format
+                    }
+                    ... on JsonSchemaArray {
+                      item {
+                        __typename
+                        name
+                      }
+                    }
+                  }
+                }
               }
             }
           }

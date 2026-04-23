@@ -21,7 +21,7 @@ import (
 )
 
 // WidgetHCLGenerator generates HCL for widget resources
-// Supports: elementum_widget with related_object, related_link_action, and related_create_action types
+// Supports: elementum_widget with related_object, related_link_action, related_create_action, and run_automation_action types
 type WidgetHCLGenerator struct {
 	app     *discovery.App
 	imports []ImportBlock
@@ -184,6 +184,32 @@ func (g *WidgetHCLGenerator) GenerateWidgetIR(widget *discovery.Widget, parentRe
 			attrs = append(attrs, Attr("full_width", Bool(true)))
 		}
 		b.SetAttr("related_create_action", Obj(attrs...))
+
+	case "DisplayWidgetRunAutomationAction":
+		// Beautify the automation_id if we have a mapping for it
+		var automationIDVal HCLValue
+		if ref, ok := g.uuidMap[widget.AutomationID]; ok {
+			automationIDVal = Ref(ref)
+		} else {
+			automationIDVal = Str(widget.AutomationID)
+		}
+
+		attrs := []*HCLAttribute{
+			Attr("name", Str(widget.Name)),
+			Attr("automation_id", automationIDVal),
+			Attr("button_type", Str(widget.ButtonType)),
+		}
+		if widget.Color != "" {
+			attrs = append(attrs, Attr("color", Str(widget.Color)))
+		}
+		if widget.Icon != "" {
+			attrs = append(attrs, Attr("icon", Str(widget.Icon)))
+		}
+		if widget.FullWidth {
+			attrs = append(attrs, Attr("full_width", Bool(true)))
+		}
+		// Note: Parameters are not exported as they would require additional API calls
+		b.SetAttr("run_automation_action", Obj(attrs...))
 
 	default:
 		return nil // Unknown type - handled by string path with comment

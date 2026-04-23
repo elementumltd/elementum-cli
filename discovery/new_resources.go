@@ -18,22 +18,37 @@ import (
 	"context"
 	"sort"
 
-	"github.com/elementumltd/elementum-cli/logger"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/logger"
 )
+
+// SearchTablesResult contains both regular and linked AI search tables
+type SearchTablesResult struct {
+	AISearchTables       []AISearchTable
+	LinkedAISearchTables []LinkedAISearchTable
+}
 
 // GetAISearchTablesForAspect retrieves all AI search tables for an aspect
 func GetAISearchTablesForAspect(ctx context.Context, c *client.Client, aspectID string) ([]AISearchTable, error) {
+	result, err := GetAllSearchTablesForAspect(ctx, c, aspectID)
+	if err != nil {
+		return nil, err
+	}
+	return result.AISearchTables, nil
+}
+
+// GetAllSearchTablesForAspect retrieves all AI search tables (both created and linked) for an aspect
+func GetAllSearchTablesForAspect(ctx context.Context, c *client.Client, aspectID string) (*SearchTablesResult, error) {
 	result, err := client.GetAspectSearchTables(ctx, c.Genqlient(), aspectID)
 	if err != nil {
 		return nil, err
 	}
 
 	if result.Organization.Aspect == nil {
-		return []AISearchTable{}, nil
+		return &SearchTablesResult{}, nil
 	}
 
-	var searchTables []AISearchTable
+	searchResult := &SearchTablesResult{}
 
 	// Extract search tables from aspect (works for both AspectApp and AspectElement)
 	switch aspect := (*result.Organization.Aspect).(type) {
@@ -41,77 +56,152 @@ func GetAISearchTablesForAspect(ctx context.Context, c *client.Client, aspectID 
 		if aspect.SearchTables != nil {
 			for _, edge := range aspect.SearchTables.Edges {
 				node := edge.GetNode()
-				st := AISearchTable{
-					ID:        node.GetId(),
-					ObjectID:  aspectID,
-					Duration:  string(node.GetDuration()),
-					TargetLag: node.GetTargetLag(),
-				}
-
-				// Field
-				field := node.GetField()
-				st.FieldID = field.GetId()
-				st.FieldName = field.GetName()
-
-				// AI Provider Connector
-				connector := node.GetAiProviderConnector()
-				st.AIProviderConnectorID = connector.GetId()
-				st.AIProviderConnectorName = connector.GetModel().Name
-
-				// Attribute Fields
-				attrFields := node.GetAttributeFields()
-				st.AttributeFieldIDs = make([]string, 0, len(attrFields))
-				for _, af := range attrFields {
-					st.AttributeFieldIDs = append(st.AttributeFieldIDs, af.GetId())
-				}
-
-				// Warehouse (optional)
-				if warehouse := node.GetWarehouse(); warehouse != nil {
-					st.Warehouse = *warehouse
-				}
-
-				searchTables = append(searchTables, st)
+				extractSearchTableNode(node, aspectID, searchResult)
 			}
 		}
 	case *client.GetAspectSearchTablesOrganizationAspectAspectElement:
 		if aspect.SearchTables != nil {
 			for _, edge := range aspect.SearchTables.Edges {
 				node := edge.GetNode()
-				st := AISearchTable{
-					ID:        node.GetId(),
-					ObjectID:  aspectID,
-					Duration:  string(node.GetDuration()),
-					TargetLag: node.GetTargetLag(),
-				}
-
-				// Field
-				field := node.GetField()
-				st.FieldID = field.GetId()
-				st.FieldName = field.GetName()
-
-				// AI Provider Connector
-				connector := node.GetAiProviderConnector()
-				st.AIProviderConnectorID = connector.GetId()
-				st.AIProviderConnectorName = connector.GetModel().Name
-
-				// Attribute Fields
-				attrFields := node.GetAttributeFields()
-				st.AttributeFieldIDs = make([]string, 0, len(attrFields))
-				for _, af := range attrFields {
-					st.AttributeFieldIDs = append(st.AttributeFieldIDs, af.GetId())
-				}
-
-				// Warehouse (optional)
-				if warehouse := node.GetWarehouse(); warehouse != nil {
-					st.Warehouse = *warehouse
-				}
-
-				searchTables = append(searchTables, st)
+				extractSearchTableNodeElement(node, aspectID, searchResult)
 			}
 		}
 	}
 
-	return searchTables, nil
+	return searchResult, nil
+}
+
+// extractSearchTableNode extracts a search table from App aspect response
+func extractSearchTableNode(node client.GetAspectSearchTablesOrganizationAspectAspectAppSearchTablesAspectSearchTableConnectionEdgesAspectSearchTableEdgeNodeAspectSearchTable, aspectID string, result *SearchTablesResult) {
+	// Check the concrete type
+	switch t := node.(type) {
+	case *client.GetAspectSearchTablesOrganizationAspectAspectAppSearchTablesAspectSearchTableConnectionEdgesAspectSearchTableEdgeNodeAspectSearchSnowflakeTable:
+		// Regular AI search table (creates a Cortex service)
+		st := AISearchTable{
+			ID:       t.GetId(),
+			ObjectID: aspectID,
+		}
+
+		// Duration and TargetLag are nullable
+		if d := t.GetDuration(); d != nil {
+			st.Duration = string(*d)
+		}
+		if lag := t.GetTargetLag(); lag != nil {
+			st.TargetLag = *lag
+		}
+
+		// Field - pointer-to-interface
+		if fieldPtr := t.GetField(); fieldPtr != nil {
+			field := *fieldPtr
+			st.FieldID = field.GetId()
+			st.FieldName = field.GetName()
+		}
+
+		// AI Provider Connector
+		if connector := t.GetAiProviderConnector(); connector != nil {
+			st.AIProviderConnectorID = connector.GetId()
+			st.AIProviderConnectorName = connector.GetModel().Name
+		}
+
+		// Attribute Fields
+		attrFields := t.GetAttributeFields()
+		st.AttributeFieldIDs = make([]string, 0, len(attrFields))
+		for _, af := range attrFields {
+			st.AttributeFieldIDs = append(st.AttributeFieldIDs, af.GetId())
+		}
+
+		// Warehouse (optional)
+		if warehouse := t.GetWarehouse(); warehouse != nil {
+			st.Warehouse = *warehouse
+		}
+
+		result.AISearchTables = append(result.AISearchTables, st)
+
+	case *client.GetAspectSearchTablesOrganizationAspectAspectAppSearchTablesAspectSearchTableConnectionEdgesAspectSearchTableEdgeNodeAspectLinkedSearchTable:
+		// Linked AI search table (connects to existing Cortex service)
+		lst := LinkedAISearchTable{
+			ID:       t.GetId(),
+			ObjectID: aspectID,
+			Status:   string(t.GetStatus()),
+		}
+
+		// Warehouse (optional)
+		if warehouse := t.GetWarehouse(); warehouse != nil {
+			lst.Warehouse = *warehouse
+		}
+
+		// Note: CloudLinkID, Database, SchemaName, ServiceName, and DisplayName
+		// are not available in this query. They would need to be fetched separately
+		// via a more detailed query if needed for export functionality.
+
+		result.LinkedAISearchTables = append(result.LinkedAISearchTables, lst)
+	}
+}
+
+// extractSearchTableNodeElement extracts a search table from Element aspect response
+func extractSearchTableNodeElement(node client.GetAspectSearchTablesOrganizationAspectAspectElementSearchTablesAspectSearchTableConnectionEdgesAspectSearchTableEdgeNodeAspectSearchTable, aspectID string, result *SearchTablesResult) {
+	// Check the concrete type
+	switch t := node.(type) {
+	case *client.GetAspectSearchTablesOrganizationAspectAspectElementSearchTablesAspectSearchTableConnectionEdgesAspectSearchTableEdgeNodeAspectSearchSnowflakeTable:
+		// Regular AI search table (creates a Cortex service)
+		st := AISearchTable{
+			ID:       t.GetId(),
+			ObjectID: aspectID,
+		}
+
+		// Duration and TargetLag are nullable
+		if d := t.GetDuration(); d != nil {
+			st.Duration = string(*d)
+		}
+		if lag := t.GetTargetLag(); lag != nil {
+			st.TargetLag = *lag
+		}
+
+		// Field - pointer-to-interface
+		if fieldPtr := t.GetField(); fieldPtr != nil {
+			field := *fieldPtr
+			st.FieldID = field.GetId()
+			st.FieldName = field.GetName()
+		}
+
+		// AI Provider Connector
+		if connector := t.GetAiProviderConnector(); connector != nil {
+			st.AIProviderConnectorID = connector.GetId()
+			st.AIProviderConnectorName = connector.GetModel().Name
+		}
+
+		// Attribute Fields
+		attrFields := t.GetAttributeFields()
+		st.AttributeFieldIDs = make([]string, 0, len(attrFields))
+		for _, af := range attrFields {
+			st.AttributeFieldIDs = append(st.AttributeFieldIDs, af.GetId())
+		}
+
+		// Warehouse (optional)
+		if warehouse := t.GetWarehouse(); warehouse != nil {
+			st.Warehouse = *warehouse
+		}
+
+		result.AISearchTables = append(result.AISearchTables, st)
+
+	case *client.GetAspectSearchTablesOrganizationAspectAspectElementSearchTablesAspectSearchTableConnectionEdgesAspectSearchTableEdgeNodeAspectLinkedSearchTable:
+		// Linked AI search table (connects to existing Cortex service)
+		lst := LinkedAISearchTable{
+			ID:       t.GetId(),
+			ObjectID: aspectID,
+			Status:   string(t.GetStatus()),
+		}
+
+		// Warehouse (optional)
+		if warehouse := t.GetWarehouse(); warehouse != nil {
+			lst.Warehouse = *warehouse
+		}
+
+		// Note: CloudLinkID, Database, SchemaName, ServiceName, and DisplayName
+		// are not available in this query.
+
+		result.LinkedAISearchTables = append(result.LinkedAISearchTables, lst)
+	}
 }
 
 // GetSearchTablesForTable retrieves all search tables for a table

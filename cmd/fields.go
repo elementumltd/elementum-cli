@@ -95,7 +95,7 @@ func runFieldsValues(cmd *cobra.Command, args []string) error {
 
 	// Display field info
 	fmt.Println()
-	fmt.Println(ui.TitleStyle.Render(fieldInfo.Name))
+	fmt.Println(ui.TitleStyle.Render(fmt.Sprintf("%s", fieldInfo.Name)))
 	fmt.Println()
 
 	// Show field type info

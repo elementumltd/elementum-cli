@@ -20,8 +20,8 @@ import (
 	"strings"
 
 	"github.com/elementumltd/elementum-cli/auth"
-	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -136,6 +136,33 @@ func listAgentsInApp(ctx context.Context, cmd *cobra.Command, apiClient *client.
 	fmt.Println()
 
 	return nil
+}
+
+// findAgentByNameInApp looks up an agent by name within a specific app.
+func findAgentByNameInApp(ctx context.Context, apiClient *client.Client, aspectID, agentName string) (string, error) {
+	resp, err := client.ListAppAgents(ctx, apiClient.Genqlient(), aspectID)
+	if err != nil {
+		return "", fmt.Errorf("failed to list agents: %w", err)
+	}
+
+	if resp.Organization.Aspect == nil {
+		return "", fmt.Errorf("app not found")
+	}
+
+	aspect := *resp.Organization.Aspect
+	appAspect, ok := aspect.(*client.ListAppAgentsOrganizationAspectAspectApp)
+	if !ok {
+		return "", fmt.Errorf("aspect is not an app")
+	}
+
+	for _, edge := range appAspect.AgentsV2.Edges {
+		agent := edge.Node
+		if strings.EqualFold(agent.GetName(), agentName) {
+			return agent.GetId(), nil
+		}
+	}
+
+	return "", fmt.Errorf("agent not found: %s", agentName)
 }
 
 // resolveAgentID resolves an agent argument to a UUID.

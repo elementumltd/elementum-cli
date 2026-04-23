@@ -6,7 +6,7 @@ A beautiful, interactive CLI tool for discovering and exporting Elementum resour
 
 - 🔐 **Secure Authentication** - Store credentials safely with OS keychain integration
 - 📋 **List Objects** - Display all objects (apps and elements) in your organization
-- 🌳 **Show Details** - View app structure in a beautiful tree format
+- 🌳 **Show Details** - View app and object structure in a tree format
 - 📦 **Export to Terraform** - Generate import configurations with `terraform plan -generate-config-out`
 - 🚀 **Terraform/Tofu Helpers** - Run plan, apply, and destroy with auto-injected credentials
 - 🎨 **Beautiful UI** - Powered by the Charm stack (Bubble Tea, Lip Gloss, Huh)
@@ -15,6 +15,16 @@ A beautiful, interactive CLI tool for discovering and exporting Elementum resour
 ## Installation
 
 ### From Source
+
+First, [Install GO](https://go.dev/doc/install)
+
+Then build through Makefile:
+
+```bash
+make build
+```
+
+Or directly:
 
 ```bash
 go build -o ~/go/bin/ei .

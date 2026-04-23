@@ -259,15 +259,15 @@ func TestExportPipeline_ComplexTaskChain(t *testing.T) {
 	assert.Contains(t, taskHCL, `"elementum_calculation_task"`)
 	assert.Contains(t, taskHCL, `"elementum_message_task"`)
 
-	// Should have parent references in the chain
-	assert.Contains(t, taskHCL, `parent_id`)
+	// Should have parent references in the chain (whole resource refs, not IDs)
+	assert.Contains(t, taskHCL, `parent = elementum_`)
 
 	// Verify no null attributes
 	assertNoNullAttributes(t, taskHCL)
 }
 
 func TestExportPipeline_BranchingWorkflow_Switch(t *testing.T) {
-	// Automation with switch task for branching
+	// Automation with switch task for branching including switch case children
 	app := createTestApp(TestAppID, "Test App")
 
 	trigger := discovery.Trigger{
@@ -281,6 +281,28 @@ func TestExportPipeline_BranchingWorkflow_Switch(t *testing.T) {
 		},
 	}
 
+	caseApprovedID := "case-approved-1111-111111111111"
+	caseDefaultID := "case-default-1111-111111111111"
+
+	switchChildren := []map[string]interface{}{
+		{
+			"__typename": "WorkflowSwitchCase",
+			"id":         caseApprovedID,
+			"label":      "Approved",
+			"filter": map[string]interface{}{
+				"type":    "equals",
+				"fieldId": TestFieldID,
+				"value":   "APPROVED",
+			},
+		},
+		{
+			"__typename": "WorkflowSwitchCase",
+			"id":         caseDefaultID,
+			"label":      "Default",
+			"filter":     nil,
+		},
+	}
+
 	switchTask := discovery.Task{
 		ID:       TestTaskID,
 		Type:     "switch",
@@ -290,7 +312,26 @@ func TestExportPipeline_BranchingWorkflow_Switch(t *testing.T) {
 			"__typename": "WorkflowSwitchTask",
 			"id":         TestTaskID,
 			"name":       "Branch",
+			"children": []interface{}{
+				map[string]interface{}{
+					"__typename": "WorkflowSwitchCase",
+					"id":         caseApprovedID,
+					"label":      "Approved",
+					"filter": map[string]interface{}{
+						"type":    "equals",
+						"fieldId": TestFieldID,
+						"value":   "APPROVED",
+					},
+				},
+				map[string]interface{}{
+					"__typename": "WorkflowSwitchCase",
+					"id":         caseDefaultID,
+					"label":      "Default",
+					"filter":     nil,
+				},
+			},
 		},
+		Children: switchChildren,
 	}
 
 	automation := discovery.Automation{
@@ -309,13 +350,33 @@ func TestExportPipeline_BranchingWorkflow_Switch(t *testing.T) {
 		{ResourceType: "elementum_automation", ResourceName: "branching", ID: TestAutomationID},
 		{ResourceType: "elementum_record_created_trigger", ResourceName: "trigger", ID: TestAutomationID + ":" + TestTriggerID},
 		{ResourceType: "elementum_switch_task", ResourceName: "branch", ID: TestWorkflowID + ":" + TestTaskID},
+		{ResourceType: "elementum_switch_case", ResourceName: "branch_approved", ID: caseApprovedID},
+		{ResourceType: "elementum_switch_case", ResourceName: "branch_default", ID: caseDefaultID},
 	}
 
 	gen := NewHCLGenerator(app, imports)
 	taskHCL := gen.GenerateTaskResourcesOnly()
 
+	// Switch task resource
 	assert.Contains(t, taskHCL, `"elementum_switch_task"`)
 	assert.Contains(t, taskHCL, `"branch"`)
+
+	// Switch case resources generated for each child
+	assert.Contains(t, taskHCL, `resource "elementum_switch_case" "branch_approved"`)
+	assert.Contains(t, taskHCL, `resource "elementum_switch_case" "branch_default"`)
+
+	// Cases reference the parent switch task (whole resource, no .id)
+	assert.Contains(t, taskHCL, `switch_task = elementum_switch_task.branch`)
+
+	// Labels
+	assert.Contains(t, taskHCL, `label = "Approved"`)
+	assert.Contains(t, taskHCL, `label = "Default"`)
+
+	// Default case has is_default = true
+	assert.Contains(t, taskHCL, `is_default = true`)
+
+	// Second case chains to first via previous_case_id
+	assert.Contains(t, taskHCL, `previous_case_id = elementum_switch_case.branch_approved.id`)
 }
 
 func TestExportPipeline_LoopingWorkflow_ForEach(t *testing.T) {
@@ -835,6 +896,69 @@ func TestHCLGenerator_GetParentRef(t *testing.T) {
 	parentRef2 := gen.GetParentRef(task2ID)
 	require.NotEmpty(t, parentRef2)
 	assert.Contains(t, parentRef2, "first_task")
+}
+
+func TestExportPipeline_AutomationTriggersOtherAutomations(t *testing.T) {
+	// Create a full automation pipeline with Terminal: false (triggers other automations)
+	app := createTestApp(TestAppID, "Test App")
+
+	trigger := discovery.Trigger{
+		ID:   TestTriggerID,
+		Type: "record_created",
+		Name: "On Record Created",
+		RawData: map[string]any{
+			"__typename": "WorkflowRecordCreateTrigger",
+			"id":         TestTriggerID,
+			"name":       "On Record Created",
+		},
+	}
+
+	task := discovery.Task{
+		ID:         TestTaskID,
+		Type:       "message",
+		Name:       "Send Notification",
+		WorkflowID: TestWorkflowID,
+		RawData: map[string]any{
+			"__typename": "WorkflowMessageTask",
+			"id":         TestTaskID,
+			"name":       "Send Notification",
+		},
+	}
+
+	automation := discovery.Automation{
+		ID:           TestAutomationID,
+		Name:         "Non Terminal Automation",
+		Status:       "ACTIVE",
+		WorkflowID:   TestWorkflowID,
+		HasPublished: true,
+		Terminal:     false, // triggers other automations
+		Triggers:     []discovery.Trigger{trigger},
+		Tasks:        []discovery.Task{task},
+	}
+	app.Automations = []discovery.Automation{automation}
+
+	imports := []ImportBlock{
+		{ResourceType: "elementum_app", ResourceName: "test_app", ID: TestAppID},
+		{ResourceType: "elementum_automation", ResourceName: "non_terminal_automation", ID: TestAutomationID},
+		{ResourceType: "elementum_record_created_trigger", ResourceName: "on_record_created", ID: TestAutomationID + ":" + TestTriggerID},
+		{ResourceType: "elementum_message_task", ResourceName: "send_notification", ID: TestAutomationID + ":" + TestTaskID},
+	}
+
+	gen := NewHCLGenerator(app, imports)
+
+	// Automation section should include triggers_other_automations
+	automationHCL := gen.GenerateAutomationResourcesOnly()
+	assert.Contains(t, automationHCL, `triggers_other_automations = true`)
+	assert.Contains(t, automationHCL, `"Non Terminal Automation"`)
+
+	// Trigger and task sections should be unaffected
+	triggerHCL := gen.GenerateTriggerResourcesOnly()
+	assert.Contains(t, triggerHCL, `resource "elementum_record_created_trigger"`)
+	assert.NotContains(t, triggerHCL, `triggers_other_automations`)
+
+	taskHCL := gen.GenerateTaskResourcesOnly()
+	assert.Contains(t, taskHCL, `resource "elementum_message_task"`)
+	assert.NotContains(t, taskHCL, `triggers_other_automations`)
 }
 
 // Note: assertNoNullAttributes and validateHCLSyntax are defined in test_helpers_test.go

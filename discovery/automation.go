@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/elementumltd/elementum-cli/logger"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/logger"
 )
 
 // AutomationDiscoveryContext tracks visited resources for cycle detection

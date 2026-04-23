@@ -22,6 +22,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -432,7 +433,7 @@ func (c *Client) Execute(ctx context.Context, query string, variables map[string
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
 			req.Header.Set("x-elementum-organization", fmt.Sprintf("%s.%s", orgPart, host))
-			req.Header.Set("x-elementum-platform", "IOS")
+			req.Header.Set("x-elementum-platform", runtime.GOOS)
 			req.Header.Set("x-elementum-toe", uuid.New().String())
 			req.Header.Set("x-elementum-base-url", host)
 
@@ -539,7 +540,7 @@ func (c *Client) ExecuteWithWarnings(ctx context.Context, query string, variable
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 		req.Header.Set("x-elementum-organization", fmt.Sprintf("%s.%s", orgPart, host))
-		req.Header.Set("x-elementum-platform", "IOS")
+		req.Header.Set("x-elementum-platform", runtime.GOOS)
 		req.Header.Set("x-elementum-toe", uuid.New().String())
 		req.Header.Set("x-elementum-base-url", host)
 		return c.httpClient.Do(req)

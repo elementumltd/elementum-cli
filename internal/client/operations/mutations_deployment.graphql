@@ -1,0 +1,20 @@
+# Deployment configuration mutations
+
+mutation ConfigureDataset($aspectId: ID!, $input: AspectInput!) {
+  aspectUpdate(id: $aspectId, input: $input) {
+    __typename
+    id
+    ... on AspectElement {
+      configured
+      fields {
+        edges {
+          node {
+            __typename
+            id
+            configured
+          }
+        }
+      }
+    }
+  }
+}

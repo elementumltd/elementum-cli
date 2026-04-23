@@ -1,0 +1,46 @@
+# App Flow Activity queries and mutations
+
+fragment AppActivityInfo on AppActivity {
+  id
+  type
+  subType
+  name
+  position
+  branchParent { id }
+  branchCondition
+  configuration {
+    __typename
+    ... on AgentActivityConfiguration { agent { id } }
+    ... on AutomationActivityConfiguration { automation { id } }
+    ... on ApprovalActivityConfiguration { approval { id } }
+    ... on FormActivityConfiguration {
+      fields { id name type required }
+      displayBlocks { id type label }
+    }
+  }
+}
+
+query GetAppFlowActivity($aspectId: ID!, $flowId: ID!, $activityId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      ... on AspectApp {
+        appFlow(id: $flowId) {
+          activity(id: $activityId) { ...AppActivityInfo }
+        }
+      }
+    }
+  }
+}
+
+mutation CreateAppActivity($input: AppActivityCreateInput!) {
+  appActivityCreate(input: $input) { ...AppActivityInfo }
+}
+
+mutation UpdateAppActivity($id: ID!, $input: AppActivityUpdateInput!) {
+  appActivityUpdate(id: $id, input: $input) { ...AppActivityInfo }
+}
+
+mutation DeleteAppActivity($id: ID!) {
+  appActivityDelete(id: $id) { id }
+}

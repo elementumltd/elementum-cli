@@ -588,3 +588,109 @@ func assertAttrStr(t *testing.T, b *HCLBlock, name, expected string) {
 	}
 	t.Errorf("attr %q not found", name)
 }
+
+// ============================================================================
+// ISS-76: Round-trip tests for block comments in code fields
+// ============================================================================
+
+func TestRoundTrip_HeredocWithBlockComments(t *testing.T) {
+	// Create IR with a heredoc code field containing block comments
+	code := "/**\n * Access your input values\n **/\nconst {x} = input.parameters;\nreturn {x};"
+	block := NewResourceBlock("elementum_execute_script_task", "test_script")
+	block.SetAttr("code", Heredoc(code, "EOT"))
+	block.SetAttr("name", Str("Test Script"))
+
+	// Serialize to HCL text
+	serialized1 := SerializeBlocks([]*HCLBlock{block})
+	t.Logf("First serialization:\n%s", serialized1)
+
+	// Block comments must appear literally in serialized output
+	if !strings.Contains(serialized1, "/**") {
+		t.Fatalf("First serialization missing /**: %s", serialized1)
+	}
+	if !strings.Contains(serialized1, "**/") {
+		t.Fatalf("First serialization missing **: %s", serialized1)
+	}
+
+	// Parse the serialized HCL back
+	blocks, err := ParseTofuOutput(serialized1)
+	if err != nil {
+		t.Fatalf("Failed to parse: %v", err)
+	}
+	if len(blocks) == 0 {
+		t.Fatal("No blocks parsed")
+	}
+
+	// Find the code attribute in parsed blocks
+	var parsedCode string
+	for _, attr := range blocks[0].Body.Attributes {
+		if attr.Name == "code" {
+			switch v := attr.Value.(type) {
+			case HCLHeredoc:
+				parsedCode = v.Value
+			case HCLString:
+				parsedCode = v.Value
+			}
+		}
+	}
+
+	if parsedCode == "" {
+		t.Fatal("No code attribute found in parsed blocks")
+	}
+
+	// The parsed code must contain the block comment markers
+	if !strings.Contains(parsedCode, "/**") {
+		t.Errorf("Parsed code missing /**: %q", parsedCode)
+	}
+	if !strings.Contains(parsedCode, "**/") {
+		t.Errorf("Parsed code missing **: %q", parsedCode)
+	}
+	if !strings.Contains(parsedCode, "const {x} = input.parameters;") {
+		t.Errorf("Parsed code missing body: %q", parsedCode)
+	}
+
+	// Re-serialize and verify stability
+	serialized2 := SerializeBlocks(blocks)
+	t.Logf("Second serialization:\n%s", serialized2)
+
+	if !strings.Contains(serialized2, "/**") {
+		t.Errorf("Second serialization missing /**: %s", serialized2)
+	}
+}
+
+func TestRoundTrip_QuotedStringWithBlockComments(t *testing.T) {
+	// Simulate a legacy exported .tf file where code is a quoted string
+	input := `resource "elementum_execute_script_task" "test" {
+  name = "Test"
+  code = "/**\n * Comment\n **/\nreturn 1;"
+}`
+
+	blocks, err := ParseTofuOutput(input)
+	if err != nil {
+		t.Fatalf("Failed to parse: %v", err)
+	}
+	if len(blocks) == 0 {
+		t.Fatal("No blocks parsed")
+	}
+
+	// Find the code attribute
+	var parsedCode string
+	for _, attr := range blocks[0].Body.Attributes {
+		if attr.Name == "code" {
+			if str, ok := attr.Value.(HCLString); ok {
+				parsedCode = str.Value
+			}
+		}
+	}
+
+	// The parsed code must contain unescaped block comment markers
+	if !strings.Contains(parsedCode, "/**") {
+		t.Errorf("Parsed code missing /**: %q", parsedCode)
+	}
+	if !strings.Contains(parsedCode, "**/") {
+		t.Errorf("Parsed code missing **: %q", parsedCode)
+	}
+	if !strings.Contains(parsedCode, "return 1;") {
+		t.Errorf("Parsed code missing body: %q", parsedCode)
+	}
+}

@@ -22,8 +22,8 @@ import (
 	"strings"
 
 	"github.com/elementumltd/elementum-cli/auth"
-	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/spf13/cobra"
 )
 

@@ -1,0 +1,18 @@
+# Environment queries
+
+query ListEnvironments {
+  organization {
+    environments(first: 100) {
+      edges {
+        node {
+          id
+          name
+          description
+          subdomain
+          immutable
+        }
+      }
+      total
+    }
+  }
+}

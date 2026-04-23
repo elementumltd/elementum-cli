@@ -66,9 +66,8 @@ You can specify the app by:
 
 The command will:
 1. Discover all resources in the app
-2. Generate import blocks
-3. Run terraform init and terraform plan -generate-config-out
-4. Output a ready-to-use Terraform configuration file`,
+2. Generate HCL configuration from discovered data
+3. Output a ready-to-use Terraform configuration file`,
 	Args: cobra.ExactArgs(1),
 	RunE: runAppsExport,
 }
@@ -90,6 +89,7 @@ func init() {
 	appsExportCmd.Flags().Bool("recursive", true, "Recursively discover and export related apps/elements through automations and relationships")
 	appsExportCmd.Flags().Bool("lenient", false, "Continue export on non-critical errors (timeouts, permission issues) instead of aborting. Produces potentially incomplete output.")
 	appsExportCmd.Flags().Int64("max-concurrency", int64(discovery.DefaultMaxConcurrency), "Maximum number of concurrent API calls (default 20, set to 1 for sequential mode)")
+	appsExportCmd.Flags().Bool("no-imports", false, "Skip emitting imports.tf (by default, multi-file exports include Terraform 1.5+ import blocks so `tofu apply` maps the generated HCL onto existing platform state)")
 }
 
 // GetAppsCmd returns the apps command for registration
@@ -330,6 +330,9 @@ func runAppsExport(cmd *cobra.Command, args []string) error {
 	input := args[0]
 	ctx := context.Background()
 
+	// Reset warnings collector for this export operation
+	export.ResetWarnings()
+
 	// Get flags
 	outputFile, _ := cmd.Flags().GetString("output")
 	outputDir, _ := cmd.Flags().GetString("directory")
@@ -338,6 +341,7 @@ func runAppsExport(cmd *cobra.Command, args []string) error {
 	recursive, _ := cmd.Flags().GetBool("recursive")
 	lenient, _ := cmd.Flags().GetBool("lenient")
 	maxConcurrency, _ := cmd.Flags().GetInt64("max-concurrency")
+	noImports, _ := cmd.Flags().GetBool("no-imports")
 
 	// Multi-file mode if directory is specified
 	multiFileMode := outputDir != ""
@@ -590,6 +594,54 @@ func runAppsExport(cmd *cobra.Command, args []string) error {
 		if len(app.DiscoveredCloudLinks) > 0 {
 			selectedTypes["cloudlinks"] = true
 		}
+		// AI search tables (ai-search-*.tf in truth). Present on the main app
+		// or any discovered element — both paths are handled when imports are
+		// generated. Without this flag the search tables discovered via
+		// AiSearchTableTask / category-sibling elements silently drop out of
+		// the export.
+		hasSearchTables := len(app.AISearchTables) > 0
+		if !hasSearchTables {
+			for _, elem := range app.DiscoveredElements {
+				if len(elem.AISearchTables) > 0 {
+					hasSearchTables = true
+					break
+				}
+			}
+		}
+		if hasSearchTables {
+			selectedTypes["ai_search_tables"] = true
+		}
+		// Agentic skills — present on main app; discovered-element skills
+		// will turn this on via the same gate once discovery surfaces them.
+		hasSkills := len(app.Skills) > 0
+		if !hasSkills {
+			for _, elem := range app.DiscoveredElements {
+				if len(elem.Skills) > 0 {
+					hasSkills = true
+					break
+				}
+			}
+		}
+		if hasSkills {
+			selectedTypes["skills"] = true
+		}
+		// Agent-to-agent skills live on AgentElementum.Card.Skills.
+		hasA2A := false
+		for _, agent := range app.AllAgents() {
+			if len(agent.A2ASkills) > 0 {
+				hasA2A = true
+				break
+			}
+		}
+		if hasA2A {
+			selectedTypes["a2a_skills"] = true
+		}
+		if len(app.PhoneServices) > 0 {
+			selectedTypes["phone_services"] = true
+		}
+		if app.ManagedViewOrder != nil && len(app.ManagedViewOrder.ViewIDs) > 0 {
+			selectedTypes["managed_view_order"] = true
+		}
 	} else {
 		// Interactive selection
 		var options []huh.Option[string]
@@ -636,67 +688,21 @@ func runAppsExport(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no resource types selected for export")
 	}
 
-	// Check if terraform is installed
-	if err := export.CheckTerraformInstalled(); err != nil {
-		return fmt.Errorf("terraform is required: %w", err)
-	}
-
 	// Generate import blocks using the export package's complete implementation
 	blocks := export.GenerateImportBlocks(app, selectedTypes)
 
 	fmt.Println(ui.SuccessStyle.Render(fmt.Sprintf("Generated %d import blocks", len(blocks))))
 
-	// Create Terraform runner
-	runner, err := export.NewTerraformRunner()
-	if err != nil {
-		return fmt.Errorf("failed to create terraform runner: %w", err)
-	}
-	fmt.Printf("Working directory: %s\n", runner.WorkDir)
-
-	// Write imports and provider config
-	providerConfig := export.RenderProviderConfig(creds.Organization, creds.Instance, creds.Environment, creds.ClientID, creds.ClientSecret)
-	imports := export.RenderImportBlocks(blocks)
-
-	err = runner.WriteImports(providerConfig, imports)
-	if err != nil {
-		return fmt.Errorf("failed to write import files: %w", err)
-	}
-
-	fmt.Println(ui.SuccessStyle.Render("Generated import blocks"))
-
-	// Run terraform init
-	fmt.Println(ui.InfoStyle.Render("Running terraform init..."))
-	if err := runner.Init(); err != nil {
-		return fmt.Errorf("terraform init failed: %w", err)
-	}
-	fmt.Println(ui.SuccessStyle.Render("Terraform initialized"))
-
-	// Run terraform plan -generate-config-out
+	// Generate HCL via CLI IR pipeline (no tofu/terraform binary required)
 	fmt.Println(ui.InfoStyle.Render("Generating Terraform configuration..."))
-	generatedFile := "generated.tf"
-	_, err = runner.GenerateConfig(generatedFile)
-	if err != nil {
-		return fmt.Errorf("terraform plan failed: %w", err)
-	}
 
-	// Read the generated file
-	content, err := runner.GetGeneratedFile(generatedFile)
-	if err != nil {
-		return fmt.Errorf("failed to read generated config: %w", err)
-	}
+	pipeline := export.NewExportPipeline(app, blocks)
+	pipeline.AddCLIBlocks()
 
-	// Multi-file mode: use IR pipeline to organize into separate files
+	// Multi-file mode: organize into separate files
 	if multiFileMode {
 		fmt.Println(ui.InfoStyle.Render("Organizing configuration into multiple files..."))
 
-		// Create and run the IR pipeline
-		pipeline := export.NewExportPipeline(app, blocks)
-		if err := pipeline.AddTofuOutput(content); err != nil {
-			return fmt.Errorf("failed to parse generated config: %w", err)
-		}
-		pipeline.AddCLIBlocks()
-
-		// Execute multi-file export (IR transforms run during Execute)
 		blockExport := pipeline.ExecuteMultiFile()
 		multiExport := blockExport.ToMultiFileExport()
 
@@ -707,8 +713,7 @@ func runAppsExport(cmd *cobra.Command, args []string) error {
 		appResourceName := export.AppResourceName(app)
 		multiExport.LocalsFile = export.GenerateLocals(app, appResourceName, blocks)
 
-		// Generate data.tf (category, cloudlink, and relationship data sources)
-		// Append to existing DataSourcesFile (which may contain user/group data sources from access policies)
+		// Generate data.tf (category, cloudlink, relationship, and AI provider connector data sources)
 		var dataSources strings.Builder
 		if multiExport.DataSourcesFile != "" {
 			dataSources.WriteString(multiExport.DataSourcesFile)
@@ -716,11 +721,22 @@ func runAppsExport(cmd *cobra.Command, args []string) error {
 		}
 		dataSources.WriteString(export.GenerateCategoryCloudLinkDataSources(app))
 		dataSources.WriteString(export.GenerateRelationshipDataSources(app))
+		// Generate AI provider connector data sources (for agents and AI tasks)
+		if len(app.DiscoveredAiProviderConnectors) > 0 {
+			dataSources.WriteString(export.GenerateAiProviderConnectorDataSources(app.DiscoveredAiProviderConnectors))
+		}
 		if dataSources.Len() > 0 {
 			multiExport.DataSourcesFile = dataSources.String()
 		}
 
-		// Apply post-processing to all files (flow injection, cloud mappings, etc.)
+		// Emit imports.tf for Terraform 1.5+ state import. This scaffolds
+		// mapping the freshly-generated HCL onto existing platform state so
+		// `tofu apply` imports instead of attempting to recreate.
+		if !noImports && len(blocks) > 0 {
+			multiExport.ImportsFile = export.RenderImportBlocks(blocks)
+		}
+
+		// Apply post-processing (flow injection, cloud mappings, value references, etc.)
 		if beautify {
 			fmt.Println(ui.InfoStyle.Render("Beautifying configuration..."))
 			uuidMap := pipeline.GetUUIDMap()
@@ -744,33 +760,27 @@ func runAppsExport(cmd *cobra.Command, args []string) error {
 			fmt.Println(ec.Summary())
 		}
 
+		// Display export warnings (unresolved refs, missing data, etc.)
+		export.PrintWarnings()
+
 		fmt.Println()
 		fmt.Println(ui.SubtitleStyle.Render("Next steps:"))
 		fmt.Printf("  %s Review files in %s\n", ui.RenderBullet(), outputDir)
-		fmt.Printf("  %s cd %s && terraform plan\n", ui.RenderBullet(), outputDir)
+		fmt.Printf("  %s cd %s && tofu plan\n", ui.RenderBullet(), outputDir)
 		fmt.Println()
 
 		return nil
 	}
 
-	// Single-file mode: use IR pipeline for beautification
+	// Single-file mode
+	var content string
 	if beautify {
 		fmt.Println(ui.InfoStyle.Render("Beautifying configuration (resolving UUIDs, stripping nulls)..."))
-
-		// Create and run the IR pipeline for single-file output
-		pipeline := export.NewExportPipeline(app, blocks)
-		if err := pipeline.AddTofuOutput(content); err != nil {
-			return fmt.Errorf("failed to parse generated config: %w", err)
-		}
-		pipeline.AddCLIBlocks()
-
-		// Execute returns beautified HCL (runs IR transforms: null stripping, UUID resolution, etc.)
 		content = pipeline.Execute()
-
-		// Apply remaining string-based post-processing (flow injection, cloud mappings, etc.)
 		content = export.PostProcessHCLWithUUIDMap(content, blocks, app, pipeline.GetUUIDMap())
-
 		fmt.Println(ui.SuccessStyle.Render("Configuration beautified"))
+	} else {
+		content = pipeline.Execute()
 	}
 
 	// Write output
@@ -786,10 +796,13 @@ func runAppsExport(cmd *cobra.Command, args []string) error {
 		fmt.Println(ec.Summary())
 	}
 
+	// Display export warnings (unresolved refs, missing data, etc.)
+	export.PrintWarnings()
+
 	fmt.Println()
 	fmt.Println(ui.SubtitleStyle.Render("Next steps:"))
 	fmt.Printf("  %s Review %s\n", ui.RenderBullet(), outputFile)
-	fmt.Printf("  %s Run: terraform plan\n", ui.RenderBullet())
+	fmt.Printf("  %s Run: tofu plan\n", ui.RenderBullet())
 	fmt.Println()
 
 	return nil

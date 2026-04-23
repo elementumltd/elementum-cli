@@ -130,6 +130,14 @@ func resolveUUIDsInBody(body *HCLBody, uuidMap map[string]string) {
 func resolveUUIDsInValue(val HCLValue, uuidMap map[string]string) HCLValue {
 	switch v := val.(type) {
 	case HCLString:
+		// Empty strings must never resolve — an empty-string key in the
+		// uuidMap (which can sneak in via `findResourceName(imports, _, "")`
+		// returning a match because `strings.Contains(x, "")` is always true)
+		// would otherwise rewrite every `= ""` attribute in the output to
+		// whatever ref was stored under the empty key.
+		if v.Value == "" {
+			return v
+		}
 		if ref, ok := uuidMap[v.Value]; ok {
 			return Ref(ref)
 		}
@@ -214,11 +222,11 @@ func injectWarningsInBody(block *HCLBlock) {
 		switch attr.Name {
 		case "ai_provider_connector_id":
 			if str, ok := attr.Value.(HCLString); ok && isUUID(str.Value) {
-				attr.Comment = "TODO: Replace with data source or variable"
+				attr.Comment = "# TODO: Replace with data source or variable"
 			}
 		case "search_table_id":
 			if str, ok := attr.Value.(HCLString); ok && isUUID(str.Value) {
-				attr.Comment = "TODO: Replace with data source or variable"
+				attr.Comment = "# TODO: Replace with data source or variable"
 			}
 		}
 	}
@@ -286,7 +294,7 @@ func isUUID(s string) bool {
 				return false
 			}
 		} else {
-			if (ch < '0' || ch > '9') && (ch < 'a' || ch > 'f') && (ch < 'A' || ch > 'F') {
+			if !((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F')) {
 				return false
 			}
 		}

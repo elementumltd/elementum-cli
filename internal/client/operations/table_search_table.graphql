@@ -110,6 +110,18 @@ query GetTableSearchTableById($tableId: ID!, $searchTableId: ID!) {
   }
 }
 
+# Query a Table search table (Cortex search)
+query TableSearchTableQuery($tableId: ID!, $input: TableSearchTableQueryInput!) {
+  tableSearchTableQuery(tableId: $tableId, input: $input) {
+    records {
+      values {
+        field
+        value
+      }
+    }
+  }
+}
+
 # Get all search tables for a table (for field-based lookup/recovery)
 query GetTableSearchTables($tableId: ID!) {
   organization {

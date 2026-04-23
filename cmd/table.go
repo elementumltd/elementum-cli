@@ -23,8 +23,8 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/elementumltd/elementum-cli/auth"
 	"github.com/elementumltd/elementum-cli/discovery"
-	"github.com/elementumltd/elementum-cli/logger"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/logger"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )

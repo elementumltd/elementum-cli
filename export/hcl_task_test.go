@@ -57,7 +57,7 @@ func TestTaskHCLGenerator_GenerateAll(t *testing.T) {
 
 	assertHCLContains(t, hcl,
 		`resource "elementum_message_task" "send_message"`,
-		"parent_id",
+		"parent = elementum_",
 		"name",
 	)
 }
@@ -224,8 +224,93 @@ func TestTaskHCL_Switch(t *testing.T) {
 
 	assertHCLContains(t, hcl,
 		`resource "elementum_switch_task" "test_switch"`,
-		"parent_id",
+		"parent = elementum_",
 		"name",
+	)
+}
+
+func TestTaskHCL_SwitchWithChildren(t *testing.T) {
+	// Test that switch task children (switch cases) are generated as separate resources
+	caseApprovedID := "case-approved-1111-111111111111"
+	caseDefaultID := "case-default-1111-111111111111"
+
+	switchChildren := []map[string]interface{}{
+		{
+			"id":    caseApprovedID,
+			"label": "Approved",
+			"filter": map[string]interface{}{
+				"type":  "equals",
+				"value": "APPROVED",
+			},
+		},
+		{
+			"id":     caseDefaultID,
+			"label":  "Default",
+			"filter": nil,
+		},
+	}
+
+	app := createTestApp(TestAppID, "Test App")
+	automations := []discovery.Automation{
+		createTestAutomation(
+			TestAutomationID,
+			"Test Automation",
+			TestWorkflowID,
+			"ACTIVE",
+			[]discovery.Trigger{{ID: TestTriggerID, Type: "record_created", RawData: buildMinimalTriggerRawData("record_created")}},
+			[]discovery.Task{{
+				ID:         TestTaskID,
+				Type:       "switch",
+				Name:       "Check Status",
+				WorkflowID: TestWorkflowID,
+				ParentID:   TestTriggerID,
+				RawData:    buildMinimalTaskRawData("switch"),
+				Children:   switchChildren,
+			}},
+		),
+	}
+
+	imports := []ImportBlock{
+		{ID: TestAutomationID, ResourceType: "elementum_automation", ResourceName: "test_automation"},
+		{ID: TestAutomationID + ":" + TestTriggerID, ResourceType: "elementum_record_created_trigger", ResourceName: "test_trigger"},
+		{ID: TestWorkflowID + ":" + TestTaskID, ResourceType: "elementum_switch_task", ResourceName: "check_status"},
+		{ID: caseApprovedID, ResourceType: "elementum_switch_case", ResourceName: "check_status_approved"},
+		{ID: caseDefaultID, ResourceType: "elementum_switch_case", ResourceName: "check_status_default"},
+	}
+
+	generator := NewTaskHCLGenerator(app, imports, make(map[string]string), automations)
+	hcl := generator.GenerateAll()
+
+	// Switch task resource
+	assertHCLContains(t, hcl,
+		`resource "elementum_switch_task" "check_status"`,
+	)
+
+	// Switch case resources
+	assertHCLContains(t, hcl,
+		`resource "elementum_switch_case" "check_status_approved"`,
+		`resource "elementum_switch_case" "check_status_default"`,
+	)
+
+	// Parent reference on cases
+	assertHCLContains(t, hcl,
+		`switch_task = elementum_switch_task.check_status`,
+	)
+
+	// Labels
+	assertHCLContains(t, hcl,
+		`label = "Approved"`,
+		`label = "Default"`,
+	)
+
+	// Default case
+	assertHCLContains(t, hcl,
+		`is_default = true`,
+	)
+
+	// Case ordering chain
+	assertHCLContains(t, hcl,
+		`previous_case_id = elementum_switch_case.check_status_approved.id`,
 	)
 }
 
@@ -315,7 +400,7 @@ func TestTaskHCL_UpdateField(t *testing.T) {
 
 	assertHCLContains(t, hcl,
 		`resource "elementum_update_field_task" "update_record"`,
-		"parent_id",
+		"parent = elementum_",
 	)
 }
 
@@ -534,6 +619,50 @@ func TestTaskHCL_Api_POST_JSONBody(t *testing.T) {
 	)
 }
 
+func TestTaskHCL_Api_OAuth_RequestType(t *testing.T) {
+	tests := []struct {
+		name        string
+		requestType string
+	}{
+		{"BASIC stays uppercase", "BASIC"},
+		{"FORM stays uppercase", "FORM"},
+		{"lowercase basic becomes uppercase", "basic"},
+		{"lowercase form becomes uppercase", "form"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rawData := map[string]interface{}{
+				"__typename": "WorkflowApiTask",
+				"id":         TestTaskID,
+				"name":       "OAuth Request",
+				"method":     "GET",
+				"urlReference": map[string]interface{}{
+					"value": "https://api.example.com/oauth-secure",
+				},
+				"authorization": map[string]interface{}{
+					"__typename":   "ApiOauthAuthorization",
+					"clientId":     "my-client-id",
+					"clientSecret": "my-client-secret",
+					"url":          "https://auth.example.com/token",
+					"requestType":  tt.requestType,
+				},
+			}
+
+			_, hcl := generateTaskHCL(t, "api", "oauth_request", rawData)
+
+			assertHCLContains(t, hcl,
+				`resource "elementum_api_task" "oauth_request"`,
+			)
+			assertAttributeValue(t, hcl, "request_type", `"`+strings.ToUpper(tt.requestType)+`"`)
+			assertHCLNotContains(t, hcl,
+				`request_type = "basic"`,
+				`request_type = "form"`,
+			)
+		})
+	}
+}
+
 func TestTaskHCL_AiFileRead(t *testing.T) {
 	rawData := map[string]interface{}{
 		"__typename": "WorkflowAiFileAnalysisTask",
@@ -632,7 +761,7 @@ func TestTaskHCL_FindRelatedRecords(t *testing.T) {
 	assertHCLContains(t, hcl,
 		`resource "elementum_find_related_records_task" "find_related"`,
 		"record_reference",
-		"related_object_id",
+		"object_id",
 	)
 }
 
@@ -1020,6 +1149,145 @@ func TestTaskHCL_AiTransform(t *testing.T) {
 	)
 }
 
+func TestTaskHCL_AiTransform_StaticPrompt(t *testing.T) {
+	// Test that a static prompt (value field only, no references) is exported correctly
+	rawData := map[string]interface{}{
+		"__typename": "WorkflowAiTransformTask",
+		"id":         TestTaskID,
+		"name":       "Analyze Pain Points",
+		"prompt": map[string]interface{}{
+			"id":    "2f7a5280-1234-5678-9abc-def012345678",
+			"value": "Analyze the following text for pain points and summarize them",
+		},
+		"aiProviderConnector": map[string]interface{}{
+			"id":       "conn-123",
+			"model":    map[string]interface{}{"name": "Claude Sonnet 4"},
+			"provider": map[string]interface{}{"name": "Anthropic"},
+		},
+		"fieldType": "TEXT",
+	}
+
+	_, hcl := generateTaskHCL(t, "ai_transform", "analyze_pain_points", rawData)
+
+	assertHCLContains(t, hcl,
+		`resource "elementum_ai_transform_task" "analyze_pain_points"`,
+		"Analyze the following text for pain points",
+	)
+	// Should not have empty prompt or TODO comment
+	assertHCLNotContains(t, hcl,
+		`prompt = ""`,
+		"TODO: Add value reference",
+	)
+}
+
+func TestTaskHCL_AiTransform_TemplatePrompt(t *testing.T) {
+	// Test that a template-based prompt (using templateReference) is exported correctly.
+	// This is the core fix for ISS-77: prompts with template interpolation were exported as empty.
+	rawData := map[string]interface{}{
+		"__typename": "WorkflowAiTransformTask",
+		"id":         TestTaskID,
+		"name":       "Analyze Pain Points",
+		"prompt": map[string]interface{}{
+			"id": "2f7a5280-1234-5678-9abc-def012345678",
+			"templateReference": map[string]interface{}{
+				"template": "Analyze the following text for pain points: {{{p1}}}",
+				"parameters": []interface{}{
+					map[string]interface{}{
+						"name": "p1",
+						"value": map[string]interface{}{
+							"triggerReference": map[string]interface{}{
+								"name": "record.some-field-id.text",
+							},
+						},
+					},
+				},
+			},
+		},
+		"aiProviderConnector": map[string]interface{}{
+			"id":       "conn-123",
+			"model":    map[string]interface{}{"name": "Claude Sonnet 4"},
+			"provider": map[string]interface{}{"name": "Anthropic"},
+		},
+		"fieldType": "TEXT",
+	}
+
+	_, hcl := generateTaskHCL(t, "ai_transform", "analyze_pain_points", rawData)
+
+	assertHCLContains(t, hcl,
+		`resource "elementum_ai_transform_task" "analyze_pain_points"`,
+		"Analyze the following text for pain points",
+		"prompt",
+	)
+	// Should not have empty prompt or TODO comment
+	assertHCLNotContains(t, hcl,
+		`prompt = ""`,
+		"TODO: Add value reference",
+	)
+}
+
+func TestTaskHCL_AiTransform_TriggerRefPrompt(t *testing.T) {
+	// Test that a prompt using a direct trigger reference resolves to refs syntax
+	rawData := map[string]interface{}{
+		"__typename": "WorkflowAiTransformTask",
+		"id":         TestTaskID,
+		"name":       "Transform Field",
+		"prompt": map[string]interface{}{
+			"id": "ref-trigger-1",
+			"triggerReference": map[string]interface{}{
+				"name": "record.field-123.text",
+			},
+		},
+		"fieldType": "TEXT",
+	}
+
+	_, hcl := generateTaskHCL(t, "ai_transform", "transform_field", rawData)
+
+	assertHCLContains(t, hcl,
+		`resource "elementum_ai_transform_task" "transform_field"`,
+		"prompt",
+	)
+	// Should not have empty prompt or TODO comment
+	assertHCLNotContains(t, hcl,
+		`prompt = ""`,
+		"TODO: Add value reference",
+	)
+}
+
+func TestTaskHCL_AiTransform_ConnectorUUIDResolution(t *testing.T) {
+	// Test that ai_provider_connector_id UUID gets resolved to a data source reference
+	// when the UUID is present in the uuid map (as built by beautify.go from discoveries)
+	rawData := map[string]interface{}{
+		"__typename": "WorkflowAiTransformTask",
+		"id":         TestTaskID,
+		"name":       "Transform",
+		"prompt": map[string]interface{}{
+			"id":    "ref-1",
+			"value": "Summarize this",
+		},
+		"aiProviderConnector": map[string]interface{}{
+			"id":       "e0c8081d-e0ea-4ceb-a28c-7d01436240a2",
+			"model":    map[string]interface{}{"name": "Claude Sonnet 4"},
+			"provider": map[string]interface{}{"name": "Anthropic"},
+		},
+		"fieldType": "TEXT",
+	}
+
+	uuidMap := map[string]string{
+		"e0c8081d-e0ea-4ceb-a28c-7d01436240a2": "data.elementum_ai_provider_connector.claude_sonnet_4.id",
+	}
+
+	_, hcl := generateTaskHCLWithUUIDMap(t, "ai_transform", "transform", rawData, uuidMap)
+
+	assertHCLContains(t, hcl,
+		`resource "elementum_ai_transform_task" "transform"`,
+		"data.elementum_ai_provider_connector.claude_sonnet_4.id",
+	)
+	// Should NOT contain the raw UUID
+	assertHCLNotContains(t, hcl,
+		"e0c8081d-e0ea-4ceb-a28c-7d01436240a2",
+	)
+}
+
 func TestTaskHCL_ApprovalChainTask(t *testing.T) {
 	rawData := buildMinimalTaskRawData("approval_chain")
 	_, hcl := generateTaskHCL(t, "approval_chain", "approval_chain", rawData)
@@ -1045,8 +1313,41 @@ func TestTaskHCL_ApprovalStatusUpdate(t *testing.T) {
 	assertHCLContains(t, hcl,
 		`resource "elementum_approval_status_update_task" "update_approval"`,
 		"approval_reference",
-		"status",
 	)
+	assertAttributeValue(t, hcl, "status", `"APPROVED"`)
+	assertHCLNotContains(t, hcl,
+		`status = "approved"`,
+	)
+}
+
+func TestTaskHCL_ApprovalStatusUpdate_StatusCase(t *testing.T) {
+	tests := []struct {
+		name   string
+		status string
+	}{
+		{"APPROVED stays uppercase", "APPROVED"},
+		{"DENIED stays uppercase", "DENIED"},
+		{"EXCEPTION stays uppercase", "EXCEPTION"},
+		{"lowercase approved becomes uppercase", "approved"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rawData := map[string]interface{}{
+				"__typename": "WorkflowApprovalStatusUpdateTask",
+				"id":         TestTaskID,
+				"name":       "Update Approval",
+				"approvalChainTemplate": map[string]interface{}{
+					"id": "act-123",
+				},
+				"status": tt.status,
+			}
+
+			_, hcl := generateTaskHCL(t, "approval_status_update", "update_approval", rawData)
+
+			assertAttributeValue(t, hcl, "status", `"`+strings.ToUpper(tt.status)+`"`)
+		})
+	}
 }
 
 func TestTaskHCL_AspectRecordFieldLocking(t *testing.T) {
@@ -1290,7 +1591,7 @@ func TestTaskHCL_RunAutomation_StaticMode_Basic(t *testing.T) {
 
 	assertHCLContains(t, hcl,
 		`resource "elementum_run_automation_task" "call_sub_workflow"`,
-		"parent_id",
+		"parent = elementum_",
 		"synchronous = true",
 		"target_automation_id",
 	)
@@ -1926,4 +2227,315 @@ func TestTaskHCL_VariableRef_ResolvesToDefiningTask(t *testing.T) {
 	// not the other task (create_othervar)
 	assertHCLContains(t, hcl, `elementum_variable_task.create_myvar.refs["myVar"]`)
 	assertHCLNotContains(t, hcl, `elementum_variable_task.create_othervar.refs["myVar"]`)
+}
+
+// ============================================================================
+// ISS-76: Execute Script Task — Block Comment Escaping Tests
+// ============================================================================
+
+func TestExecuteScriptTask_BlockComments(t *testing.T) {
+	// Reproducer for ISS-76: block comments (/** ... **/) must survive export
+	code := "/**\n * Access your input values from the `input.parameters` object\n * Example:\n * const { participants } = input.parameters;\n**/\n\nconst { participants } = input.parameters;\nreturn { participants };"
+
+	app := createTestApp(TestAppID, "Test App")
+	automations := []discovery.Automation{
+		createTestAutomation(
+			TestAutomationID,
+			"Test Automation",
+			TestWorkflowID,
+			"ACTIVE",
+			[]discovery.Trigger{{ID: TestTriggerID, Type: "record_created", RawData: buildMinimalTriggerRawData("record_created")}},
+			[]discovery.Task{{
+				ID:         TestTaskID,
+				Type:       "execute_script",
+				Name:       "Script With Block Comments",
+				WorkflowID: TestWorkflowID,
+				ParentID:   TestTriggerID,
+				RawData: func() map[string]interface{} {
+					data := buildMinimalTaskRawData("execute_script")
+					data["code"] = code
+					return data
+				}(),
+			}},
+		),
+	}
+
+	imports := []ImportBlock{
+		{ID: TestAutomationID, ResourceType: "elementum_automation", ResourceName: "test_automation"},
+		{ID: TestAutomationID + ":" + TestTriggerID, ResourceType: "elementum_record_created_trigger", ResourceName: "test_trigger"},
+		{ID: TestWorkflowID + ":" + TestTaskID, ResourceType: "elementum_execute_script_task", ResourceName: "script_with_block_comments"},
+	}
+
+	generator := NewTaskHCLGenerator(app, imports, make(map[string]string), automations)
+	hcl := generator.GenerateAll()
+
+	t.Logf("Generated HCL:\n%s", hcl)
+
+	// The code field MUST use heredoc format for multiline code
+	assertHCLContains(t, hcl, "<<-")
+
+	// Block comment markers must appear literally in the output
+	assertHCLContains(t, hcl, "/**")
+	assertHCLContains(t, hcl, "**/")
+
+	// The full block comment content must be preserved
+	assertHCLContains(t, hcl, "* Access your input values")
+	assertHCLContains(t, hcl, "const { participants } = input.parameters;")
+}
+
+func TestExecuteScriptTask_TemplateInterpolation(t *testing.T) {
+	// JavaScript template literals use ${expr} which must be escaped to $${expr}
+	// to prevent HCL from interpreting them as Terraform interpolation
+	code := "const name = `Hello ${user.name}`;\nconst url = `https://api.com/${id}/data`;\nreturn { name, url };"
+
+	app := createTestApp(TestAppID, "Test App")
+	automations := []discovery.Automation{
+		createTestAutomation(
+			TestAutomationID,
+			"Test Automation",
+			TestWorkflowID,
+			"ACTIVE",
+			[]discovery.Trigger{{ID: TestTriggerID, Type: "record_created", RawData: buildMinimalTriggerRawData("record_created")}},
+			[]discovery.Task{{
+				ID:         TestTaskID,
+				Type:       "execute_script",
+				Name:       "Script With Templates",
+				WorkflowID: TestWorkflowID,
+				ParentID:   TestTriggerID,
+				RawData: func() map[string]interface{} {
+					data := buildMinimalTaskRawData("execute_script")
+					data["code"] = code
+					return data
+				}(),
+			}},
+		),
+	}
+
+	imports := []ImportBlock{
+		{ID: TestAutomationID, ResourceType: "elementum_automation", ResourceName: "test_automation"},
+		{ID: TestAutomationID + ":" + TestTriggerID, ResourceType: "elementum_record_created_trigger", ResourceName: "test_trigger"},
+		{ID: TestWorkflowID + ":" + TestTaskID, ResourceType: "elementum_execute_script_task", ResourceName: "script_with_templates"},
+	}
+
+	generator := NewTaskHCLGenerator(app, imports, make(map[string]string), automations)
+	hcl := generator.GenerateAll()
+
+	t.Logf("Generated HCL:\n%s", hcl)
+
+	// ${user.name} must be escaped to $${user.name} so HCL treats it as literal
+	assertHCLContains(t, hcl, "$${user.name}")
+	assertHCLContains(t, hcl, "$${id}")
+
+	// Verify escaping is correct: every ${...} must be preceded by $$ (i.e., $${...})
+	// We can't use assertHCLNotContains since "$${x}" contains "${x}" as a substring.
+	// Instead, count occurrences: escaped ($${) count must equal total ${ count.
+	totalDollarBrace := strings.Count(hcl, "${")
+	escapedDollarBrace := strings.Count(hcl, "$${")
+	if totalDollarBrace != escapedDollarBrace {
+		t.Errorf("Found %d total ${ but only %d escaped $${ — some interpolations are not escaped", totalDollarBrace, escapedDollarBrace)
+	}
+}
+
+func TestExecuteScriptTask_SingleLineCode(t *testing.T) {
+	// Single-line code should stay as a quoted string, not heredoc
+	code := "return { result: 42 };"
+
+	app := createTestApp(TestAppID, "Test App")
+	automations := []discovery.Automation{
+		createTestAutomation(
+			TestAutomationID,
+			"Test Automation",
+			TestWorkflowID,
+			"ACTIVE",
+			[]discovery.Trigger{{ID: TestTriggerID, Type: "record_created", RawData: buildMinimalTriggerRawData("record_created")}},
+			[]discovery.Task{{
+				ID:         TestTaskID,
+				Type:       "execute_script",
+				Name:       "Simple Script",
+				WorkflowID: TestWorkflowID,
+				ParentID:   TestTriggerID,
+				RawData: func() map[string]interface{} {
+					data := buildMinimalTaskRawData("execute_script")
+					data["code"] = code
+					return data
+				}(),
+			}},
+		),
+	}
+
+	imports := []ImportBlock{
+		{ID: TestAutomationID, ResourceType: "elementum_automation", ResourceName: "test_automation"},
+		{ID: TestAutomationID + ":" + TestTriggerID, ResourceType: "elementum_record_created_trigger", ResourceName: "test_trigger"},
+		{ID: TestWorkflowID + ":" + TestTaskID, ResourceType: "elementum_execute_script_task", ResourceName: "simple_script"},
+	}
+
+	generator := NewTaskHCLGenerator(app, imports, make(map[string]string), automations)
+	hcl := generator.GenerateAll()
+
+	t.Logf("Generated HCL:\n%s", hcl)
+
+	// Single-line code should use quoted string, not heredoc
+	assertHCLContains(t, hcl, `"return { result: 42 };"`)
+	assertHCLNotContains(t, hcl, "<<-")
+}
+
+func TestExecuteScriptTask_CodeWithEOTDelimiter(t *testing.T) {
+	// Code containing "EOT" at the start of a line should use a different delimiter
+	code := "// This function returns EOT\nconst result = 'EOT';\nreturn { result };"
+
+	app := createTestApp(TestAppID, "Test App")
+	automations := []discovery.Automation{
+		createTestAutomation(
+			TestAutomationID,
+			"Test Automation",
+			TestWorkflowID,
+			"ACTIVE",
+			[]discovery.Trigger{{ID: TestTriggerID, Type: "record_created", RawData: buildMinimalTriggerRawData("record_created")}},
+			[]discovery.Task{{
+				ID:         TestTaskID,
+				Type:       "execute_script",
+				Name:       "EOT Script",
+				WorkflowID: TestWorkflowID,
+				ParentID:   TestTriggerID,
+				RawData: func() map[string]interface{} {
+					data := buildMinimalTaskRawData("execute_script")
+					data["code"] = code
+					return data
+				}(),
+			}},
+		),
+	}
+
+	imports := []ImportBlock{
+		{ID: TestAutomationID, ResourceType: "elementum_automation", ResourceName: "test_automation"},
+		{ID: TestAutomationID + ":" + TestTriggerID, ResourceType: "elementum_record_created_trigger", ResourceName: "test_trigger"},
+		{ID: TestWorkflowID + ":" + TestTaskID, ResourceType: "elementum_execute_script_task", ResourceName: "eot_script"},
+	}
+
+	generator := NewTaskHCLGenerator(app, imports, make(map[string]string), automations)
+	hcl := generator.GenerateAll()
+
+	t.Logf("Generated HCL:\n%s", hcl)
+
+	// Should use heredoc (multiline) but code content must be preserved
+	assertHCLContains(t, hcl, "<<-")
+	assertHCLContains(t, hcl, "const result = 'EOT';")
+}
+
+func TestExecuteScriptTask_EdgeCases(t *testing.T) {
+	tests := []struct {
+		name             string
+		code             string
+		shouldContain    []string
+		shouldNotContain []string
+	}{
+		{
+			name:          "code starting with block comment",
+			code:          "/* start */\nvar x = 1;\nreturn { x };",
+			shouldContain: []string{"/* start */", "var x = 1;"},
+		},
+		{
+			name:          "nested comment-like patterns",
+			code:          "var re = /\\/* match *\\//;\n/* real comment */\nreturn { re };",
+			shouldContain: []string{"/* real comment */"},
+		},
+		{
+			name:          "line comments preserved",
+			code:          "// This is a line comment\nvar x = 1; // inline\nreturn { x };",
+			shouldContain: []string{"// This is a line comment", "// inline"},
+		},
+		{
+			name:          "close comment in JS string",
+			code:          "var end = \"end of comment: */\";\n/* actual comment */\nreturn { end };",
+			shouldContain: []string{`end of comment: */`, "/* actual comment */"},
+		},
+		{
+			name:          "mixed comment styles",
+			code:          "/* block comment */\n// line comment\n/* another block */\nreturn { ok: true };",
+			shouldContain: []string{"/* block comment */", "// line comment", "/* another block */"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			app := createTestApp(TestAppID, "Test App")
+			automations := []discovery.Automation{
+				createTestAutomation(
+					TestAutomationID,
+					"Test Automation",
+					TestWorkflowID,
+					"ACTIVE",
+					[]discovery.Trigger{{ID: TestTriggerID, Type: "record_created", RawData: buildMinimalTriggerRawData("record_created")}},
+					[]discovery.Task{{
+						ID:         TestTaskID,
+						Type:       "execute_script",
+						Name:       "Edge Case Script",
+						WorkflowID: TestWorkflowID,
+						ParentID:   TestTriggerID,
+						RawData: func() map[string]interface{} {
+							data := buildMinimalTaskRawData("execute_script")
+							data["code"] = tt.code
+							return data
+						}(),
+					}},
+				),
+			}
+
+			imports := []ImportBlock{
+				{ID: TestAutomationID, ResourceType: "elementum_automation", ResourceName: "test_automation"},
+				{ID: TestAutomationID + ":" + TestTriggerID, ResourceType: "elementum_record_created_trigger", ResourceName: "test_trigger"},
+				{ID: TestWorkflowID + ":" + TestTaskID, ResourceType: "elementum_execute_script_task", ResourceName: "edge_case_script"},
+			}
+
+			generator := NewTaskHCLGenerator(app, imports, make(map[string]string), automations)
+			hcl := generator.GenerateAll()
+
+			t.Logf("Generated HCL:\n%s", hcl)
+
+			assertHCLContains(t, hcl, tt.shouldContain...)
+			if len(tt.shouldNotContain) > 0 {
+				assertHCLNotContains(t, hcl, tt.shouldNotContain...)
+			}
+		})
+	}
+}
+
+func TestExecuteScriptTask_EmptyCode(t *testing.T) {
+	// Empty code string should not produce a code attribute
+	app := createTestApp(TestAppID, "Test App")
+	automations := []discovery.Automation{
+		createTestAutomation(
+			TestAutomationID,
+			"Test Automation",
+			TestWorkflowID,
+			"ACTIVE",
+			[]discovery.Trigger{{ID: TestTriggerID, Type: "record_created", RawData: buildMinimalTriggerRawData("record_created")}},
+			[]discovery.Task{{
+				ID:         TestTaskID,
+				Type:       "execute_script",
+				Name:       "Empty Script",
+				WorkflowID: TestWorkflowID,
+				ParentID:   TestTriggerID,
+				RawData: func() map[string]interface{} {
+					data := buildMinimalTaskRawData("execute_script")
+					data["code"] = ""
+					return data
+				}(),
+			}},
+		),
+	}
+
+	imports := []ImportBlock{
+		{ID: TestAutomationID, ResourceType: "elementum_automation", ResourceName: "test_automation"},
+		{ID: TestAutomationID + ":" + TestTriggerID, ResourceType: "elementum_record_created_trigger", ResourceName: "test_trigger"},
+		{ID: TestWorkflowID + ":" + TestTaskID, ResourceType: "elementum_execute_script_task", ResourceName: "empty_script"},
+	}
+
+	generator := NewTaskHCLGenerator(app, imports, make(map[string]string), automations)
+	hcl := generator.GenerateAll()
+
+	t.Logf("Generated HCL:\n%s", hcl)
+
+	// Empty code should not produce a code attribute (the condition `strVal != ""` guards this)
+	assertHCLNotContains(t, hcl, "code =")
 }

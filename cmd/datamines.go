@@ -182,13 +182,6 @@ func runDataminesExport(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Get credentials for provider config
-	config, _ := auth.LoadConfig()
-	creds, err := auth.GetCredentials(cmd, config)
-	if err != nil {
-		return err
-	}
-
 	fmt.Println(ui.InfoStyle.Render("Looking up Table..."))
 
 	// Resolve table - try by name, handle, then ID
@@ -221,25 +214,10 @@ func runDataminesExport(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(ui.SuccessStyle.Render(fmt.Sprintf("Found Datamine: %s (%s)", datamine.Name, datamine.ID)))
 
-	// Check if terraform is installed
-	if err := export.CheckTerraformInstalled(); err != nil {
-		return fmt.Errorf("terraform is required: %w", err)
-	}
-
-	// Generate import blocks
-	blocks := []export.ImportBlock{
-		{
-			ID:           export.BuildImportID("elementum_datamine", map[string]string{"table_id": tableInfo.ID, "datamine_id": datamine.ID}),
-			ResourceType: "elementum_datamine",
-			ResourceName: export.SanitizeName(datamine.Name),
-		},
-	}
-
 	// Fetch related resources for beautification
 	var relatedResources []discovery.RelatedResource
 	if beautify {
 		fmt.Println(ui.InfoStyle.Render("Fetching related resources for beautification..."))
-		var err error
 		relatedResources, err = discovery.FetchDatamineRelatedResources(ctx, client, datamine, tableInfo)
 		if err != nil {
 			return fmt.Errorf("failed to fetch related resources: %w", err)
@@ -247,51 +225,9 @@ func runDataminesExport(cmd *cobra.Command, args []string) error {
 		fmt.Println(ui.SuccessStyle.Render(fmt.Sprintf("Found %d related resources", len(relatedResources))))
 	}
 
-	// Create Terraform runner
-	runner, err := export.NewTerraformRunner()
-	if err != nil {
-		return fmt.Errorf("failed to create terraform runner: %w", err)
-	}
-	fmt.Printf("Working directory: %s\n", runner.WorkDir)
-
-	// Write imports and provider config
-	providerConfig := export.RenderProviderConfig(creds.Organization, creds.Instance, creds.Environment, creds.ClientID, creds.ClientSecret)
-	imports := export.RenderImportBlocks(blocks)
-
-	err = runner.WriteImports(providerConfig, imports)
-	if err != nil {
-		return fmt.Errorf("failed to write import files: %w", err)
-	}
-
-	fmt.Println(ui.SuccessStyle.Render("Generated import block"))
-
-	// Run terraform init
-	fmt.Println(ui.InfoStyle.Render("Running terraform init..."))
-	if err := runner.Init(); err != nil {
-		return fmt.Errorf("terraform init failed: %w", err)
-	}
-	fmt.Println(ui.SuccessStyle.Render("Terraform initialized"))
-
-	// Run terraform plan -generate-config-out
+	// Generate HCL from discovered data
 	fmt.Println(ui.InfoStyle.Render("Generating Terraform configuration..."))
-	generatedFile := "generated.tf"
-	_, err = runner.GenerateConfig(generatedFile)
-	if err != nil {
-		return fmt.Errorf("terraform plan failed: %w", err)
-	}
-
-	// Read the generated file
-	content, err := runner.GetGeneratedFile(generatedFile)
-	if err != nil {
-		return fmt.Errorf("failed to read generated config: %w", err)
-	}
-
-	// Beautify the generated config if enabled
-	if beautify {
-		fmt.Println(ui.InfoStyle.Render("Beautifying configuration (resolving UUIDs, stripping nulls)..."))
-		content = export.BeautifyDatamineConfig(content, blocks, datamine, tableInfo, relatedResources)
-		fmt.Println(ui.SuccessStyle.Render("Configuration beautified"))
-	}
+	content := export.GenerateDatamineHCL(datamine, tableInfo, relatedResources)
 
 	// Write to output file
 	err = os.WriteFile(outputFile, []byte(content), 0644)
@@ -303,7 +239,7 @@ func runDataminesExport(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 	fmt.Println(ui.SubtitleStyle.Render("Next steps:"))
 	fmt.Printf("  %s Review %s\n", ui.RenderBullet(), outputFile)
-	fmt.Printf("  %s Run: terraform plan\n", ui.RenderBullet())
+	fmt.Printf("  %s Run: tofu plan\n", ui.RenderBullet())
 	fmt.Println()
 
 	return nil

@@ -35,9 +35,11 @@ func TestSanitizeName(t *testing.T) {
 			want:  "myapp",
 		},
 		{
+			// SanitizeName now splits CamelCase at word boundaries so platform
+			// names like "ValidateAdGroupRequest" become valid snake_case.
 			name:  "uppercase to lowercase",
 			input: "MyApp",
-			want:  "myapp",
+			want:  "my_app",
 		},
 		{
 			name:  "spaces to underscores",
@@ -50,9 +52,10 @@ func TestSanitizeName(t *testing.T) {
 			want:  "my_app_name",
 		},
 		{
+			// Runs of underscores are now collapsed (previously preserved).
 			name:  "mixed special chars",
 			input: "My App: Test/Demo",
-			want:  "my_app__test_demo", // Double underscore from consecutive replacements
+			want:  "my_app_test_demo",
 		},
 		{
 			name:  "starts with number",
@@ -1125,8 +1128,8 @@ func TestGenerateImportBlocks_DeduplicatesBidirectionalRelationships(t *testing.
 	// Verify the relationship that was kept is from the app (first one processed)
 	for _, b := range blocks {
 		if b.ResourceType == "elementum_relationship" {
-			if b.ResourceName != "docdigi_to_digitizeddocument" {
-				t.Errorf("Expected relationship named 'docdigi_to_digitizeddocument', got %s", b.ResourceName)
+			if b.ResourceName != "docdigi_to_digitized_document" {
+				t.Errorf("Expected relationship named 'docdigi_to_digitized_document', got %s", b.ResourceName)
 			}
 			// Verify it's the app's relationship (not element's) by checking the import ID
 			if !strings.Contains(b.ID, "app_docdigi") {
@@ -1331,7 +1334,7 @@ func TestGenerateCloudLinkDataSourcesFromMap(t *testing.T) {
 			wantContains: []string{
 				`data "elementum_cloudlink" "snowflake_prod"`,
 				`name = "Snowflake Prod"`,
-				`data "elementum_cloudlink" "bigquery_analytics"`,
+				`data "elementum_cloudlink" "big_query_analytics"`,
 				`name = "BigQuery Analytics"`,
 			},
 		},
@@ -1361,7 +1364,7 @@ func TestGenerateCloudLinkDataSourcesFromMap(t *testing.T) {
 			},
 			wantContains: []string{
 				// Parentheses are removed (not converted to underscore)
-				`data "elementum_cloudlink" "cloud_link___dev_test"`,
+				`data "elementum_cloudlink" "cloud_link_dev_test"`,
 				`name = "Cloud Link - Dev (Test)"`,
 			},
 		},
@@ -2525,7 +2528,7 @@ func TestAppResourceName(t *testing.T) {
 				Name:      "App With Spaces - V2",
 				Namespace: "",
 			},
-			expected: "app_with_spaces___v2",
+			expected: "app_with_spaces_v2",
 		},
 	}
 
@@ -2971,5 +2974,82 @@ func TestGenerateImportBlocks_DiscoveredTaskAgentViewsSkippedWhenAgentsNotSelect
 	// List views should be exported
 	if listViewCount != 1 {
 		t.Errorf("Expected 1 list view from discovered task, got %d", listViewCount)
+	}
+}
+
+func TestGenerateAspectAutomationImportBlocks_SwitchCaseChildren(t *testing.T) {
+	t.Parallel()
+
+	caseApprovedID := "case-approved-1111-111111111111"
+	caseDefaultID := "case-default-1111-111111111111"
+
+	automations := []discovery.Automation{
+		{
+			ID:           TestAutomationID,
+			Name:         "Route Workflow",
+			Status:       "ACTIVE",
+			WorkflowID:   TestWorkflowID,
+			HasPublished: true,
+			Triggers: []discovery.Trigger{
+				{ID: TestTriggerID, Type: "record_created", Name: "Trigger"},
+			},
+			Tasks: []discovery.Task{
+				{
+					ID:       TestTaskID,
+					Type:     "switch",
+					Name:     "Route",
+					ParentID: TestTriggerID,
+					Children: []map[string]interface{}{
+						{
+							"id":    caseApprovedID,
+							"label": "Approved",
+							"filter": map[string]interface{}{
+								"type":  "equals",
+								"value": "APPROVED",
+							},
+						},
+						{
+							"id":     caseDefaultID,
+							"label":  "Default",
+							"filter": nil,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	blocks := GenerateAspectAutomationImportBlocks(TestAppID, "app", "test", automations)
+
+	// Count resource types
+	switchTaskCount := 0
+	switchCaseCount := 0
+	var switchCaseIDs []string
+	for _, block := range blocks {
+		switch block.ResourceType {
+		case "elementum_switch_task":
+			switchTaskCount++
+		case "elementum_switch_case":
+			switchCaseCount++
+			switchCaseIDs = append(switchCaseIDs, block.ID)
+		}
+	}
+
+	if switchTaskCount != 1 {
+		t.Errorf("Expected 1 switch task import block, got %d", switchTaskCount)
+	}
+
+	if switchCaseCount != 2 {
+		t.Errorf("Expected 2 switch case import blocks, got %d", switchCaseCount)
+	}
+
+	// Verify case IDs are the raw case UUIDs (not workflow_id:case_id)
+	if len(switchCaseIDs) >= 2 {
+		if switchCaseIDs[0] != caseApprovedID {
+			t.Errorf("Expected first switch case ID to be %s, got %s", caseApprovedID, switchCaseIDs[0])
+		}
+		if switchCaseIDs[1] != caseDefaultID {
+			t.Errorf("Expected second switch case ID to be %s, got %s", caseDefaultID, switchCaseIDs[1])
+		}
 	}
 }

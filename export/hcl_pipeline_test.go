@@ -21,14 +21,7 @@ import (
 	"github.com/elementumltd/elementum-cli/discovery"
 )
 
-func TestExportPipeline_TofuOnly(t *testing.T) {
-	tofuOutput := `
-resource "elementum_app" "my_app" {
-  name      = "My App"
-  namespace = "my-app"
-  options   = null
-}
-`
+func TestExportPipeline_CLIOnly(t *testing.T) {
 	app := &discovery.App{
 		ID:        "app-1",
 		Name:      "My App",
@@ -39,33 +32,19 @@ resource "elementum_app" "my_app" {
 	}
 
 	pipeline := NewExportPipeline(app, imports)
-	err := pipeline.AddTofuOutput(tofuOutput)
-	if err != nil {
-		t.Fatalf("AddTofuOutput error: %v", err)
-	}
+	pipeline.AddCLIBlocks()
 
 	result := pipeline.Execute()
 
-	// Should have the app resource
 	if !strings.Contains(result, `resource "elementum_app" "my_app"`) {
 		t.Error("expected app resource in output")
 	}
-
-	// Null attributes should be stripped
-	if strings.Contains(result, "null") {
-		t.Error("expected null attributes to be stripped")
+	if !strings.Contains(result, `"My App"`) {
+		t.Error("expected app name in output")
 	}
 }
 
-func TestExportPipeline_MergesCLIOverTofu(t *testing.T) {
-	// Tofu generates a minimal app block
-	tofuOutput := `
-resource "elementum_app" "my_app" {
-  name      = "My App"
-  namespace = "my-app"
-}
-`
-	// CLI generates a richer automation block
+func TestExportPipeline_CLIWithAutomations(t *testing.T) {
 	app := &discovery.App{
 		ID:        "app-1",
 		Name:      "My App",
@@ -85,20 +64,13 @@ resource "elementum_app" "my_app" {
 	}
 
 	pipeline := NewExportPipeline(app, imports)
-	err := pipeline.AddTofuOutput(tofuOutput)
-	if err != nil {
-		t.Fatalf("AddTofuOutput error: %v", err)
-	}
 	pipeline.AddCLIBlocks()
 
 	result := pipeline.Execute()
 
-	// Should have the app resource from tofu
 	if !strings.Contains(result, `"My App"`) {
 		t.Error("expected app name in output")
 	}
-
-	// Should have the automation from CLI generators
 	if !strings.Contains(result, `"elementum_automation"`) {
 		t.Error("expected automation resource from CLI generators")
 	}
@@ -132,7 +104,6 @@ func TestExportPipeline_MultiFile(t *testing.T) {
 		t.Fatal("expected at least 1 file group in multi-file export")
 	}
 
-	// Check that automation file exists
 	hasAuto := false
 	for _, fg := range result.FileGroups {
 		if strings.Contains(fg.FileName, "automation") {
@@ -146,13 +117,6 @@ func TestExportPipeline_MultiFile(t *testing.T) {
 }
 
 func TestExportPipeline_Deduplication(t *testing.T) {
-	// Both tofu and CLI produce the same block - should be deduplicated
-	tofuOutput := `
-resource "elementum_automation" "process" {
-  app_id = "app-1"
-  name   = "Process"
-}
-`
 	app := &discovery.App{
 		ID:        "app-1",
 		Name:      "Test App",
@@ -172,15 +136,15 @@ resource "elementum_automation" "process" {
 	}
 
 	pipeline := NewExportPipeline(app, imports)
-	err := pipeline.AddTofuOutput(tofuOutput)
-	if err != nil {
-		t.Fatalf("AddTofuOutput error: %v", err)
-	}
 	pipeline.AddCLIBlocks()
+
+	// Add duplicate blocks manually
+	pipeline.AddBlocks([]*HCLBlock{
+		NewResourceBlock("elementum_automation", "process"),
+	})
 
 	blocks := pipeline.GetMergedBlocks()
 
-	// Count automation blocks
 	autoCount := 0
 	for _, b := range blocks {
 		if len(b.Labels) >= 2 && b.Labels[0] == "elementum_automation" && b.Labels[1] == "process" {
@@ -193,17 +157,16 @@ resource "elementum_automation" "process" {
 }
 
 func TestExportPipeline_TransformsApplied(t *testing.T) {
-	tofuOutput := `
-resource "elementum_table" "my_table" {
-  name      = "My Table"
-  source_id = "table-id-1"
-  options   = null
-}
-`
 	app := &discovery.App{
 		ID:        "app-1",
 		Name:      "Test App",
 		Namespace: "test-app",
+		DiscoveredTables: []*discovery.Table{
+			{
+				ID:   "table-id-1",
+				Name: "My Table",
+			},
+		},
 	}
 	imports := []ImportBlock{
 		{ResourceType: "elementum_app", ResourceName: "test_app", ID: "app-1"},
@@ -211,29 +174,69 @@ resource "elementum_table" "my_table" {
 	}
 
 	pipeline := NewExportPipeline(app, imports)
-	err := pipeline.AddTofuOutput(tofuOutput)
-	if err != nil {
-		t.Fatalf("AddTofuOutput error: %v", err)
-	}
+	pipeline.AddCLIBlocks()
 
 	blocks := pipeline.GetMergedBlocks()
 
-	// Find the table block
 	for _, b := range blocks {
 		if len(b.Labels) >= 2 && b.Labels[0] == "elementum_table" {
-			// Null should be stripped
 			for _, attr := range b.Body.Attributes {
 				if _, isNull := attr.Value.(HCLNull); isNull {
 					t.Error("expected null attributes to be stripped")
 				}
 			}
-
-			// Self-referencing source_id should be stripped
-			for _, attr := range b.Body.Attributes {
-				if attr.Name == "source_id" {
-					t.Error("expected self-referencing source_id to be stripped")
-				}
-			}
 		}
+	}
+}
+
+func TestExportPipeline_AddTofuOutput_Deprecated(t *testing.T) {
+	app := &discovery.App{
+		ID:        "app-1",
+		Name:      "Test App",
+		Namespace: "test-app",
+	}
+	imports := []ImportBlock{
+		{ResourceType: "elementum_app", ResourceName: "test_app", ID: "app-1"},
+	}
+
+	pipeline := NewExportPipeline(app, imports)
+	err := pipeline.AddTofuOutput("anything")
+	if err != nil {
+		t.Errorf("AddTofuOutput should not error (deprecated no-op), got: %v", err)
+	}
+}
+
+func TestExportPipeline_Fields(t *testing.T) {
+	app := &discovery.App{
+		ID:        "app-1",
+		Name:      "Test App",
+		Namespace: "test-app",
+		Fields: []discovery.Field{
+			{ID: "f-1", Name: "Email", Type: "text"},
+			{ID: "f-2", Name: "Priority", Type: "dropdown", Options: []discovery.FieldOption{
+				{Label: "Low", Color: "#green"},
+				{Label: "High", Color: "#red"},
+			}},
+		},
+	}
+	imports := []ImportBlock{
+		{ResourceType: "elementum_app", ResourceName: "test_app", ID: "app-1"},
+		{ResourceType: "elementum_text_field", ResourceName: "email", ID: "app-1:f-1"},
+		{ResourceType: "elementum_dropdown_field", ResourceName: "priority", ID: "app-1:f-2"},
+	}
+
+	pipeline := NewExportPipeline(app, imports)
+	pipeline.AddCLIBlocks()
+
+	result := pipeline.Execute()
+
+	if !strings.Contains(result, `resource "elementum_text_field" "email"`) {
+		t.Error("expected text field in output")
+	}
+	if !strings.Contains(result, `resource "elementum_dropdown_field" "priority"`) {
+		t.Error("expected dropdown field in output")
+	}
+	if !strings.Contains(result, `"Low"`) {
+		t.Error("expected dropdown options in output")
 	}
 }

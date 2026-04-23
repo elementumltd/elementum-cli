@@ -88,6 +88,18 @@ func (e *BlockMultiFileExport) ToMultiFileExport() *MultiFileExport {
 			result.DatamineFiles = append(result.DatamineFiles, fg)
 		case strings.HasPrefix(group.FileName, "table-"):
 			result.TableFiles = append(result.TableFiles, fg)
+		case strings.HasPrefix(group.FileName, "skill-"):
+			result.AgentFiles = append(result.AgentFiles, fg)
+		case strings.HasPrefix(group.FileName, "ai-search-"):
+			result.AISearchTableFiles = append(result.AISearchTableFiles, fg)
+		case group.FileName == "a2a-skills.tf":
+			result.AgentFiles = append(result.AgentFiles, fg)
+		case group.FileName == "skills.tf":
+			result.AgentFiles = append(result.AgentFiles, fg)
+		case group.FileName == "file-readers.tf":
+			result.FileReaderFiles = append(result.FileReaderFiles, fg)
+		case group.FileName == "views.tf":
+			result.ViewFiles = append(result.ViewFiles, fg)
 		case strings.HasSuffix(group.FileName, "-view.tf"):
 			result.ViewFiles = append(result.ViewFiles, fg)
 		case strings.HasSuffix(group.FileName, "-file-readers.tf"):
@@ -169,46 +181,87 @@ func determineFileName(block *HCLBlock, app *discovery.App, imports []ImportBloc
 	switch {
 	// Automations, triggers, tasks -> automation-{name}.tf
 	case resourceType == "elementum_automation":
+		// Use the platform's original automation name (CamelCase preserved) so
+		// SanitizeFileName can split word boundaries — the resource name has
+		// already been lowercased and lost them.
+		if originalName := lookupAutomationOriginalName(resourceName, imports, app); originalName != "" {
+			return fmt.Sprintf("automation-%s.tf", SanitizeFileName(originalName))
+		}
 		return fmt.Sprintf("automation-%s.tf", SanitizeFileName(resourceName))
 	case strings.HasSuffix(resourceType, "_trigger"):
+		if originalName := findAutomationOriginalNameForTrigger(resourceName, imports, app); originalName != "" {
+			return fmt.Sprintf("automation-%s.tf", SanitizeFileName(originalName))
+		}
 		autoName := findAutomationNameForTrigger(resourceName, imports, app)
 		if autoName != "" {
 			return fmt.Sprintf("automation-%s.tf", SanitizeFileName(autoName))
 		}
 		return "automations.tf"
 	case strings.HasSuffix(resourceType, "_task"):
+		if originalName := findAutomationOriginalNameForTask(resourceName, imports, app); originalName != "" {
+			return fmt.Sprintf("automation-%s.tf", SanitizeFileName(originalName))
+		}
 		autoName := findAutomationNameForTask(resourceName, imports, app)
 		if autoName != "" {
 			return fmt.Sprintf("automation-%s.tf", SanitizeFileName(autoName))
 		}
 		return "automations.tf"
 	case resourceType == "elementum_workflow_publish":
-		// workflow_publish goes with its automation (resource name matches automation name)
+		// workflow_publish resource name matches automation resource name.
+		if originalName := lookupAutomationOriginalName(resourceName, imports, app); originalName != "" {
+			return fmt.Sprintf("automation-%s.tf", SanitizeFileName(originalName))
+		}
 		return fmt.Sprintf("automation-%s.tf", SanitizeFileName(resourceName))
 
 	// Agents and tools -> agent-{name}.tf
 	case resourceType == "elementum_agent":
-		return fmt.Sprintf("agent-%s.tf", SanitizeFileName(resourceName))
+		if originalName := lookupAgentOriginalName(resourceName, imports, app); originalName != "" {
+			return fmt.Sprintf("agent-%s.tf", stripAgentSuffix(SanitizeFileName(originalName)))
+		}
+		return fmt.Sprintf("agent-%s.tf", SanitizeFileName(stripAgentSuffix(resourceName)))
 	case strings.Contains(resourceType, "_agent_") && strings.HasSuffix(resourceType, "_tool"):
+		if originalName := findAgentOriginalNameForTool(resourceName, imports, app); originalName != "" {
+			return fmt.Sprintf("agent-%s.tf", stripAgentSuffix(SanitizeFileName(originalName)))
+		}
 		agentName := findAgentNameForTool(resourceName, imports, app)
 		if agentName != "" {
-			return fmt.Sprintf("agent-%s.tf", SanitizeFileName(agentName))
+			return fmt.Sprintf("agent-%s.tf", SanitizeFileName(stripAgentSuffix(agentName)))
 		}
 		return "agents.tf"
 
-	// File readers -> {namespace}-file-readers.tf
+	// A2A skills (on agents) -> a2a-skills.tf
+	case resourceType == "elementum_agent_a2a_skill":
+		return "a2a-skills.tf"
+
+	// Phone services attach to an agent — route them into the agent's file.
+	case resourceType == "elementum_phone_service":
+		agentName := findAgentNameForPhoneService(resourceName, imports, app)
+		if agentName != "" {
+			return fmt.Sprintf("agent-%s.tf", stripAgentSuffix(SanitizeFileName(agentName)))
+		}
+		return "agents.tf"
+
+	// Agentic skills and their tools -> skill-{name}.tf
+	case resourceType == "elementum_agentic_skill":
+		return fmt.Sprintf("skill-%s.tf", SanitizeFileName(resourceName))
+	case resourceType == "elementum_agentic_skill_tool":
+		skillName := findSkillNameForTool(resourceName, imports)
+		if skillName != "" {
+			return fmt.Sprintf("skill-%s.tf", SanitizeFileName(skillName))
+		}
+		return "skills.tf"
+
+	// File readers -> file-readers.tf (flat, no namespace prefix — truth convention)
 	case strings.HasSuffix(resourceType, "_file_reader"):
-		ns := appNamespace(app)
-		return fmt.Sprintf("%s-file-readers.tf", ns)
+		return "file-readers.tf"
 
 	// Access policies and roles -> {namespace}-security.tf or element/task specific
 	case resourceType == "elementum_access_policy" || resourceType == "elementum_role":
 		return determineSecurityFileName(app)
 
-	// AI search tables -> {namespace}-ai-search.tf
+	// AI search tables -> ai-search-{name}.tf (one file per table)
 	case resourceType == "elementum_ai_search_table":
-		ns := appNamespace(app)
-		return fmt.Sprintf("%s-ai-search.tf", ns)
+		return fmt.Sprintf("ai-search-%s.tf", SanitizeFileName(resourceName))
 
 	// Table search tables -> table-{name}.tf (grouped with parent table)
 	case resourceType == "elementum_table_search_table":
@@ -230,6 +283,10 @@ func determineFileName(block *HCLBlock, app *discovery.App, imports []ImportBloc
 	case resourceType == "elementum_datamine":
 		return fmt.Sprintf("datamine-%s.tf", SanitizeFileName(resourceName))
 
+	// Elements -> element-{name}.tf (truth convention).
+	case resourceType == "elementum_element":
+		return fmt.Sprintf("element-%s.tf", SanitizeFileName(resourceName))
+
 	// App, fields, layouts, flows, views -> app-{name}.tf
 	case resourceType == "elementum_app" ||
 		strings.HasSuffix(resourceType, "_field") ||
@@ -238,8 +295,12 @@ func determineFileName(block *HCLBlock, app *discovery.App, imports []ImportBloc
 		return determineAppFileName(app)
 
 	case resourceType == "elementum_view":
-		ns := appNamespace(app)
-		return fmt.Sprintf("%s-view.tf", ns)
+		// Truth puts all views in a single views.tf.
+		return "views.tf"
+
+	// View-order pins go alongside the views they order.
+	case resourceType == "elementum_managed_view_order":
+		return "views.tf"
 
 	// Data sources go to data.tf
 	case block.Type == "data":
@@ -278,6 +339,192 @@ func appNamespace(app *discovery.App) string {
 		return SanitizeFileName(app.Namespace)
 	}
 	return SanitizeFileName(app.Name)
+}
+
+// lookupAutomationOriginalName returns the automation's original platform name
+// (with CamelCase/spacing preserved) for a given Terraform resource name.
+// Returns "" if the automation cannot be resolved.
+//
+// Automation import IDs are formatted `<app_id>:<automation_id>` — not just
+// the automation ID — so we match by suffix/contains against the automation's
+// ID.
+func lookupAutomationOriginalName(resourceName string, imports []ImportBlock, app *discovery.App) string {
+	if app == nil {
+		return ""
+	}
+	for _, imp := range imports {
+		if imp.ResourceType != "elementum_automation" || imp.ResourceName != resourceName {
+			continue
+		}
+		for _, auto := range app.AllAutomations() {
+			if auto.ID != "" && strings.Contains(imp.ID, auto.ID) {
+				return auto.Name
+			}
+		}
+	}
+	return ""
+}
+
+// findAutomationOriginalNameForTrigger is like findAutomationNameForTrigger but
+// returns the platform's original automation name instead of the sanitized
+// Terraform resource name.
+func findAutomationOriginalNameForTrigger(triggerResourceName string, imports []ImportBlock, app *discovery.App) string {
+	if app == nil {
+		return ""
+	}
+	for _, imp := range imports {
+		if imp.ResourceName != triggerResourceName {
+			continue
+		}
+		if !strings.HasSuffix(imp.ResourceType, "_trigger") {
+			continue
+		}
+		parts := strings.Split(imp.ID, ":")
+		if len(parts) == 0 {
+			continue
+		}
+		autoID := parts[0]
+		for _, auto := range app.AllAutomations() {
+			if auto.ID == autoID {
+				return auto.Name
+			}
+		}
+	}
+	return ""
+}
+
+// findAutomationOriginalNameForTask is like findAutomationNameForTask but
+// returns the platform's original automation name.
+func findAutomationOriginalNameForTask(taskResourceName string, imports []ImportBlock, app *discovery.App) string {
+	if app == nil {
+		return ""
+	}
+	for _, imp := range imports {
+		if imp.ResourceName != taskResourceName {
+			continue
+		}
+		if !strings.HasSuffix(imp.ResourceType, "_task") {
+			continue
+		}
+		parts := strings.Split(imp.ID, ":")
+		if len(parts) == 0 {
+			continue
+		}
+		workflowID := parts[0]
+		for _, auto := range app.AllAutomations() {
+			if auto.WorkflowID == workflowID {
+				return auto.Name
+			}
+		}
+	}
+	return ""
+}
+
+// lookupAgentOriginalName returns the agent's original platform name. Agent
+// import IDs are `<app_id>:<agent_id>` — match by contains.
+func lookupAgentOriginalName(resourceName string, imports []ImportBlock, app *discovery.App) string {
+	if app == nil {
+		return ""
+	}
+	for _, imp := range imports {
+		if imp.ResourceType != "elementum_agent" || imp.ResourceName != resourceName {
+			continue
+		}
+		for _, agent := range app.AllAgents() {
+			if agent.ID != "" && strings.Contains(imp.ID, agent.ID) {
+				return agent.Name
+			}
+		}
+	}
+	return ""
+}
+
+// findAgentOriginalNameForTool returns the agent's original platform name given
+// a tool resource name.
+func findAgentOriginalNameForTool(toolResourceName string, imports []ImportBlock, app *discovery.App) string {
+	if app == nil {
+		return ""
+	}
+	for _, imp := range imports {
+		if imp.ResourceName != toolResourceName {
+			continue
+		}
+		if !strings.Contains(imp.ResourceType, "_agent_") {
+			continue
+		}
+		parts := strings.Split(imp.ID, ":")
+		if len(parts) == 0 {
+			continue
+		}
+		agentID := parts[0]
+		for _, agent := range app.AllAgents() {
+			if agent.ID == agentID {
+				return agent.Name
+			}
+		}
+	}
+	return ""
+}
+
+// findSkillNameForTool returns the skill resource name that owns a given
+// agentic_skill_tool resource. Skill tool import IDs are typically
+// {skill_id}:{tool_id}; we look up the parent skill via the imports list.
+// Returns "" if unresolved (tool falls back to skills.tf).
+func findSkillNameForTool(toolResourceName string, imports []ImportBlock) string {
+	for _, imp := range imports {
+		if imp.ResourceName != toolResourceName {
+			continue
+		}
+		if imp.ResourceType != "elementum_agentic_skill_tool" {
+			continue
+		}
+		parts := strings.Split(imp.ID, ":")
+		if len(parts) == 0 {
+			continue
+		}
+		skillID := parts[0]
+		if skillResName := findImportResourceName(imports, "elementum_agentic_skill", skillID); skillResName != "" {
+			return skillResName
+		}
+	}
+	return ""
+}
+
+// findAgentNameForPhoneService returns the original (platform) agent name for
+// the agent a phone-service resource is attached to. Phone services are
+// one-per-agent; we walk the app's services, match by the imports' resource
+// name, then resolve to the parent agent.
+func findAgentNameForPhoneService(resourceName string, imports []ImportBlock, app *discovery.App) string {
+	if app == nil {
+		return ""
+	}
+	for _, ps := range app.PhoneServices {
+		importName := findImportResourceName(imports, "elementum_phone_service", ps.ID)
+		if importName != resourceName {
+			continue
+		}
+		// Resolve the parent agent's original name so SanitizeFileName can
+		// split CamelCase the same way the agent's own filename does.
+		for _, agent := range app.AllAgents() {
+			if agent.ID == ps.AgentID {
+				return agent.Name
+			}
+		}
+	}
+	return ""
+}
+
+// stripAgentSuffix drops a trailing "-agent" from a kebab-cased filename
+// fragment so "intake-agent" becomes "intake". Truth author convention: the
+// file is named after the agent's purpose, not the redundant "Agent" suffix.
+// Applied AFTER kebab-casing so it also covers "IntakeAgent"/"intake_agent"
+// inputs that both end up as "intake-agent".
+func stripAgentSuffix(name string) string {
+	const suf = "-agent"
+	if strings.HasSuffix(name, suf) && len(name) > len(suf) {
+		return name[:len(name)-len(suf)]
+	}
+	return name
 }
 
 // findAutomationNameForTrigger finds the automation resource name for a trigger resource name.
@@ -385,13 +632,103 @@ func findImportResourceName(imports []ImportBlock, resourceType, id string) stri
 	return ""
 }
 
-// SanitizeFileName sanitizes a name for use in filenames.
+// splitCamelCase inserts a single space at each CamelCase word boundary so
+// callers can then lowercase and rejoin with their preferred separator
+// (dash for filenames, underscore for HCL identifiers). See SanitizeFileName
+// for the three splitting rules.
+func splitCamelCase(name string) string {
+	runes := []rune(name)
+	isUpper := func(r rune) bool { return r >= 'A' && r <= 'Z' }
+	isLower := func(r rune) bool { return r >= 'a' && r <= 'z' }
+
+	// upperRunLen counts consecutive uppercase letters starting at position i.
+	upperRunLen := func(i int) int {
+		n := 0
+		for j := i; j < len(runes) && isUpper(runes[j]); j++ {
+			n++
+		}
+		return n
+	}
+
+	var out strings.Builder
+	for i, r := range runes {
+		if i > 0 && isUpper(r) {
+			prev := runes[i-1]
+			var next rune
+			hasNext := i+1 < len(runes)
+			if hasNext {
+				next = runes[i+1]
+			}
+			switch {
+			case isLower(prev) && (!hasNext || isLower(next)):
+				out.WriteRune(' ')
+			case isUpper(prev) && hasNext && isLower(next):
+				out.WriteRune(' ')
+			case isLower(prev) && hasNext && isUpper(next) && upperRunLen(i) >= 3:
+				out.WriteRune(' ')
+			}
+		}
+		out.WriteRune(r)
+	}
+	return out.String()
+}
+
+// SanitizeFileName produces a kebab-case filename fragment from an arbitrary
+// platform name. Unlike SanitizeName (which must emit a valid HCL identifier
+// and so uses underscores), filenames are free to keep dashes — and our hand-
+// authored truth uses dashes.
+//
+// The tricky bit is CamelCase: "ValidateAdGroupRequest" should become
+// "validate-ad-group-request", but "WaaSRequest" should become "waas-request"
+// (the acronym stays together) and "A2A" should stay "a2a" rather than split
+// on the digit boundary.
+//
+// Splitting rules — insert a space before an uppercase letter at position i:
+//  1. prev is lowercase AND (next is lowercase OR end). Normal CamelCase
+//     word boundary, e.g. "validate|Ad".
+//  2. prev is uppercase AND next is lowercase. Acronym-to-word boundary,
+//     e.g. "WaaS|Request" (split between S and R), "DL|Update" (L→U).
+//  3. prev is lowercase AND next is uppercase AND the uppercase run that
+//     starts at position i is at least 3 letters long. Word-to-acronym
+//     boundary where the acronym is embedded in the middle of the name,
+//     e.g. "Validate|DLUpdate" (the DLU run has length 3 because U is
+//     also uppercase). Without this rule "ValidateDLUpdateRequest" would
+//     collapse to "validatedl-update-request". We require ≥3 rather than
+//     ≥2 so that "WaaSRequest" (WaaS has only S,R as the run of 2) does
+//     NOT split between "a" and "S" — S is the tail of "WaaS", not the
+//     start of a new acronym.
+//
+// Digit-adjacent uppercase transitions deliberately do NOT split so that
+// "A2A" survives as a single token.
 func SanitizeFileName(name string) string {
-	// Reuse the existing SanitizeName but also handle path-unsafe chars
-	sanitized := SanitizeName(name)
-	sanitized = strings.ReplaceAll(sanitized, "/", "-")
-	sanitized = strings.ReplaceAll(sanitized, "\\", "-")
-	return sanitized
+	// 1. Insert spaces at CamelCase boundaries (see splitCamelCase doc).
+	s := splitCamelCase(name)
+
+	// 2. Lowercase and normalise separators to a single dash.
+	s = strings.ToLower(s)
+	for _, sep := range []string{" ", "_", ".", ":", "/", "\\"} {
+		s = strings.ReplaceAll(s, sep, "-")
+	}
+
+	// 3. Strip anything that isn't [a-z0-9-].
+	var out strings.Builder
+	for _, r := range s {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
+			out.WriteRune(r)
+		}
+	}
+	s = out.String()
+
+	// 4. Collapse runs of dashes and trim leading/trailing.
+	for strings.Contains(s, "--") {
+		s = strings.ReplaceAll(s, "--", "-")
+	}
+	s = strings.Trim(s, "-")
+
+	if s == "" {
+		s = "resource"
+	}
+	return s
 }
 
 // DeduplicateBlocks removes duplicate blocks based on (type, labels) key.
@@ -427,12 +764,27 @@ func SortBlocksByType(blocks []*HCLBlock) {
 
 func blockSortKey(b *HCLBlock) string {
 	if len(b.Labels) >= 2 {
-		key := b.Labels[0] + "." + b.Labels[1]
-		// workflow_publish should always be last in each file (it depends on all tasks)
-		if b.Labels[0] == "elementum_workflow_publish" {
-			return "~" + key // ~ sorts after all letters
+		resourceType := b.Labels[0]
+		key := resourceType + "." + b.Labels[1]
+		// Group per-automation blocks in a readable order:
+		//   automation → triggers → tasks → switch_case → workflow_publish
+		// Truth HCL follows this convention; without explicit prefixes, pure
+		// alphabetical ordering interleaves tasks before the automation
+		// because `elementum_ai_search_table_task` < `elementum_automation`.
+		prefix := "5" // fallback bucket
+		switch {
+		case resourceType == "elementum_workflow_publish":
+			prefix = "9" // last, depends on all tasks
+		case resourceType == "elementum_switch_case":
+			prefix = "4" // belongs with its parent switch_task
+		case strings.HasSuffix(resourceType, "_task"):
+			prefix = "3"
+		case strings.HasSuffix(resourceType, "_trigger"):
+			prefix = "2"
+		case resourceType == "elementum_automation":
+			prefix = "1"
 		}
-		return key
+		return prefix + key
 	}
 	if len(b.Labels) >= 1 {
 		return b.Labels[0]

@@ -17,45 +17,35 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/elementumltd/elementum-cli/auth"
-	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/spf13/cobra"
 )
 
 var skillsCreateCmd = &cobra.Command{
-	Use:   "create",
+	Use:   "create <namespace>",
 	Short: "Create an agentic skill",
-	Long: `Create a new agentic skill.
+	Long: `Create a new agentic skill in an app.
 
 Skills define reusable capabilities for agents. They have instructions that guide
 agent behavior and can have tools attached for executing actions.
 
-The --owner-id and --owner-type specify what the skill belongs to:
-  - owner-type APP_ASPECT: skill belongs to an app (pass app ID as owner-id)
-  - owner-type ORGANIZATION: skill belongs to the org (pass org ID)
-
 Examples:
   # Create a skill on an app
-  ei skills create --name "Ticket Triage" \
+  ei skills create support-tickets --name "ticket-triage" \
     --description "Triages incoming support tickets" \
-    --instructions "When a ticket comes in, classify it by urgency..." \
-    --owner-id <app-id> --owner-type APP_ASPECT
+    --instructions "When a ticket comes in, classify it by urgency..."
 
   # Create with a specific status
-  ei skills create --name "Draft Skill" \
+  ei skills create support-tickets --name "draft-skill" \
     --description "Work in progress" \
     --instructions "..." \
-    --owner-id <app-id> --owner-type APP_ASPECT \
-    --status DRAFT
-
-  # Create using app namespace instead of ID
-  ei skills create --name "Ticket Triage" \
-    --description "Triages incoming support tickets" \
-    --instructions "Classify tickets by urgency..." \
-    --app support-tickets`,
+    --status DRAFT`,
+	Args: cobra.ExactArgs(1),
 	RunE: runSkillsCreate,
 }
 
@@ -63,9 +53,6 @@ func init() {
 	skillsCreateCmd.Flags().String("name", "", "Skill name (required)")
 	skillsCreateCmd.Flags().String("description", "", "Skill description (required)")
 	skillsCreateCmd.Flags().String("instructions", "", "Skill instructions (required)")
-	skillsCreateCmd.Flags().String("owner-id", "", "Owner ID (app ID or org ID)")
-	skillsCreateCmd.Flags().String("owner-type", "APP_ASPECT", "Owner type: APP_ASPECT or ORGANIZATION")
-	skillsCreateCmd.Flags().String("app", "", "App namespace (shorthand for --owner-id with --owner-type APP_ASPECT)")
 	skillsCreateCmd.Flags().String("status", "ACTIVE", "Skill status: ACTIVE, DRAFT, INACTIVE")
 	skillsCreateCmd.Flags().Bool("dry-run", false, "Show what would be created without creating")
 	_ = skillsCreateCmd.MarkFlagRequired("name")
@@ -77,6 +64,7 @@ func init() {
 
 func runSkillsCreate(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
+	namespace := args[0]
 
 	apiClient, err := auth.GetClientFromCmd(cmd)
 	if err != nil {
@@ -84,29 +72,24 @@ func runSkillsCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	name, _ := cmd.Flags().GetString("name")
+	if len(name) == 0 || len(name) > 64 {
+		return fmt.Errorf("skill name must be 1-64 characters, got %d", len(name))
+	}
+	if matched, _ := regexp.MatchString(`^[a-z0-9-]+$`, name); !matched {
+		return fmt.Errorf("skill name must contain only lowercase alphanumeric characters and hyphens (a-z, 0-9, -)")
+	}
+
 	description, _ := cmd.Flags().GetString("description")
 	instructions, _ := cmd.Flags().GetString("instructions")
-	ownerID, _ := cmd.Flags().GetString("owner-id")
-	ownerType, _ := cmd.Flags().GetString("owner-type")
-	appNamespace, _ := cmd.Flags().GetString("app")
 	status, _ := cmd.Flags().GetString("status")
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
 
-	if appNamespace != "" {
-		if looksLikeUUID(appNamespace) {
-			ownerID = appNamespace
-		} else {
-			ownerID, _, err = resolveAspectByNamespace(ctx, apiClient, appNamespace)
-			if err != nil {
-				return fmt.Errorf("failed to resolve app %q: %w", appNamespace, err)
-			}
-		}
-		ownerType = "APP_ASPECT"
+	// Resolve namespace to aspect ID
+	ownerID, _, err := resolveAspectByNamespace(ctx, apiClient, namespace)
+	if err != nil {
+		return fmt.Errorf("failed to resolve app %q: %w", namespace, err)
 	}
-
-	if ownerID == "" {
-		return fmt.Errorf("either --owner-id or --app must be provided")
-	}
+	ownerType := "APP_ASPECT"
 
 	statusEnum := client.AgenticSkillStatus(strings.ToUpper(status))
 	switch statusEnum {

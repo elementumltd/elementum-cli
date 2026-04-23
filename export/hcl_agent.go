@@ -267,13 +267,11 @@ func generateToolFieldsIR(rawConfig map[string]interface{}, key string) HCLValue
 		if mult, ok := f["multiple"].(bool); ok && mult {
 			attrs = append(attrs, Attr("multiple", Bool(true)))
 		}
-		// trigger_parameter_id for inputs
-		if tpID, ok := f["trigger_parameter_id"].(string); ok && tpID != "" {
-			attrs = append(attrs, Attr("trigger_parameter_id", Str(tpID)))
+		if paramName, ok := f["parameter_name"].(string); ok && paramName != "" {
+			attrs = append(attrs, Attr("parameter_name", Str(paramName)))
 		}
-		// output_name for outputs
-		if outName, ok := f["output_name"].(string); ok && outName != "" {
-			attrs = append(attrs, Attr("output_name", Str(outName)))
+		if wpn, ok := f["workflow_property_name"].(string); ok && wpn != "" {
+			attrs = append(attrs, Attr("workflow_property_name", Str(wpn)))
 		}
 		if len(attrs) > 0 {
 			fieldObjs = append(fieldObjs, Obj(attrs...))

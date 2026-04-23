@@ -20,22 +20,22 @@ import (
 	"strings"
 
 	"github.com/elementumltd/elementum-cli/auth"
-	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/spf13/cobra"
 )
 
 var skillsUpdateCmd = &cobra.Command{
-	Use:   "update <skill-id-or-name>",
+	Use:   "update <namespace> <skill-name>",
 	Short: "Update an agentic skill",
-	Long: `Update properties of an existing agentic skill.
+	Long: `Update properties of an existing agentic skill within an app.
 
 Examples:
-  ei skills update "Ticket Triage" --name "New Triage Skill"
-  ei skills update "Ticket Triage" --description "Updated description"
-  ei skills update "Ticket Triage" --instructions "New instructions..."
-  ei skills update "Ticket Triage" --status INACTIVE`,
-	Args: cobra.ExactArgs(1),
+  ei skills update support-tickets "Ticket Triage" --name "New Triage Skill"
+  ei skills update support-tickets "Ticket Triage" --description "Updated description"
+  ei skills update clm escalation-handler --instructions "New instructions..."
+  ei skills update clm escalation-handler --status INACTIVE`,
+	Args: cobra.ExactArgs(2),
 	RunE: runSkillsUpdate,
 }
 
@@ -50,21 +50,26 @@ func init() {
 
 func runSkillsUpdate(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
+	namespace := args[0]
+	skillName := args[1]
 
 	apiClient, err := auth.GetClientFromCmd(cmd)
 	if err != nil {
 		return err
 	}
 
-	skillIDOrName := args[0]
-	skillID := skillIDOrName
-	if !isUUID(skillIDOrName) {
-		skill, err := findSkillByName(ctx, apiClient, skillIDOrName)
-		if err != nil {
-			return fmt.Errorf("failed to find skill %q: %w", skillIDOrName, err)
-		}
-		skillID = skill.ID
+	// Resolve namespace to aspect ID
+	aspectID, _, err := resolveAspectByNamespace(ctx, apiClient, namespace)
+	if err != nil {
+		return fmt.Errorf("failed to resolve app %q: %w", namespace, err)
 	}
+
+	// Find skill by name in the app
+	skill, err := findSkillByNameInApp(ctx, apiClient, aspectID, skillName)
+	if err != nil {
+		return fmt.Errorf("failed to find skill %q in app %q: %w", skillName, namespace, err)
+	}
+	skillID := skill.ID
 
 	name, _ := cmd.Flags().GetString("name")
 	description, _ := cmd.Flags().GetString("description")

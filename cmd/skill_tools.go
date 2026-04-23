@@ -19,8 +19,8 @@ import (
 	"fmt"
 
 	"github.com/elementumltd/elementum-cli/auth"
-	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -31,10 +31,15 @@ var skillToolsCmd = &cobra.Command{
 }
 
 var skillToolsListCmd = &cobra.Command{
-	Use:   "list <skill-id>",
+	Use:   "list <namespace> <skill-name>",
 	Short: "List tools on an agentic skill",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runListSkillTools,
+	Long: `List all tools attached to an agentic skill within an app.
+
+Examples:
+  ei skill-tools list support-tickets "Ticket Triage"
+  ei skill-tools list clm escalation-handler --json`,
+	Args: cobra.ExactArgs(2),
+	RunE: runListSkillTools,
 }
 
 var skillToolsDeleteCmd = &cobra.Command{
@@ -45,10 +50,15 @@ var skillToolsDeleteCmd = &cobra.Command{
 }
 
 var skillToolsDeleteAllCmd = &cobra.Command{
-	Use:   "delete-all <skill-id>",
+	Use:   "delete-all <namespace> <skill-name>",
 	Short: "Delete all tools on an agentic skill",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runDeleteAllSkillTools,
+	Long: `Delete all tools attached to an agentic skill within an app.
+
+Examples:
+  ei skill-tools delete-all support-tickets "Ticket Triage"
+  ei skill-tools delete-all clm escalation-handler`,
+	Args: cobra.ExactArgs(2),
+	RunE: runDeleteAllSkillTools,
 }
 
 func init() {
@@ -64,20 +74,37 @@ func GetSkillToolsCmd() *cobra.Command {
 
 func runListSkillTools(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
-	skillID := args[0]
+	namespace := args[0]
+	skillName := args[1]
 
 	apiClient, err := auth.GetClientFromCmd(cmd)
 	if err != nil {
 		return err
 	}
 
-	tools, err := getSkillTools(ctx, apiClient, skillID)
+	// Resolve namespace to aspect ID
+	aspectID, _, err := resolveAspectByNamespace(ctx, apiClient, namespace)
+	if err != nil {
+		return fmt.Errorf("failed to resolve app %q: %w", namespace, err)
+	}
+
+	// Find skill by name in the app
+	skill, err := findSkillByNameInApp(ctx, apiClient, aspectID, skillName)
+	if err != nil {
+		return fmt.Errorf("failed to find skill %q in app %q: %w", skillName, namespace, err)
+	}
+
+	tools, err := getSkillTools(ctx, apiClient, skill.ID)
 	if err != nil {
 		return err
 	}
 
+	if isJSONOutput(cmd) {
+		return outputJSON(tools)
+	}
+
 	if len(tools) == 0 {
-		fmt.Println(ui.WarningStyle.Render("No tools found on this skill."))
+		fmt.Println(ui.WarningStyle.Render(fmt.Sprintf("No tools found on skill %q.", skillName)))
 		return nil
 	}
 
@@ -91,7 +118,7 @@ func runListSkillTools(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println()
-	fmt.Println(ui.TitleStyle.Render("Skill Tools"))
+	fmt.Println(ui.TitleStyle.Render(fmt.Sprintf("Tools on %s", skillName)))
 	fmt.Println()
 	fmt.Println(table.Render())
 	fmt.Println()
@@ -121,24 +148,37 @@ func runDeleteSkillTool(cmd *cobra.Command, args []string) error {
 
 func runDeleteAllSkillTools(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
-	skillID := args[0]
+	namespace := args[0]
+	skillName := args[1]
 
 	apiClient, err := auth.GetClientFromCmd(cmd)
 	if err != nil {
 		return err
 	}
 
-	tools, err := getSkillTools(ctx, apiClient, skillID)
+	// Resolve namespace to aspect ID
+	aspectID, _, err := resolveAspectByNamespace(ctx, apiClient, namespace)
+	if err != nil {
+		return fmt.Errorf("failed to resolve app %q: %w", namespace, err)
+	}
+
+	// Find skill by name in the app
+	skill, err := findSkillByNameInApp(ctx, apiClient, aspectID, skillName)
+	if err != nil {
+		return fmt.Errorf("failed to find skill %q in app %q: %w", skillName, namespace, err)
+	}
+
+	tools, err := getSkillTools(ctx, apiClient, skill.ID)
 	if err != nil {
 		return err
 	}
 
 	if len(tools) == 0 {
-		fmt.Println(ui.WarningStyle.Render("No tools found on this skill."))
+		fmt.Println(ui.WarningStyle.Render(fmt.Sprintf("No tools found on skill %q.", skillName)))
 		return nil
 	}
 
-	fmt.Println(ui.InfoStyle.Render(fmt.Sprintf("Deleting %d tools...", len(tools))))
+	fmt.Println(ui.InfoStyle.Render(fmt.Sprintf("Deleting %d tools from skill %q...", len(tools), skillName)))
 
 	for _, tool := range tools {
 		err = deleteSkillTool(ctx, apiClient, tool.ID)

@@ -19,44 +19,44 @@ import (
 	"fmt"
 
 	"github.com/elementumltd/elementum-cli/auth"
-	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/spf13/cobra"
 )
 
 var agentsCreateCmd = &cobra.Command{
-	Use:   "create",
+	Use:   "create <namespace>",
 	Short: "Create a new agent",
-	Long: `Create a new Elementum AI agent on an app.
+	Long: `Create a new Elementum AI agent in an app.
 
 Examples:
   # Create an Elementum agent with a model name
-  ei agents create --app support-tickets --name "Support Agent" \
+  ei agents create support-tickets --name "Support Agent" \
     --description "Handles support tickets" \
     --instructions "You are a helpful support agent." \
     --model "gpt-4o"
 
   # Create with explicit AI provider connector ID
-  ei agents create --app support-tickets --name "Support Agent" \
+  ei agents create support-tickets --name "Support Agent" \
     --description "Handles support tickets" \
     --instructions "You are a helpful support agent." \
     --ai-provider-connector-id "abc-123"
 
   # Create with a first message
-  ei agents create --app support-tickets --name "Support Agent" \
+  ei agents create support-tickets --name "Support Agent" \
     --description "Handles support tickets" \
     --instructions "You are a helpful support agent." \
     --model "gpt-4o" \
     --first-message "Hello! How can I help you today?"
 
   # Dry run
-  ei agents create --app support-tickets --name "Test Agent" \
+  ei agents create support-tickets --name "Test Agent" \
     --description "Test" --instructions "Test" --model "gpt-4o" --dry-run`,
+	Args: cobra.ExactArgs(1),
 	RunE: runAgentsCreate,
 }
 
 func init() {
-	agentsCreateCmd.Flags().String("app", "", "App namespace or ID (required)")
 	agentsCreateCmd.Flags().String("name", "", "Agent name (required)")
 	agentsCreateCmd.Flags().String("description", "", "Agent description (required)")
 	agentsCreateCmd.Flags().String("instructions", "", "Agent instructions/system prompt (required)")
@@ -65,7 +65,6 @@ func init() {
 	agentsCreateCmd.Flags().String("first-message", "", "Agent's greeting message")
 	agentsCreateCmd.Flags().String("type", "elementum", "Agent type: elementum, snowflake, bedrock, browser_use")
 	agentsCreateCmd.Flags().Bool("dry-run", false, "Show what would be created without creating")
-	_ = agentsCreateCmd.MarkFlagRequired("app")
 	_ = agentsCreateCmd.MarkFlagRequired("name")
 	_ = agentsCreateCmd.MarkFlagRequired("description")
 	_ = agentsCreateCmd.MarkFlagRequired("instructions")
@@ -73,13 +72,13 @@ func init() {
 
 func runAgentsCreate(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
+	namespace := args[0]
 
 	apiClient, err := auth.GetClientFromCmd(cmd)
 	if err != nil {
 		return err
 	}
 
-	appInput, _ := cmd.Flags().GetString("app")
 	name, _ := cmd.Flags().GetString("name")
 	description, _ := cmd.Flags().GetString("description")
 	instructions, _ := cmd.Flags().GetString("instructions")
@@ -93,14 +92,10 @@ func runAgentsCreate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("either --model or --ai-provider-connector-id must be provided")
 	}
 
-	var appID string
-	if looksLikeUUID(appInput) {
-		appID = appInput
-	} else {
-		appID, _, err = resolveAspectByNamespace(ctx, apiClient, appInput)
-		if err != nil {
-			return fmt.Errorf("failed to resolve app %q: %w", appInput, err)
-		}
+	// Resolve namespace to app ID
+	appID, _, err := resolveAspectByNamespace(ctx, apiClient, namespace)
+	if err != nil {
+		return fmt.Errorf("failed to resolve app %q: %w", namespace, err)
 	}
 
 	if connectorID == "" {
@@ -112,7 +107,7 @@ func runAgentsCreate(cmd *cobra.Command, args []string) error {
 
 	if dryRun {
 		fmt.Println(ui.WarningStyle.Render("Dry run:"))
-		fmt.Printf("  App:          %s\n", appInput)
+		fmt.Printf("  App:          %s\n", namespace)
 		fmt.Printf("  Name:         %s\n", name)
 		fmt.Printf("  Description:  %s\n", description)
 		fmt.Printf("  Type:         %s\n", agentType)

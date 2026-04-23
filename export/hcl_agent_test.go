@@ -626,16 +626,15 @@ func TestAgentToolHCL_RunAutomationTool(t *testing.T) {
 						RawConfig: map[string]interface{}{
 							"inputs": []map[string]interface{}{
 								{
-									"name":                 "ticket_id",
-									"description":          "The ticket to escalate",
-									"required":             true,
-									"trigger_parameter_id": "param-1",
+									"parameter_name": "ticket_id",
+									"description":    "The ticket to escalate",
+									"required":       true,
 								},
 							},
 							"outputs": []map[string]interface{}{
 								{
-									"name":        "escalation_status",
-									"output_name": "result",
+									"workflow_property_name": "result",
+									"display_name":           "escalation_status",
 								},
 							},
 						},
@@ -659,13 +658,12 @@ func TestAgentToolHCL_RunAutomationTool(t *testing.T) {
 		`resource "elementum_agent_run_automation_tool" "escalate_ticket"`,
 		`automation_id = "`,
 		"inputs = [",
-		`name = "ticket_id"`,
+		`parameter_name = "ticket_id"`,
 		`description = "The ticket to escalate"`,
 		`required = true`,
-		`trigger_parameter_id = "param-1"`,
 		"outputs = [",
-		`name = "escalation_status"`,
-		`output_name = "result"`,
+		`workflow_property_name = "result"`,
+		`display_name = "escalation_status"`,
 	)
 }
 

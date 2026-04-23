@@ -26,9 +26,9 @@ import (
 	"github.com/elementumltd/elementum-cli/analysis"
 	"github.com/elementumltd/elementum-cli/auth"
 	"github.com/elementumltd/elementum-cli/discovery"
+	"github.com/elementumltd/elementum-cli/internal/client"
 	"github.com/elementumltd/elementum-cli/server"
 	"github.com/elementumltd/elementum-cli/ui"
-	"github.com/elementumltd/elementum-cli/internal/client"
 	"github.com/spf13/cobra"
 )
 
@@ -554,7 +554,7 @@ func fetchActionIO(
 	}
 
 	// Try to parse as 1-based index first
-	var actionIdx = -1
+	var actionIdx int = -1
 	if idx, err := strconv.Atoi(target); err == nil {
 		if idx < 1 || idx > len(execAnalysis.Actions) {
 			return fmt.Errorf("action index %d out of range (1-%d)", idx, len(execAnalysis.Actions))

@@ -25,8 +25,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/elementumltd/elementum-cli/logger"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/logger"
 )
 
 // BulkCreateInput holds the configuration for a bulk create operation

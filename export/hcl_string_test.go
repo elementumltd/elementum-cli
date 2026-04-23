@@ -404,3 +404,67 @@ func TestEscapeTemplateInterpolation(t *testing.T) {
 		})
 	}
 }
+
+// ============================================================================
+// ISS-76: Block Comment and Template Interpolation Tests
+// ============================================================================
+
+func TestFormatHCLString_BlockComments(t *testing.T) {
+	// Multiline code with block comments must use heredoc format
+	// and preserve the comment markers literally
+	input := "/**\n * Block comment\n **/\nreturn 1;"
+	result := FormatHCLString(input)
+
+	// Should use heredoc (contains newlines)
+	if !strings.HasPrefix(result, "<<-") {
+		t.Errorf("Expected heredoc format (<<-), got: %s", result)
+	}
+
+	// Block comment markers must appear literally
+	if !strings.Contains(result, "/**") {
+		t.Errorf("Expected result to contain /**, got:\n%s", result)
+	}
+	if !strings.Contains(result, "**/") {
+		t.Errorf("Expected result to contain **/, got:\n%s", result)
+	}
+}
+
+func TestFormatHCLString_JSTemplateInterpolation(t *testing.T) {
+	// JavaScript template literals ${...} must be escaped to $${...}
+	input := "const x = `Hello ${name}`;\nreturn x;"
+	result := FormatHCLString(input)
+
+	// ${name} should be escaped to $${name}
+	if !strings.Contains(result, "$${name}") {
+		t.Errorf("Expected $${name} in result, got:\n%s", result)
+	}
+
+	// Should NOT contain unescaped ${name}
+	if strings.Contains(result, "${name}") && !strings.Contains(result, "$${name}") {
+		t.Errorf("Found unescaped ${name} in result:\n%s", result)
+	}
+}
+
+func TestFormatHCLString_BlockCommentWithInterpolation(t *testing.T) {
+	// Combined: block comments AND template interpolations
+	input := "/**\n * Process ${item.name}\n **/\nconst val = `${item.id}`;\nreturn val;"
+	result := FormatHCLString(input)
+
+	// Should use heredoc
+	if !strings.HasPrefix(result, "<<-") {
+		t.Errorf("Expected heredoc format, got: %s", result)
+	}
+
+	// Block comments preserved
+	if !strings.Contains(result, "/**") {
+		t.Errorf("Expected /** in result, got:\n%s", result)
+	}
+
+	// Interpolations escaped
+	if !strings.Contains(result, "$${item.name}") {
+		t.Errorf("Expected $${item.name} in result, got:\n%s", result)
+	}
+	if !strings.Contains(result, "$${item.id}") {
+		t.Errorf("Expected $${item.id} in result, got:\n%s", result)
+	}
+}

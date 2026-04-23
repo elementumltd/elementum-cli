@@ -1,0 +1,99 @@
+# Widget automation execution and tracking
+
+mutation ExecuteWidgetAutomation($input: DisplayWidgetRunAutomationExecuteInput!) {
+  displayWidgetRunAutomationExecute(input: $input) {
+    id
+    status
+  }
+}
+
+query GetWidgetAutomationTracking($aspectId: ID!, $widgetId: ID!, $recordId: String!) {
+  organization {
+    aspect(id: $aspectId) {
+      displayWidget(id: $widgetId) {
+        __typename
+        ... on DisplayWidgetRunAutomationAction {
+          id
+          name
+          automation {
+            id
+            name
+          }
+          automationTracking(recordId: $recordId) {
+            id
+            workflowExecution {
+              id
+              status
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetRunAutomationWidget($aspectId: ID!, $widgetId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      displayWidget(id: $widgetId) {
+        __typename
+        ... on DisplayWidgetRunAutomationAction {
+          id
+          name
+          automation {
+            id
+            name
+            status
+          }
+          parameters {
+            name
+            fieldType
+            required
+            multiple
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetAutomationWidgets($aspectId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      ... on AspectApp {
+        displayWidgets {
+          edges {
+            node {
+              __typename
+              id
+              name
+              ... on DisplayWidgetRunAutomationAction {
+                automation {
+                  id
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+      ... on AspectElement {
+        displayWidgets {
+          edges {
+            node {
+              __typename
+              id
+              name
+              ... on DisplayWidgetRunAutomationAction {
+                automation {
+                  id
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

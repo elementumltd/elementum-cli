@@ -61,7 +61,7 @@ func TestTriggerHCLGenerator_GenerateAll(t *testing.T) {
 		t.Errorf("Expected HCL to contain trigger resource, got:\n%s", hcl)
 	}
 
-	if !strings.Contains(hcl, "automation_id = elementum_automation.test_automation.id") {
+	if !strings.Contains(hcl, "automation = elementum_automation.test_automation") {
 		t.Errorf("Expected HCL to reference automation, got:\n%s", hcl)
 	}
 }
@@ -192,7 +192,7 @@ func TestTriggerHCL_RecordCreated(t *testing.T) {
 
 	assertHCLContains(t, hcl,
 		`resource "elementum_record_created_trigger" "test_trigger"`,
-		"automation_id = elementum_automation.",
+		"automation = elementum_automation.",
 	)
 }
 
@@ -284,7 +284,7 @@ func TestTriggerHCL_RecordUpdated(t *testing.T) {
 
 	assertHCLContains(t, hcl,
 		`resource "elementum_record_updated_trigger" "test_trigger"`,
-		"automation_id = elementum_automation.",
+		"automation = elementum_automation.",
 	)
 }
 
@@ -334,7 +334,7 @@ func TestTriggerHCL_AttachmentAdded(t *testing.T) {
 
 	assertHCLContains(t, hcl,
 		`resource "elementum_attachment_added_trigger" "test_trigger"`,
-		"automation_id = elementum_automation.",
+		"automation = elementum_automation.",
 	)
 }
 
@@ -356,7 +356,7 @@ func TestTriggerHCL_CommentAdded(t *testing.T) {
 
 	assertHCLContains(t, hcl,
 		`resource "elementum_comment_added_trigger" "test_trigger"`,
-		"automation_id = elementum_automation.",
+		"automation = elementum_automation.",
 	)
 }
 
@@ -400,7 +400,7 @@ func TestTriggerHCL_SlackMessage(t *testing.T) {
 
 	assertHCLContains(t, hcl,
 		`resource "elementum_slack_message_trigger" "test_trigger"`,
-		"automation_id = elementum_automation.",
+		"automation = elementum_automation.",
 	)
 }
 
@@ -422,7 +422,7 @@ func TestTriggerHCL_AgentConversationEnded(t *testing.T) {
 
 	assertHCLContains(t, hcl,
 		`resource "elementum_agent_conversation_ended_trigger" "test_trigger"`,
-		"automation_id = elementum_automation.",
+		"automation = elementum_automation.",
 	)
 }
 
@@ -446,7 +446,7 @@ func TestTriggerHCL_Webhook(t *testing.T) {
 
 	assertHCLContains(t, hcl,
 		`resource "elementum_webhook_trigger" "test_trigger"`,
-		"automation_id = elementum_automation.",
+		"automation = elementum_automation.",
 	)
 }
 
@@ -485,7 +485,7 @@ func TestTriggerHCL_OnDemand(t *testing.T) {
 
 	assertHCLContains(t, hcl,
 		`resource "elementum_on_demand_trigger" "test_trigger"`,
-		"automation_id = elementum_automation.",
+		"automation = elementum_automation.",
 	)
 }
 

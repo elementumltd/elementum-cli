@@ -21,9 +21,10 @@ import (
 
 	"github.com/elementumltd/elementum-cli/auth"
 	"github.com/elementumltd/elementum-cli/discovery"
+	"github.com/elementumltd/elementum-cli/export"
+	eclient "github.com/elementumltd/elementum-cli/internal/client"
 	"github.com/elementumltd/elementum-cli/state"
 	"github.com/elementumltd/elementum-cli/ui"
-	eclient "github.com/elementumltd/elementum-cli/internal/client"
 	"github.com/spf13/cobra"
 )
 
@@ -72,6 +73,7 @@ func init() {
 	automationsListCmd.Flags().Bool("details", false, "Show full task configuration for each automation")
 	automationsShowCmd.Flags().String("state-file", "", "Path to Terraform state file (default: ./terraform.tfstate)")
 	automationsShowCmd.Flags().Bool("from-remote", false, "Query automation from Elementum API instead of state")
+	automationsShowCmd.Flags().Bool("hcl", false, "Export automation as Terraform HCL")
 	automationsCmd.AddCommand(automationsListCmd)
 	automationsCmd.AddCommand(automationsShowCmd)
 	automationsCmd.AddCommand(automationStatusCmd)
@@ -403,6 +405,44 @@ func runAutomationsShowFromRemote(cmd *cobra.Command, automationID string) error
 		}
 	}
 
+	// Check for --hcl flag
+	hclOutput, _ := cmd.Flags().GetBool("hcl")
+	if hclOutput {
+		if fullWorkflow == nil {
+			return fmt.Errorf("cannot generate HCL: workflow details not available")
+		}
+
+		// Convert to discovery automation
+		auto := discovery.ConvertWorkflowToAutomation(
+			automation.Id,
+			automation.Name,
+			workflowID,
+			string(automation.Status),
+			fullWorkflow,
+		)
+
+		// Get aspect name for resource naming
+		aspectName := automation.Name // fallback
+		if entity := automation.Entity; entity != nil {
+			switch e := entity.(type) {
+			case *eclient.GetAutomationDetailsOrganizationAutomationEntityAspectApp:
+				aspectName = e.Name
+			case *eclient.GetAutomationDetailsOrganizationAutomationEntityAspectElement:
+				aspectName = e.Name
+			case *eclient.GetAutomationDetailsOrganizationAutomationEntityAspectTask:
+				aspectName = e.Name
+			}
+		}
+
+		// Enrich with available references for proper refs["Name"] syntax
+		discovery.EnrichAutomationRefs(ctx, c, aspectID, &auto)
+
+		// Generate HCL
+		hcl := export.ExportSingleAutomationHCL(aspectID, aspectName, auto)
+		fmt.Print(hcl)
+		return nil
+	}
+
 	// Build result for JSON output
 	result := map[string]any{
 		"id":     automation.Id,
@@ -420,8 +460,38 @@ func runAutomationsShowFromRemote(cmd *cobra.Command, automationID string) error
 		}
 
 		if fullWorkflow != nil {
-			workflow["triggers"] = fullWorkflow.Triggers
-			workflow["tasks"] = fullWorkflow.Tasks
+			// Include full RawData for triggers (RawData has json:"-" tag, so merge manually)
+			triggers := make([]map[string]interface{}, len(fullWorkflow.Triggers))
+			for i, t := range fullWorkflow.Triggers {
+				merged := make(map[string]interface{})
+				for k, v := range t.RawData {
+					merged[k] = v
+				}
+				merged["id"] = t.ID
+				merged["__typename"] = t.Typename
+				triggers[i] = merged
+			}
+			workflow["triggers"] = triggers
+
+			// Include full RawData for tasks
+			tasks := make([]map[string]interface{}, len(fullWorkflow.Tasks))
+			for i, t := range fullWorkflow.Tasks {
+				merged := make(map[string]interface{})
+				for k, v := range t.RawData {
+					merged[k] = v
+				}
+				merged["id"] = t.ID
+				merged["name"] = t.Name
+				merged["__typename"] = t.Typename
+				if t.Previous != nil {
+					merged["previous"] = map[string]interface{}{"id": t.Previous.ID}
+				}
+				if t.Next != nil {
+					merged["next"] = map[string]interface{}{"id": t.Next.ID}
+				}
+				tasks[i] = merged
+			}
+			workflow["tasks"] = tasks
 			workflow["outputs"] = fullWorkflow.Outputs
 		}
 

@@ -137,7 +137,7 @@ func (g *TriggerHCLGenerator) GenerateTriggerIR(trigger *discovery.Trigger, auto
 	}
 
 	b := NewResourceBlock(triggerType, resourceName)
-	b.SetAttr("automation_id", Ref("elementum_automation."+automationResourceName+".id"))
+	b.SetAttr("automation", Ref("elementum_automation."+automationResourceName))
 
 	// Add trigger-type-specific attributes from the type registry
 	config, ok := client.GetTriggerTypeConfig(trigger.Type)
@@ -263,7 +263,11 @@ func (g *TriggerHCLGenerator) addTriggerFieldIR(b *HCLBlock, trigger *discovery.
 		}
 
 	case field.Name == "fire_on_alert", field.Name == "fire_on_recovery", field.Name == "authenticated", field.Name == "show_triggered_by":
-		if boolVal, ok := value.(bool); ok {
+		// Truth convention: only emit these optional booleans when they are
+		// true. The provider's schema default is false for all of them, so
+		// omitting a false value is semantically identical and avoids diff
+		// noise when the attribute doesn't appear in hand-authored truth.
+		if boolVal, ok := value.(bool); ok && boolVal {
 			b.SetAttr(field.Name, Bool(boolVal))
 		}
 
@@ -326,9 +330,11 @@ func (g *TriggerHCLGenerator) BeautifyTrigger(hcl string, trigger *discovery.Tri
 		return hcl
 	}
 
-	// Replace UUID strings with terraform references
+	// Replace UUID strings with terraform references. Skip empty keys.
 	for uuid, ref := range g.uuidMap {
-		// Replace quoted UUIDs
+		if uuid == "" {
+			continue
+		}
 		hcl = strings.ReplaceAll(hcl, fmt.Sprintf("%q", uuid), ref)
 	}
 

@@ -19,8 +19,8 @@ import (
 	"fmt"
 
 	"github.com/elementumltd/elementum-cli/auth"
+	"github.com/elementumltd/elementum-cli/discovery"
 	"github.com/elementumltd/elementum-cli/ui"
-	"github.com/elementumltd/elementum-cli/internal/client"
 	"github.com/spf13/cobra"
 )
 
@@ -38,8 +38,20 @@ var usersSearchCmd = &cobra.Command{
 	RunE:  runUsersSearch,
 }
 
+var usersListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List all users",
+	Long:  "List all users in your organization. Supports pagination with --limit, --after, and --all flags.",
+	RunE:  runUsersList,
+}
+
 func init() {
+	usersListCmd.Flags().Int("limit", 25, "Maximum number of users to fetch per request")
+	usersListCmd.Flags().String("after", "", "Pagination cursor (fetch users after this cursor)")
+	usersListCmd.Flags().Bool("all", false, "Fetch all users (auto-paginate)")
+
 	usersCmd.AddCommand(usersSearchCmd)
+	usersCmd.AddCommand(usersListCmd)
 }
 
 // GetUsersCmd returns the users command for registration
@@ -62,48 +74,23 @@ func runUsersSearch(cmd *cobra.Command, args []string) error {
 		fmt.Printf("%s %s...\n", ui.InfoStyle.Render("*"), ui.InfoStyle.Render(fmt.Sprintf("Searching users for %q", query)))
 	}
 
-	// Build server-side filter for name OR email matching
-	filter := client.BuildUserSearchFilter(query)
-
-	// Search users with server-side filtering (first page of 20)
-	result, err := client.SearchUsers(ctx, c.Genqlient(), ptr(20), nil, filter)
+	result, err := discovery.ListUsers(ctx, c, discovery.UserListOptions{
+		Limit: 20,
+		Query: query,
+	})
 	if err != nil {
 		return fmt.Errorf("search failed: %w", err)
-	}
-
-	// Build user list for output
-	type UserResult struct {
-		ID       string `json:"id"`
-		Name     string `json:"name"`
-		Email    string `json:"email"`
-		Status   string `json:"status"`
-		JobTitle string `json:"job_title,omitempty"`
-	}
-
-	var users []UserResult
-	for _, edge := range result.Organization.Users.Edges {
-		jobTitle := ""
-		if edge.Node.JobTitle != nil {
-			jobTitle = *edge.Node.JobTitle
-		}
-		users = append(users, UserResult{
-			ID:       edge.Node.Id,
-			Name:     edge.Node.Name,
-			Email:    edge.Node.Email,
-			Status:   string(edge.Node.Status),
-			JobTitle: jobTitle,
-		})
 	}
 
 	// JSON output
 	if isJSONOutput(cmd) {
 		return outputJSON(map[string]interface{}{
-			"users": users,
-			"total": result.Organization.Users.Total,
+			"users": result.Users,
+			"total": result.Total,
 		})
 	}
 
-	if len(users) == 0 {
+	if len(result.Users) == 0 {
 		fmt.Println()
 		fmt.Println(ui.WarningStyle.Render(fmt.Sprintf("No users found matching %q.", query)))
 		fmt.Println()
@@ -113,7 +100,7 @@ func runUsersSearch(cmd *cobra.Command, args []string) error {
 	// Create table
 	table := ui.NewTable([]string{"NAME", "EMAIL", "STATUS", "JOB TITLE"})
 
-	for _, user := range users {
+	for _, user := range result.Users {
 		table.AddRow(
 			user.Name,
 			user.Email,
@@ -130,8 +117,8 @@ func runUsersSearch(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 
 	// Show total count (may be more than displayed)
-	total := result.Organization.Users.Total
-	displayed := len(users)
+	total := result.Total
+	displayed := len(result.Users)
 	if total > displayed {
 		fmt.Println(ui.MutedStyle.Render(fmt.Sprintf("Showing %d of %d matching users", displayed, total)))
 	} else {
@@ -142,7 +129,69 @@ func runUsersSearch(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// ptr returns a pointer to the given value
-func ptr[T any](v T) *T {
-	return &v
+func runUsersList(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+
+	c, err := auth.GetClientFromCmd(cmd)
+	if err != nil {
+		return err
+	}
+
+	limit, _ := cmd.Flags().GetInt("limit")
+	after, _ := cmd.Flags().GetString("after")
+	fetchAll, _ := cmd.Flags().GetBool("all")
+
+	opts := discovery.UserListOptions{Limit: limit, After: after, All: fetchAll}
+
+	if !isJSONOutput(cmd) {
+		fmt.Println(ui.InfoStyle.Render("⠿ Loading users..."))
+	}
+
+	var result *discovery.UserListResult
+	if fetchAll {
+		result, err = discovery.ListAllUsers(ctx, c, opts)
+	} else {
+		result, err = discovery.ListUsers(ctx, c, opts)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to fetch users: %w", err)
+	}
+
+	if isJSONOutput(cmd) {
+		return outputJSON(map[string]interface{}{
+			"users":       result.Users,
+			"total":       result.Total,
+			"hasNextPage": result.HasNextPage,
+			"endCursor":   result.EndCursor,
+		})
+	}
+
+	if len(result.Users) == 0 {
+		fmt.Println()
+		fmt.Println(ui.WarningStyle.Render("No users found."))
+		fmt.Println()
+		return nil
+	}
+
+	table := ui.NewTable([]string{"NAME", "EMAIL", "STATUS", "JOB TITLE"})
+	for _, u := range result.Users {
+		table.AddRow(u.Name, u.Email, u.Status, u.JobTitle)
+	}
+
+	fmt.Println()
+	fmt.Println(ui.TitleStyle.Render("Users"))
+	fmt.Println()
+	fmt.Println(table.Render())
+	fmt.Println()
+
+	if result.HasNextPage {
+		fmt.Println(ui.MutedStyle.Render(fmt.Sprintf(
+			"Showing %d of %d users (more available, use --all to fetch all or --after %q to continue)",
+			len(result.Users), result.Total, result.EndCursor)))
+	} else {
+		fmt.Println(ui.MutedStyle.Render(fmt.Sprintf("Total: %d users", result.Total)))
+	}
+	fmt.Println()
+
+	return nil
 }

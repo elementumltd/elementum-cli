@@ -2,17 +2,63 @@
 
 mutation CreateAgent($input: AgentCreateV3Input!) {
   agentCreateV3(input: $input) {
+    __typename
     id
     name
     description
+    ... on AgentElementum {
+      agentAuthentication {
+        jwt {
+          enabled
+          emailAddressClaimName
+          headerName
+          keySource {
+            __typename
+            ... on AgentAuthenticationJwtPlainTextSource {
+              plainTextKeyValuePem
+            }
+            ... on AgentAuthenticationJwtJwksSource {
+              jwksUrl
+            }
+          }
+          requiredClaims {
+            claimName
+            acceptableValues
+          }
+        }
+      }
+    }
   }
 }
 
 mutation UpdateAgent($id: ID!, $input: AgentUpdateV2Input!) {
   agentUpdateV2(id: $id, input: $input) {
+    __typename
     id
     name
     description
+    ... on AgentElementum {
+      agentAuthentication {
+        jwt {
+          enabled
+          emailAddressClaimName
+          headerName
+          keySource {
+            __typename
+            ... on AgentAuthenticationJwtPlainTextSource {
+              plainTextKeyValuePem
+            }
+            ... on AgentAuthenticationJwtJwksSource {
+              jwksUrl
+            }
+          }
+          requiredClaims {
+            claimName
+            acceptableValues
+          }
+        }
+      }
+    }
   }
 }
 

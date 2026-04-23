@@ -243,6 +243,27 @@ func buildReferenceMapsFromAutomations(
 			}
 		}
 
+		// Register operator children (switch cases, fork/join branches) in reference maps
+		for _, task := range automation.Tasks {
+			childResourceType := getOperatorChildResourceType(task.Type)
+			if childResourceType == "" || len(task.Children) == 0 {
+				continue
+			}
+			for _, child := range task.Children {
+				childID, _ := child["id"].(string)
+				if childID == "" {
+					continue
+				}
+				for _, imp := range imports {
+					if imp.ResourceType == childResourceType && imp.ID == childID {
+						ref := childResourceType + "." + imp.ResourceName + ".id"
+						taskRefMap[childID] = ref
+						break
+					}
+				}
+			}
+		}
+
 		// Build parent map (second pass - resolve parent references)
 		for _, task := range automation.Tasks {
 			if task.Type == "unknown" {

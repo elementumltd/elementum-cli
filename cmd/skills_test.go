@@ -55,7 +55,7 @@ func TestGetSkillsCmd(t *testing.T) {
 }
 
 func TestSkillsListCommandRegistration(t *testing.T) {
-	if skillsListCmd.Use != "list [app-namespace]" {
+	if skillsListCmd.Use != "list <namespace>" {
 		t.Errorf("unexpected Use: %q", skillsListCmd.Use)
 	}
 
@@ -65,8 +65,8 @@ func TestSkillsListCommandRegistration(t *testing.T) {
 }
 
 func TestSkillsCreateCommandRegistration(t *testing.T) {
-	if skillsCreateCmd.Use != "create" {
-		t.Errorf("unexpected Use: %q, want %q", skillsCreateCmd.Use, "create")
+	if skillsCreateCmd.Use != "create <namespace>" {
+		t.Errorf("unexpected Use: %q, want %q", skillsCreateCmd.Use, "create <namespace>")
 	}
 
 	requiredFlags := []string{"name", "description", "instructions"}
@@ -77,16 +77,11 @@ func TestSkillsCreateCommandRegistration(t *testing.T) {
 		}
 	}
 
-	optionalFlags := []string{"owner-id", "owner-type", "app", "status", "dry-run"}
+	optionalFlags := []string{"status", "dry-run"}
 	for _, name := range optionalFlags {
 		if skillsCreateCmd.Flags().Lookup(name) == nil {
 			t.Errorf("missing flag: %s", name)
 		}
-	}
-
-	ownerTypeFlag := skillsCreateCmd.Flags().Lookup("owner-type")
-	if ownerTypeFlag != nil && ownerTypeFlag.DefValue != "APP_ASPECT" {
-		t.Errorf("owner-type flag default = %q, want %q", ownerTypeFlag.DefValue, "APP_ASPECT")
 	}
 
 	statusFlag := skillsCreateCmd.Flags().Lookup("status")
@@ -96,7 +91,7 @@ func TestSkillsCreateCommandRegistration(t *testing.T) {
 }
 
 func TestSkillsShowCommandRegistration(t *testing.T) {
-	if skillsShowCmd.Use != "show <skill-id-or-name>" {
+	if skillsShowCmd.Use != "show <namespace> <skill-name>" {
 		t.Errorf("unexpected Use: %q", skillsShowCmd.Use)
 	}
 
@@ -110,7 +105,7 @@ func TestSkillsShowCommandRegistration(t *testing.T) {
 }
 
 func TestSkillsUpdateCommandRegistration(t *testing.T) {
-	if skillsUpdateCmd.Use != "update <skill-id-or-name>" {
+	if skillsUpdateCmd.Use != "update <namespace> <skill-name>" {
 		t.Errorf("unexpected Use: %q", skillsUpdateCmd.Use)
 	}
 
@@ -127,7 +122,7 @@ func TestSkillsUpdateCommandRegistration(t *testing.T) {
 }
 
 func TestSkillsDeleteCommandRegistration(t *testing.T) {
-	if skillsDeleteCmd.Use != "delete <skill-id-or-name>" {
+	if skillsDeleteCmd.Use != "delete <namespace> <skill-name>" {
 		t.Errorf("unexpected Use: %q", skillsDeleteCmd.Use)
 	}
 

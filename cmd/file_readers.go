@@ -20,8 +20,8 @@ import (
 	"strings"
 
 	"github.com/elementumltd/elementum-cli/auth"
-	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -213,6 +213,22 @@ func graphQLTypeToCliType(typeName string) string {
 		return "xml"
 	default:
 		return strings.ToLower(strings.TrimPrefix(typeName, "DocumentModel"))
+	}
+}
+
+// cliTypeToGraphQLType converts CLI type names to GraphQL type names
+func cliTypeToGraphQLType(cliType string) string {
+	switch cliType {
+	case "ai":
+		return "DocumentModelAi"
+	case "text":
+		return "DocumentModelOCR"
+	case "json":
+		return "DocumentModelJson"
+	case "xml":
+		return "DocumentModelXml"
+	default:
+		return ""
 	}
 }
 

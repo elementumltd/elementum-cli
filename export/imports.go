@@ -237,7 +237,18 @@ func GenerateImportBlocks(app *discovery.App, selectedTypes map[string]bool) []I
 					continue
 				}
 
-				triggerBaseName := SanitizeName(fmt.Sprintf("%s_%s_%d", automation.Name, trigger.Type, i))
+				// Truth convention: when an automation has a single trigger,
+				// the trigger takes the automation's resource name (so
+				// `validate_ad_group_request` automation → `validate_ad_group_request`
+				// trigger). Multi-trigger automations fall back to the
+				// legacy `<automation>_<type>_<index>` form so refs stay
+				// unambiguous. The index is kept as a suffix-disambiguator.
+				var triggerBaseName string
+				if len(automation.Triggers) == 1 {
+					triggerBaseName = SanitizeName(automation.Name)
+				} else {
+					triggerBaseName = SanitizeName(fmt.Sprintf("%s_%s_%d", automation.Name, trigger.Type, i))
+				}
 				triggerCount := triggerNames[triggerBaseName]
 				triggerNames[triggerBaseName]++
 
@@ -275,6 +286,9 @@ func GenerateImportBlocks(app *discovery.App, selectedTypes map[string]bool) []I
 					ResourceType: GetResourceTypeForTask(task),
 					ResourceName: taskName,
 				})
+
+				// Generate import blocks for operator children (switch cases, fork/join branches)
+				blocks = append(blocks, generateOperatorChildrenImportBlocks(task, taskName, taskNames)...)
 			}
 		}
 	}
@@ -601,6 +615,107 @@ func GenerateImportBlocks(app *discovery.App, selectedTypes map[string]bool) []I
 			})
 		}
 		logger.Debug("generated AI search table import blocks", "count", len(app.AISearchTables))
+	}
+
+	// Agentic skills + their tools. Skills have the TF import ID
+	// `{owner_aspect_id}:{skill_id}`; tools use `{skill_id}:{tool_id}`.
+	// Without imports the HCL generator has no resource-name anchor and
+	// skips the skill entirely.
+	if selectedTypes["skills"] {
+		skillNames := make(map[string]int)
+		toolNames := make(map[string]int)
+		for _, skill := range app.Skills {
+			base := SanitizeName(skill.Name)
+			if base == "" {
+				base = "skill"
+			}
+			count := skillNames[base]
+			skillNames[base]++
+			name := base
+			if count > 0 {
+				name = fmt.Sprintf("%s_%d", base, count)
+			}
+			blocks = append(blocks, ImportBlock{
+				ID: BuildImportID("elementum_agentic_skill", map[string]string{
+					"owner_id": app.ID,
+					"skill_id": skill.ID,
+				}),
+				ResourceType: "elementum_agentic_skill",
+				ResourceName: name,
+			})
+			for _, tool := range skill.Tools {
+				tbase := SanitizeName(tool.Name)
+				if tbase == "" {
+					tbase = "tool"
+				}
+				tcount := toolNames[tbase]
+				toolNames[tbase]++
+				tname := tbase
+				if tcount > 0 {
+					tname = fmt.Sprintf("%s_%d", tbase, tcount)
+				}
+				blocks = append(blocks, ImportBlock{
+					ID: BuildImportID("elementum_agentic_skill_tool", map[string]string{
+						"skill_id": skill.ID,
+						"tool_id":  tool.ID,
+					}),
+					ResourceType: "elementum_agentic_skill_tool",
+					ResourceName: tname,
+				})
+			}
+		}
+		logger.Debug("generated agentic skill import blocks", "skills", len(app.Skills))
+	}
+
+	// Phone services — one per voice channel attached to an agent.
+	// TF import ID is `{app_id}:{service_id}`.
+	if selectedTypes["phone_services"] {
+		phoneNames := make(map[string]int)
+		for _, ps := range app.PhoneServices {
+			base := "phone_service"
+			count := phoneNames[base]
+			phoneNames[base]++
+			name := base
+			if count > 0 {
+				name = fmt.Sprintf("%s_%d", base, count)
+			}
+			blocks = append(blocks, ImportBlock{
+				ID: BuildImportID("elementum_phone_service", map[string]string{
+					"app_id":     app.ID,
+					"service_id": ps.ID,
+				}),
+				ResourceType: "elementum_phone_service",
+				ResourceName: name,
+			})
+		}
+	}
+
+	// Agent-to-agent (A2A) skills — one per skill on an agent's card.
+	// TF import ID is `{agent_id}:{skill_id}`.
+	if selectedTypes["a2a_skills"] {
+		a2aNames := make(map[string]int)
+		for _, agent := range app.AllAgents() {
+			for _, sk := range agent.A2ASkills {
+				base := SanitizeName(sk.Name)
+				if base == "" {
+					base = "a2a_skill"
+				}
+				count := a2aNames[base]
+				a2aNames[base]++
+				name := base
+				if count > 0 {
+					name = fmt.Sprintf("%s_%d", base, count)
+				}
+				blocks = append(blocks, ImportBlock{
+					ID: BuildImportID("elementum_agent_a2a_skill", map[string]string{
+						"agent_id": agent.ID,
+						"skill_id": sk.ID,
+					}),
+					ResourceType: "elementum_agent_a2a_skill",
+					ResourceName: name,
+				})
+			}
+		}
 	}
 
 	// Managed View Order
@@ -1276,7 +1391,15 @@ func generateDiscoveredAppAutomationBlocks(discoveredApp *discovery.App) []Impor
 				continue
 			}
 
-			triggerBaseName := SanitizeName(fmt.Sprintf("%s_%s_%s_%d", prefix, automation.Name, trigger.Type, i))
+			// Single-trigger automations inherit the automation's resource
+			// name (matches truth). Multi-trigger keeps the legacy
+			// `<prefix>_<auto>_<type>_<index>` form so refs stay unambiguous.
+			var triggerBaseName string
+			if len(automation.Triggers) == 1 {
+				triggerBaseName = SanitizeName(automation.Name)
+			} else {
+				triggerBaseName = SanitizeName(fmt.Sprintf("%s_%s_%s_%d", prefix, automation.Name, trigger.Type, i))
+			}
 			triggerCount := triggerNames[triggerBaseName]
 			triggerNames[triggerBaseName]++
 
@@ -1312,6 +1435,9 @@ func generateDiscoveredAppAutomationBlocks(discoveredApp *discovery.App) []Impor
 				ResourceType: GetResourceTypeForTask(task),
 				ResourceName: taskName,
 			})
+
+			// Generate import blocks for operator children (switch cases, fork/join branches)
+			blocks = append(blocks, generateOperatorChildrenImportBlocks(task, taskName, taskNames)...)
 		}
 	}
 
@@ -2003,6 +2129,9 @@ func generateDiscoveredTaskAutomationBlocks(discoveredTask *discovery.AspectTask
 				ResourceType: GetResourceTypeForTask(task),
 				ResourceName: taskName,
 			})
+
+			// Generate import blocks for operator children (switch cases, fork/join branches)
+			blocks = append(blocks, generateOperatorChildrenImportBlocks(task, taskName, taskNames)...)
 		}
 	}
 
@@ -2059,7 +2188,15 @@ func generateDiscoveredElementAutomationBlocks(discoveredElement *discovery.Elem
 				continue
 			}
 
-			triggerBaseName := SanitizeName(fmt.Sprintf("%s_%s_%s_%d", prefix, automation.Name, trigger.Type, i))
+			// Single-trigger automations inherit the automation's resource
+			// name (matches truth). Multi-trigger keeps the legacy
+			// `<prefix>_<auto>_<type>_<index>` form so refs stay unambiguous.
+			var triggerBaseName string
+			if len(automation.Triggers) == 1 {
+				triggerBaseName = SanitizeName(automation.Name)
+			} else {
+				triggerBaseName = SanitizeName(fmt.Sprintf("%s_%s_%s_%d", prefix, automation.Name, trigger.Type, i))
+			}
 			triggerCount := triggerNames[triggerBaseName]
 			triggerNames[triggerBaseName]++
 
@@ -2095,6 +2232,9 @@ func generateDiscoveredElementAutomationBlocks(discoveredElement *discovery.Elem
 				ResourceType: GetResourceTypeForTask(task),
 				ResourceName: taskName,
 			})
+
+			// Generate import blocks for operator children (switch cases, fork/join branches)
+			blocks = append(blocks, generateOperatorChildrenImportBlocks(task, taskName, taskNames)...)
 		}
 	}
 
@@ -2563,10 +2703,18 @@ func GenerateStoredFunctionDataSources(functions []*discovery.StoredFunction) st
 func RenderImportBlocks(blocks []ImportBlock) string {
 	var sb strings.Builder
 
-	sb.WriteString("# Generated by elementum\n")
-	sb.WriteString("# Import these resources with: terraform plan -generate-config-out=generated.tf\n\n")
+	sb.WriteString("# imports.tf -- generated by `ei apps export`.\n")
+	sb.WriteString("#\n")
+	sb.WriteString("# One-time scaffolding to map this HCL onto pre-existing platform\n")
+	sb.WriteString("# state. Run `tofu init && tofu apply` to import; then delete this\n")
+	sb.WriteString("# file. Subsequent plans should show zero diff.\n\n")
 
 	for _, block := range blocks {
+		// Skip blocks with empty IDs — safer to drop than emit an invalid
+		// import block that blocks the entire apply.
+		if block.ID == "" || block.ResourceType == "" || block.ResourceName == "" {
+			continue
+		}
 		sb.WriteString("import {\n")
 		fmt.Fprintf(&sb, "  id = %q\n", block.ID)
 		fmt.Fprintf(&sb, "  to = %s.%s\n", block.ResourceType, block.ResourceName)
@@ -2681,37 +2829,49 @@ func GetResourceTypeForAgentTool(tool *discovery.AgentTool) string {
 	return ""
 }
 
-// SanitizeName converts a name to a valid Terraform resource name
+// SanitizeName converts a name to a valid Terraform resource name (snake_case).
+//
+// CamelCase / PascalCase inputs are split at word boundaries using the same
+// rules as SanitizeFileName (which produces kebab-case filenames). This means
+// "ValidateAdGroupRequest" becomes "validate_ad_group_request" rather than
+// collapsing to "validateadgrouprequest" (which would lose word boundaries
+// and diverge from the snake_case convention used across the truth HCL).
+// "WaaSRequest" becomes "waas_request" (acronym preserved), "DLUpdate"
+// becomes "dl_update" (embedded acronym split), "A2ATranscript" becomes
+// "a2a_transcript" (digit-bounded acronym preserved).
 func SanitizeName(name string) string {
-	// Replace invalid characters with underscores
-	name = strings.ToLower(name)
-	name = strings.ReplaceAll(name, " ", "_")
-	name = strings.ReplaceAll(name, "-", "_")
-	name = strings.ReplaceAll(name, ".", "_")
-	name = strings.ReplaceAll(name, "/", "_")
-	name = strings.ReplaceAll(name, ":", "_")
+	// Reuse the CamelCase splitter from SanitizeFileName (which inserts
+	// spaces at word boundaries), then normalise separators to underscores.
+	s := splitCamelCase(name)
+	s = strings.ToLower(s)
+	for _, sep := range []string{" ", "-", ".", ":", "/", "\\"} {
+		s = strings.ReplaceAll(s, sep, "_")
+	}
 
-	// Remove any non-alphanumeric characters except underscores
+	// Strip anything that isn't [a-z0-9_].
 	var result strings.Builder
-	for _, char := range name {
-		if (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') || char == '_' {
-			result.WriteRune(char)
+	for _, r := range s {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' {
+			result.WriteRune(r)
 		}
 	}
+	s = result.String()
 
-	name = result.String()
+	// Collapse runs of underscores and trim.
+	for strings.Contains(s, "__") {
+		s = strings.ReplaceAll(s, "__", "_")
+	}
+	s = strings.Trim(s, "_")
 
-	// Ensure it doesn't start with a number
-	if len(name) > 0 && name[0] >= '0' && name[0] <= '9' {
-		name = "_" + name
+	// Ensure it doesn't start with a number (HCL identifier rule).
+	if len(s) > 0 && s[0] >= '0' && s[0] <= '9' {
+		s = "_" + s
 	}
 
-	// Ensure it's not empty
-	if name == "" {
-		name = "resource"
+	if s == "" {
+		s = "resource"
 	}
-
-	return name
+	return s
 }
 
 // AppResourceName returns the canonical resource name for an app using namespace-first logic.
@@ -2814,7 +2974,15 @@ func GenerateAspectAutomationImportBlocks(aspectID string, aspectType string, pr
 				continue
 			}
 
-			triggerBaseName := SanitizeName(fmt.Sprintf("%s_%s_%s_%d", prefix, automation.Name, trigger.Type, i))
+			// Single-trigger automations inherit the automation's resource
+			// name (matches truth). Multi-trigger keeps the legacy
+			// `<prefix>_<auto>_<type>_<index>` form so refs stay unambiguous.
+			var triggerBaseName string
+			if len(automation.Triggers) == 1 {
+				triggerBaseName = SanitizeName(automation.Name)
+			} else {
+				triggerBaseName = SanitizeName(fmt.Sprintf("%s_%s_%s_%d", prefix, automation.Name, trigger.Type, i))
+			}
 			triggerCount := triggerNames[triggerBaseName]
 			triggerNames[triggerBaseName]++
 
@@ -2851,9 +3019,74 @@ func GenerateAspectAutomationImportBlocks(aspectID string, aspectType string, pr
 				ResourceType: GetResourceTypeForTask(task),
 				ResourceName: taskName,
 			})
+
+			// Generate import blocks for operator children (switch cases, fork/join branches)
+			blocks = append(blocks, generateOperatorChildrenImportBlocks(task, taskName, taskNames)...)
 		}
 	}
 
+	return blocks
+}
+
+// getOperatorChildResourceType returns the Terraform resource type for operator children.
+func getOperatorChildResourceType(taskType string) string {
+	switch taskType {
+	case "switch":
+		return "elementum_switch_case"
+	case "fork_join":
+		return "elementum_fork_join_branch"
+	default:
+		return ""
+	}
+}
+
+// getChildLabel extracts the label from a child data map.
+// GraphQL returns "label" for switch cases; falls back to "name" for compatibility.
+func getChildLabel(child map[string]interface{}) string {
+	if label, ok := child["label"].(string); ok && label != "" {
+		return label
+	}
+	if name, ok := child["name"].(string); ok && name != "" {
+		return name
+	}
+	return ""
+}
+
+// generateOperatorChildrenImportBlocks generates import blocks for operator task children
+// (switch cases, fork/join branches). Call this after generating the parent task import block.
+func generateOperatorChildrenImportBlocks(task discovery.Task, namePrefix string, taskNames map[string]int) []ImportBlock {
+	childResourceType := getOperatorChildResourceType(task.Type)
+	if childResourceType == "" || len(task.Children) == 0 {
+		return nil
+	}
+
+	var blocks []ImportBlock
+	for _, child := range task.Children {
+		childID, _ := child["id"].(string)
+		if childID == "" {
+			continue
+		}
+
+		childLabel := getChildLabel(child)
+		if childLabel == "" {
+			childLabel = "case"
+		}
+
+		childBaseName := SanitizeName(fmt.Sprintf("%s_%s", namePrefix, childLabel))
+		childCount := taskNames[childBaseName]
+		taskNames[childBaseName]++
+
+		childName := childBaseName
+		if childCount > 0 {
+			childName = fmt.Sprintf("%s_%d", childBaseName, childCount)
+		}
+
+		blocks = append(blocks, ImportBlock{
+			ID:           childID,
+			ResourceType: childResourceType,
+			ResourceName: childName,
+		})
+	}
 	return blocks
 }
 

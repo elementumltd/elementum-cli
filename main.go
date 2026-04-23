@@ -150,6 +150,7 @@ func init() {
 	rootCmd.AddCommand(elementumcmd.GetSkillsCmd())
 	rootCmd.AddCommand(elementumcmd.GetSkillToolsCmd())
 	rootCmd.AddCommand(elementumcmd.GetAgentToolsCmd())
+	rootCmd.AddCommand(elementumcmd.GetA2ASkillsCmd())
 	rootCmd.AddCommand(elementumcmd.GetObjectsCmd())
 	rootCmd.AddCommand(elementumcmd.GetCategoriesCmd())
 	rootCmd.AddCommand(elementumcmd.GetCloudlinksCmd())
@@ -158,8 +159,11 @@ func init() {
 	rootCmd.AddCommand(elementumcmd.GetInterventionsCmd())
 	rootCmd.AddCommand(elementumcmd.GetFileReadersCmd())
 	rootCmd.AddCommand(elementumcmd.GetTableCmd())
-	rootCmd.AddCommand(elementumcmd.GetFunctionsCmd())
-	rootCmd.AddCommand(elementumcmd.GetA2ASkillsCmd())
+	rootCmd.AddCommand(elementumcmd.GetSearchTablesCmd())
+
+	// Deployment commands
+	rootCmd.AddCommand(elementumcmd.GetEnvironmentsCmd())
+	rootCmd.AddCommand(elementumcmd.GetDeploymentsCmd())
 
 	// Infrastructure/config commands
 	rootCmd.AddCommand(elementumcmd.GetAiProvidersCmd())
@@ -167,6 +171,10 @@ func init() {
 	rootCmd.AddCommand(elementumcmd.GetFeatureFlagsCmd())
 	rootCmd.AddCommand(elementumcmd.GetPhoneProvidersCmd())
 	rootCmd.AddCommand(elementumcmd.GetPhoneServicesCmd())
+	rootCmd.AddCommand(elementumcmd.GetFunctionsCmd())
+
+	// Low-level / debugging commands
+	rootCmd.AddCommand(elementumcmd.GetGraphQLCmd())
 }
 
 func main() {

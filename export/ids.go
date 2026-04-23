@@ -72,6 +72,7 @@ var ImportIDFormats = map[string]string{
 	"elementum_ai_file_read_task":                "{workflow_id}:{task_id}",
 	"elementum_add_watcher_task":                 "{workflow_id}:{task_id}",
 	"elementum_ai_classify_task":                 "{workflow_id}:{task_id}",
+	"elementum_aspect_record_field_locking_task": "{workflow_id}:{task_id}",
 
 	"elementum_ai_summarize_task":           "{workflow_id}:{task_id}",
 	"elementum_ai_transform_task":           "{workflow_id}:{task_id}",
@@ -82,6 +83,11 @@ var ImportIDFormats = map[string]string{
 	"elementum_save_attachment_task":        "{workflow_id}:{task_id}",
 	"elementum_user_search_task":            "{workflow_id}:{task_id}",
 	"elementum_run_automation_task":         "{workflow_id}:{task_id}",
+	"elementum_execute_script_task":         "{workflow_id}:{task_id}",
+	"elementum_bulk_excel_task":             "{workflow_id}:{task_id}",
+	"elementum_switch_case":                 "{case_id}",
+	"elementum_fork_join_branch":            "{branch_id}",
+	"elementum_fork_join_task":              "{workflow_id}:{task_id}",
 	"elementum_agent":                       "{app_id}:{agent_id}",
 	"elementum_agent_create_record_tool":    "{app_id}:{agent_id}:{tool_id}",
 	"elementum_agent_search_records_tool":   "{app_id}:{agent_id}:{tool_id}",
@@ -113,6 +119,9 @@ var ImportIDFormats = map[string]string{
 	"elementum_dashboard":                   "{dashboard_id}",
 	"elementum_dashboard_widget":            "{dashboard_id}:{widget_id}",
 	"elementum_workflow_publish":            "{automation_id}",
+	"elementum_agentic_skill":               "{skill_id}",
+	"elementum_agentic_skill_tool":          "{skill_id}:{tool_id}",
+	"elementum_agent_a2a_skill":             "{agent_id}:{skill_id}",
 }
 
 // BuildImportID builds an import ID for a specific resource

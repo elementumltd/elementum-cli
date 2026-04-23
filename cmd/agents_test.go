@@ -69,11 +69,11 @@ func TestAgentsListCommandRegistration(t *testing.T) {
 }
 
 func TestAgentsCreateCommandRegistration(t *testing.T) {
-	if agentsCreateCmd.Use != "create" {
-		t.Errorf("unexpected Use: %q, want %q", agentsCreateCmd.Use, "create")
+	if agentsCreateCmd.Use != "create <namespace>" {
+		t.Errorf("unexpected Use: %q, want %q", agentsCreateCmd.Use, "create <namespace>")
 	}
 
-	requiredFlags := []string{"app", "name", "description", "instructions"}
+	requiredFlags := []string{"name", "description", "instructions"}
 	for _, name := range requiredFlags {
 		f := agentsCreateCmd.Flags().Lookup(name)
 		if f == nil {
@@ -95,7 +95,7 @@ func TestAgentsCreateCommandRegistration(t *testing.T) {
 }
 
 func TestAgentsShowCommandRegistration(t *testing.T) {
-	if agentsShowCmd.Use != "show <agent-name-or-id>" {
+	if agentsShowCmd.Use != "show <namespace> <agent-name>" {
 		t.Errorf("unexpected Use: %q", agentsShowCmd.Use)
 	}
 
@@ -109,7 +109,7 @@ func TestAgentsShowCommandRegistration(t *testing.T) {
 }
 
 func TestAgentsUpdateCommandRegistration(t *testing.T) {
-	if agentsUpdateCmd.Use != "update <agent-name-or-id>" {
+	if agentsUpdateCmd.Use != "update <namespace> <agent-name>" {
 		t.Errorf("unexpected Use: %q", agentsUpdateCmd.Use)
 	}
 
@@ -126,7 +126,7 @@ func TestAgentsUpdateCommandRegistration(t *testing.T) {
 }
 
 func TestAgentsDeleteCommandRegistration(t *testing.T) {
-	if agentsDeleteCmd.Use != "delete <agent-name-or-id>" {
+	if agentsDeleteCmd.Use != "delete <namespace> <agent-name>" {
 		t.Errorf("unexpected Use: %q", agentsDeleteCmd.Use)
 	}
 

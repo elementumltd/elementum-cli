@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/elementumltd/elementum-cli/logger"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/logger"
 )
 
 // FieldValueInfo represents a picklist option value

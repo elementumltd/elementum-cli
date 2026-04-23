@@ -55,7 +55,7 @@ func TestGetSkillToolsCmd(t *testing.T) {
 }
 
 func TestSkillToolsCreateCommandRegistration(t *testing.T) {
-	if skillToolsCreateCmd.Use != "create <skill-id-or-name>" {
+	if skillToolsCreateCmd.Use != "create <namespace> <skill-name>" {
 		t.Errorf("unexpected Use: %q", skillToolsCreateCmd.Use)
 	}
 

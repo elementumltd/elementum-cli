@@ -151,6 +151,19 @@ func Truncate(s string, maxLength int) string {
 	return s[:maxLength-3] + "..."
 }
 
+// TruncateUTF8 truncates a string to maxLength runes (not bytes) and adds ellipsis if needed.
+// This is safe for multi-byte UTF-8 characters.
+func TruncateUTF8(s string, maxLength int) string {
+	runes := []rune(s)
+	if len(runes) <= maxLength {
+		return s
+	}
+	if maxLength <= 3 {
+		return string(runes[:maxLength])
+	}
+	return string(runes[:maxLength-3]) + "..."
+}
+
 // Pad pads a string to the specified width
 func Pad(s string, width int) string {
 	if len(s) >= width {

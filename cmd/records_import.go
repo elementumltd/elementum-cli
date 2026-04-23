@@ -134,9 +134,7 @@ func runRecordsImport(cmd *cobra.Command, args []string) error {
 				}
 			}
 			if !hasIDField {
-				return fmt.Errorf("missing required field %q in import data; "+
-					"this object has a user-managed ID field that must be provided; "+
-					"ensure your import file includes a %q column", idField.Name, idField.Name)
+				return fmt.Errorf("missing required field %q in import data\n\nThis object has a user-managed ID field that must be provided.\nEnsure your import file includes a %q column.", idField.Name, idField.Name)
 			}
 		}
 	}
@@ -189,6 +187,10 @@ func runRecordsImport(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 
 	return nil
+}
+
+func displayImportDryRun(cmd *cobra.Command, filePath string, format discovery.FileFormat, records []map[string]interface{}, fields []discovery.AspectFieldInfo) error {
+	return displayImportDryRunWithAspectInfo(cmd, filePath, format, records, fields, nil)
 }
 
 func displayImportDryRunWithAspectInfo(cmd *cobra.Command, filePath string, format discovery.FileFormat, records []map[string]interface{}, fields []discovery.AspectFieldInfo, aspectInfo *discovery.AspectInfo) error {

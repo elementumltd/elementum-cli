@@ -3,6 +3,7 @@
 # Get an async task by ID for polling status
 # Used to wait for search table creation to complete
 # Note: asyncTask is accessed via the current user (me)
+# Note: We use aliases (aspectSearchTable, tableSearchTable) because the field types differ
 query GetAsyncTask($id: ID!) {
   me {
     asyncTask(id: $id) {
@@ -12,22 +13,39 @@ query GetAsyncTask($id: ID!) {
       completedAt
       name
       ... on AsyncTaskSearchTableCreate {
-        searchTable {
+        aspectSearchTable: searchTable {
           id
-          field {
+          aspectField: field {
             id
             name
           }
         }
       }
       ... on AsyncTaskTableSearchTableCreate {
-        searchTable {
+        tableSearchTable: searchTable {
           id
-          field {
+          tableField: field {
             id
             name
           }
         }
+      }
+      ... on AsyncTaskAspectPromotion {
+        aspect {
+          ... on AspectApp {
+            id
+            name
+          }
+          ... on AspectElement {
+            id
+            name
+          }
+          ... on AspectTask {
+            id
+            name
+          }
+        }
+        executionId
       }
     }
   }

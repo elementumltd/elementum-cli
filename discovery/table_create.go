@@ -21,8 +21,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/elementumltd/elementum-cli/logger"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/logger"
 )
 
 // TableCreateConfig represents the YAML configuration for creating a table

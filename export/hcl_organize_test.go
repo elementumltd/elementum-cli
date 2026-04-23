@@ -44,10 +44,10 @@ func TestOrganizeBlocksExport_BasicGrouping(t *testing.T) {
 		t.Fatal("expected at least 1 file group")
 	}
 
-	// Both should be in app-test_app.tf (SanitizeName converts hyphen to underscore)
+	// Both should be in app-test-app.tf (SanitizeFileName is kebab-case).
 	found := false
 	for _, fg := range result.FileGroups {
-		if fg.FileName == "app-test_app.tf" {
+		if fg.FileName == "app-test-app.tf" {
 			found = true
 			if len(fg.Blocks) != 2 {
 				t.Errorf("expected 2 blocks in app file, got %d", len(fg.Blocks))
@@ -55,7 +55,7 @@ func TestOrganizeBlocksExport_BasicGrouping(t *testing.T) {
 		}
 	}
 	if !found {
-		t.Errorf("expected app-test_app.tf file group, got files:")
+		t.Errorf("expected app-test-app.tf file group, got files:")
 		for _, fg := range result.FileGroups {
 			t.Errorf("  %s (%d blocks)", fg.FileName, len(fg.Blocks))
 		}
@@ -94,7 +94,7 @@ func TestOrganizeBlocksExport_AutomationGrouping(t *testing.T) {
 	// Automation should be in its own file
 	foundAuto := false
 	for _, fg := range result.FileGroups {
-		if fg.FileName == "automation-process_ticket.tf" {
+		if fg.FileName == "automation-process-ticket.tf" {
 			foundAuto = true
 			// Automation resource goes here
 			break
@@ -105,7 +105,7 @@ func TestOrganizeBlocksExport_AutomationGrouping(t *testing.T) {
 		for _, fg := range result.FileGroups {
 			t.Logf("file: %s, blocks: %d", fg.FileName, len(fg.Blocks))
 		}
-		t.Error("expected automation-process_ticket.tf file group")
+		t.Error("expected automation-process-ticket.tf file group")
 	}
 }
 
@@ -168,9 +168,32 @@ func TestSanitizeFileName(t *testing.T) {
 		input    string
 		expected string
 	}{
-		{"My App", "my_app"},
-		{"app/sub", "app_sub"},
-		{"Test App (v2)", "test_app_v2"},
+		// Filenames are kebab-case (unlike SanitizeName which emits snake_case
+		// identifiers). Hand-authored truth consistently uses dashes.
+		{"My App", "my-app"},
+		{"app/sub", "app-sub"},
+		{"Test App (v2)", "test-app-v2"},
+		// CamelCase must be split into words. Hit by lumanow's automations
+		// named like "ValidateAdGroupRequest" — without splitting they
+		// collapse to "validateadgrouprequest" and diverge from the hand-
+		// authored truth filename "validate-ad-group-request".
+		{"ValidateAdGroupRequest", "validate-ad-group-request"},
+		// Acronyms stay together (prev=upper, next=upper → no split), so
+		// "WaaSRequest" splits only between the acronym run and the next word.
+		{"WaaSRequest", "waas-request"},
+		{"DLUpdate", "dl-update"},
+		{"APIKey", "api-key"},
+		// Word-to-embedded-acronym boundary (rule 3): split when the upper run
+		// starting at the transition is ≥3 letters. "ValidateDLUpdateRequest"
+		// must become "validate-dl-update-request" because D-L-U is length 3.
+		{"ValidateDLUpdateRequest", "validate-dl-update-request"},
+		// Digits don't introduce boundaries — "A2A" stays as one token.
+		{"A2ATranscript", "a2a-transcript"},
+		{"fn_call_servicenow", "fn-call-servicenow"},
+		{"Already-Kebab", "already-kebab"},
+		// Dashes should not double up or leak to the edges.
+		{"-leading and trailing-", "leading-and-trailing"},
+		{"multi   space", "multi-space"},
 	}
 
 	for _, tt := range tests {
@@ -205,7 +228,7 @@ func TestOrganizeBlocksExport_TableSearchTableRouting(t *testing.T) {
 	// Table search tables should be routed to table-<resource_name>.tf
 	found := false
 	for _, fg := range result.FileGroups {
-		if fg.FileName == "table-customer_data_description.tf" {
+		if fg.FileName == "table-customer-data-description.tf" {
 			found = true
 			if len(fg.Blocks) != 1 {
 				t.Errorf("expected 1 block in table file, got %d", len(fg.Blocks))
@@ -213,7 +236,7 @@ func TestOrganizeBlocksExport_TableSearchTableRouting(t *testing.T) {
 		}
 	}
 	if !found {
-		t.Errorf("expected table-customer_data_description.tf file group, got files:")
+		t.Errorf("expected table-customer-data-description.tf file group, got files:")
 		for _, fg := range result.FileGroups {
 			t.Errorf("  %s (%d blocks)", fg.FileName, len(fg.Blocks))
 		}
@@ -382,14 +405,14 @@ func TestOrganizeBlocksExport_TasksUseWorkflowID(t *testing.T) {
 	// Find the automation file
 	var autoFile *BlockFileGroup
 	for i := range result.FileGroups {
-		if result.FileGroups[i].FileName == "automation-process_ticket.tf" {
+		if result.FileGroups[i].FileName == "automation-process-ticket.tf" {
 			autoFile = &result.FileGroups[i]
 			break
 		}
 	}
 
 	if autoFile == nil {
-		t.Fatal("expected automation-process_ticket.tf file group")
+		t.Fatal("expected automation-process-ticket.tf file group")
 	}
 
 	// All 5 blocks should be in the automation file (automation, trigger, 3 tasks)

@@ -135,3 +135,43 @@ func TestTaskTypeRegistry_Helpers(t *testing.T) {
 		}
 	})
 }
+func TestValueRefFragment_ContainsAllReferenceTypes(t *testing.T) {
+	t.Parallel()
+
+	// The ValueRefFragment constant should include all ValueReference reference types
+	// so that the export pipeline can resolve any value reference to Terraform syntax.
+	requiredKeywords := []string{
+		"id",
+		"value",
+		"triggerReference",
+		"taskReference",
+		"templateReference",
+		"variableReference",
+		"forEachReference",
+	}
+
+	for _, kw := range requiredKeywords {
+		if !strings.Contains(ValueRefFragment, kw) {
+			t.Errorf("ValueRefFragment is missing required keyword %q", kw)
+		}
+	}
+}
+
+func TestValueRefFragment_UsedInAiTransformPrompt(t *testing.T) {
+	t.Parallel()
+
+	// Verify that the ai_transform task's prompt field uses the full ValueRefFragment.
+	// This was the root cause of ISS-77: the prompt field was using { id label value }
+	// which missed templateReference and other reference types.
+	config, ok := GetTaskTypeConfig("ai_transform")
+	if !ok {
+		t.Fatal("expected ai_transform to be in registry")
+	}
+
+	if !strings.Contains(config.GraphQLFragment, "templateReference") {
+		t.Error("ai_transform fragment should include templateReference for prompt resolution")
+	}
+	if !strings.Contains(config.GraphQLFragment, "triggerReference") {
+		t.Error("ai_transform fragment should include triggerReference for prompt resolution")
+	}
+}

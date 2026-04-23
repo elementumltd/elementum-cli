@@ -150,9 +150,9 @@ func TestGenerateTaskResourcesOnly(t *testing.T) {
 		t.Errorf("Expected HCL to contain switch task resource, got:\n%s", hcl)
 	}
 
-	// Check that parent_id is set
-	if !strings.Contains(hcl, "parent_id = elementum_record_created_trigger.test_automation_record_created_0.id") {
-		t.Errorf("Expected HCL to have parent_id set to trigger, got:\n%s", hcl)
+	// Check that parent is set (whole resource reference, no .id suffix)
+	if !strings.Contains(hcl, "parent = elementum_record_created_trigger.test_automation_record_created_0") {
+		t.Errorf("Expected HCL to have parent set to trigger, got:\n%s", hcl)
 	}
 
 	// Check that name is set
@@ -927,17 +927,14 @@ func TestGenerateWorkflowPublishIR(t *testing.T) {
 	// Serialize the block and check contents
 	serialized := SerializeBlock(block, 0)
 
-	// Check automation_id attribute
-	if !strings.Contains(serialized, "automation_id = elementum_automation.process_order.id") {
-		t.Errorf("Expected automation_id to reference automation, got:\n%s", serialized)
+	// Check automation attribute (whole resource reference, no .id suffix)
+	if !strings.Contains(serialized, "automation = elementum_automation.process_order") {
+		t.Errorf("Expected automation to reference automation resource, got:\n%s", serialized)
 	}
 
-	// Check task_ids attribute contains all task references
-	if !strings.Contains(serialized, "elementum_variable_task.process_order_set_status.id") {
-		t.Errorf("Expected task_ids to contain variable_task ref, got:\n%s", serialized)
-	}
-	if !strings.Contains(serialized, "elementum_update_field_task.process_order_update_order.id") {
-		t.Errorf("Expected task_ids to contain update_field_task ref, got:\n%s", serialized)
+	// Check workflow_revision attribute is set
+	if !strings.Contains(serialized, `workflow_revision = "1.0.0"`) {
+		t.Errorf("Expected workflow_revision to be set, got:\n%s", serialized)
 	}
 }
 

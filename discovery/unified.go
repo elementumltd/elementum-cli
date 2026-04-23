@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/elementumltd/elementum-cli/internal/client"
 	"github.com/elementumltd/elementum-cli/logger"
 	"github.com/elementumltd/elementum-cli/ui"
-	"github.com/elementumltd/elementum-cli/internal/client"
 )
 
 // DiscoverAllDependencies performs unified recursive discovery from any root object.
@@ -79,6 +79,7 @@ func DiscoverAllDependenciesParallel(ctx context.Context, c *client.Client, root
 			return nil, err
 		}
 		queueFromAspect(app, uCtx)
+		enqueueCategorySiblings(ctx, c, app.CategoryID, app.ID, uCtx, collector)
 	case "Element":
 		element, err := GetElementFull(ctx, c, rootID)
 		if err != nil {
@@ -93,6 +94,37 @@ func DiscoverAllDependenciesParallel(ctx context.Context, c *client.Client, root
 	}
 
 	return uCtx, nil
+}
+
+// enqueueCategorySiblings pulls every Element aspect in the root app's
+// category into the discovery queue. This catches elements that the
+// task/tool/search-table graph doesn't reach — e.g. an element referenced
+// only by a standalone elementum_ai_search_table resource in the truth HCL,
+// or one reached solely through field-id lookups. Apps and tasks in the
+// same category are NOT auto-enqueued (those are discovered via relationship
+// traversal when relevant, and blanket-enqueuing apps would recursively pull
+// siblings we don't want in this export).
+func enqueueCategorySiblings(ctx context.Context, c *client.Client, categoryID, rootID string, uCtx *UnifiedDiscoveryContext, collector *ErrorCollector) {
+	if categoryID == "" {
+		return
+	}
+	aspects, err := ListCategoryAspects(ctx, c, categoryID)
+	if err != nil {
+		if collector != nil {
+			collector.Add(SeverityWarning, "category_discovery", categoryID, err)
+		} else {
+			logger.Warn("failed to list category aspects", "categoryID", categoryID, "error", err)
+		}
+		return
+	}
+	for _, a := range aspects {
+		if a.ID == rootID {
+			continue
+		}
+		if a.Typename == "AspectElement" {
+			uCtx.Enqueue(a.ID, "Element")
+		}
+	}
 }
 
 // ProcessDiscoveryQueue processes all items in the discovery queue.
@@ -279,6 +311,14 @@ type DiscoverableAspect interface {
 	GetAgents() []Agent // Returns nil for types that don't support agents (e.g., Element)
 }
 
+// aspectWithSearchTables is implemented by aspects that own AI search tables.
+// Used as an optional capability on DiscoverableAspect — each implementation
+// that has them should return the list so queueFromAspect can enqueue the
+// element aspects that own them.
+type aspectWithSearchTables interface {
+	GetAISearchTables() []AISearchTable
+}
+
 // queueFromAspect extracts all discoverable references from any aspect type and adds them to the queue.
 // This unifies the previously duplicated queueFromApp/queueFromTask/queueFromElement functions.
 func queueFromAspect(aspect DiscoverableAspect, uCtx *UnifiedDiscoveryContext) {
@@ -300,7 +340,7 @@ func queueFromAspect(aspect DiscoverableAspect, uCtx *UnifiedDiscoveryContext) {
 
 		// Check tasks for cross-app/element references
 		for _, task := range automation.Tasks {
-			// ObjectID from aspect (record_search, create_record, update_field, aspect_record_field_locking, bulk_excel)
+			// ObjectID from aspect (record_search, create_record, update_field, aspect_record_field_locking, bulk_excel, ai_search_table)
 			if task.ObjectID != "" && task.ObjectID != aspectID {
 				uCtx.Enqueue(task.ObjectID, "App")
 			}
@@ -311,6 +351,18 @@ func queueFromAspect(aspect DiscoverableAspect, uCtx *UnifiedDiscoveryContext) {
 			// DynamicCategoryAspectID from ai_classify task's dynamic_category_source.aspect
 			if task.DynamicCategoryAspectID != "" && task.DynamicCategoryAspectID != aspectID {
 				uCtx.Enqueue(task.DynamicCategoryAspectID, "App")
+			}
+		}
+	}
+
+	// 2b. AI search tables belonging to this aspect — their ObjectID points
+	// to the aspect that owns them. When we see a table whose ObjectID is
+	// NOT the current aspect, that's an AI search table attached to an
+	// element (or another app) that we want to pull into the export.
+	if st, ok := aspect.(aspectWithSearchTables); ok {
+		for _, table := range st.GetAISearchTables() {
+			if table.ObjectID != "" && table.ObjectID != aspectID {
+				uCtx.Enqueue(table.ObjectID, "App")
 			}
 		}
 	}

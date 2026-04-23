@@ -19,8 +19,8 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/huh"
-	"github.com/elementumltd/elementum-cli/logger"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/logger"
 )
 
 // LoginFormData holds the data collected from the login form

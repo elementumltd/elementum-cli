@@ -17,9 +17,10 @@ package discovery
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
-	"github.com/elementumltd/elementum-cli/logger"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/logger"
 )
 
 // AspectType represents the type of aspect
@@ -434,4 +435,164 @@ func GetAspectAutomations(ctx context.Context, c *client.Client, aspectID string
 	}
 
 	return automations, nil
+}
+
+// FetchAutomationFullDetails fetches full task/trigger details (including RawData) for automations.
+// This populates the RawData field needed for HCL generation.
+// aspectID is the ID of the aspect (app, element, or task) that owns these automations.
+func FetchAutomationFullDetails(ctx context.Context, c *client.Client, aspectID string, automations []Automation) error {
+	if len(automations) == 0 {
+		return nil
+	}
+
+	tasksFragment := client.BuildTasksQueryFragment()
+	triggersFragment := buildTriggersQueryFragment()
+
+	for i := range automations {
+		automation := &automations[i]
+
+		// Skip automations without workflows or unpublished/inactive ones
+		if automation.WorkflowID == "" || !automation.HasPublished || automation.Status != "ACTIVE" {
+			continue
+		}
+
+		query := fmt.Sprintf(`
+			query GetFullWorkflowDetails($aspectId: ID!, $automationId: ID!) {
+				organization {
+					aspect(id: $aspectId) {
+						id
+						automation(id: $automationId) {
+							id
+							current {
+								id
+								outputs {
+									id
+									name
+									value {
+										taskReference { name }
+										triggerReference { name }
+										variableReference { name }
+									}
+								}
+								triggers {
+									id
+									__typename
+									%s
+								}
+								%s
+							}
+						}
+					}
+				}
+			}
+		`, triggersFragment, tasksFragment)
+
+		variables := map[string]interface{}{
+			"aspectId":     aspectID,
+			"automationId": automation.ID,
+		}
+
+		var result map[string]interface{}
+		if err := c.ExecuteInto(ctx, query, variables, &result); err != nil {
+			logger.Warn("failed to fetch full automation details",
+				"automationId", automation.ID,
+				"aspectId", aspectID,
+				"error", err)
+			continue // Don't fail the whole batch
+		}
+
+		// Extract workflow data from automation.current
+		workflowData := extractCurrentWorkflowData(result)
+		if workflowData == nil {
+			continue
+		}
+
+		// Update trigger RawData
+		if triggers, ok := workflowData["triggers"].([]interface{}); ok {
+			triggerByID := make(map[string]*Trigger)
+			for j := range automation.Triggers {
+				triggerByID[automation.Triggers[j].ID] = &automation.Triggers[j]
+			}
+			for _, triggerInterface := range triggers {
+				if triggerData, ok := triggerInterface.(map[string]interface{}); ok {
+					triggerID := getString(triggerData, "id")
+					if trigger, exists := triggerByID[triggerID]; exists {
+						trigger.RawData = triggerData
+					}
+				}
+			}
+		}
+
+		// Update task RawData
+		if tasks, ok := workflowData["tasks"].([]interface{}); ok {
+			taskByID := make(map[string]*Task)
+			for j := range automation.Tasks {
+				taskByID[automation.Tasks[j].ID] = &automation.Tasks[j]
+			}
+			for _, taskInterface := range tasks {
+				if taskData, ok := taskInterface.(map[string]interface{}); ok {
+					taskID := getString(taskData, "id")
+					if task, exists := taskByID[taskID]; exists {
+						task.RawData = taskData
+						// Re-determine task type for variable/update_variable distinction
+						if task.Type == "variable" && isUpdateVariableTask(taskData) {
+							task.Type = "update_variable"
+						}
+						// Extract operator children (switch cases, fork/join branches)
+						if childrenArr, ok := taskData["children"].([]interface{}); ok {
+							for _, childInterface := range childrenArr {
+								if childData, ok := childInterface.(map[string]interface{}); ok {
+									task.Children = append(task.Children, childData)
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Parse workflow outputs
+		if outputs, ok := workflowData["outputs"].([]interface{}); ok {
+			for _, outputInterface := range outputs {
+				if outputData, ok := outputInterface.(map[string]interface{}); ok {
+					output := WorkflowOutput{
+						Name: getString(outputData, "name"),
+					}
+					if value, ok := outputData["value"].(map[string]interface{}); ok {
+						output.Value = value
+					}
+					automation.Outputs = append(automation.Outputs, output)
+				}
+			}
+		}
+
+		logger.Debug("fetched full automation details", "automationId", automation.ID, "taskCount", len(automation.Tasks))
+
+		// Fetch available refs to populate FieldRefs for value reference resolution
+		// Reuse the existing fetchAutomationRefs function from app.go
+		fetchAutomationRefs(ctx, c, aspectID, automation)
+	}
+
+	return nil
+}
+
+// extractCurrentWorkflowData extracts workflow data from automation.current response
+func extractCurrentWorkflowData(result map[string]interface{}) map[string]interface{} {
+	org, ok := result["organization"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	aspect, ok := org["aspect"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	automation, ok := aspect["automation"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	current, ok := automation["current"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	return current
 }

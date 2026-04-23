@@ -60,6 +60,31 @@ mutation CreateDisplayWidget($aspectId: ID!, $input: DisplayWidgetCreateInput!) 
       icon
       fullWidth
     }
+    ... on DisplayWidgetRunAutomationAction {
+      automation {
+        id
+      }
+      buttonType
+      color
+      icon
+      fullWidth
+      parameters {
+        name
+        fieldType
+        multiple
+        required
+        value {
+          ... on AspectFieldFieldValueReference {
+            id
+            fieldId
+          }
+          ... on AspectFieldObjectValueReference {
+            id
+            value
+          }
+        }
+      }
+    }
   }
 }
 
@@ -101,6 +126,31 @@ mutation UpdateDisplayWidget($id: ID!, $input: DisplayWidgetUpdateInput!) {
       color
       icon
       fullWidth
+    }
+    ... on DisplayWidgetRunAutomationAction {
+      automation {
+        id
+      }
+      buttonType
+      color
+      icon
+      fullWidth
+      parameters {
+        name
+        fieldType
+        multiple
+        required
+        value {
+          ... on AspectFieldFieldValueReference {
+            id
+            fieldId
+          }
+          ... on AspectFieldObjectValueReference {
+            id
+            value
+          }
+        }
+      }
     }
   }
 }

@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 )
 
 // =============================================================================
@@ -87,59 +88,74 @@ func mapToGenqlientOperatorInput(input map[string]interface{}) (WorkflowTaskOper
 }
 
 // CreateWorkflowTask creates the first (root) task in a workflow.
-func (c *Client) CreateWorkflowTask(ctx context.Context, workflowID string, taskInput map[string]interface{}) (string, error) {
+// Returns (taskID, updatedAt, error).
+func (c *Client) CreateWorkflowTask(ctx context.Context, workflowID string, taskInput map[string]interface{}) (string, string, error) {
 	typedInput, err := mapToGenqlientTaskInput(taskInput)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	result, err := CreateWorkflowTask(ctx, c.Genqlient(), workflowID, typedInput)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return result.WorkflowTaskCreate.GetId(), nil
+	return result.WorkflowTaskCreate.GetId(), result.WorkflowTaskCreate.GetUpdatedAt(), nil
 }
 
 // InsertWorkflowTask inserts a task into a workflow after an existing task.
-func (c *Client) InsertWorkflowTask(ctx context.Context, workflowID string, taskInput map[string]interface{}) (string, error) {
+// Returns (taskID, updatedAt, error).
+func (c *Client) InsertWorkflowTask(ctx context.Context, workflowID string, taskInput map[string]interface{}) (string, string, error) {
 	typedInput, err := mapToGenqlientTaskInput(taskInput)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	result, err := InsertWorkflowTask(ctx, c.Genqlient(), workflowID, typedInput)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return result.WorkflowTaskInsert.GetId(), nil
+	return result.WorkflowTaskInsert.GetId(), result.WorkflowTaskInsert.GetUpdatedAt(), nil
 }
 
 // UpdateWorkflowTask updates an existing task in a workflow.
-func (c *Client) UpdateWorkflowTask(ctx context.Context, taskID string, taskInput map[string]interface{}) error {
+// Returns (updatedAt, error).
+func (c *Client) UpdateWorkflowTask(ctx context.Context, taskID string, taskInput map[string]interface{}) (string, error) {
 	typedInput, err := mapToGenqlientTaskUpdateInput(taskInput)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	_, err = UpdateWorkflowTask(ctx, c.Genqlient(), taskID, typedInput)
-	return err
+	result, err := UpdateWorkflowTask(ctx, c.Genqlient(), taskID, typedInput)
+	if err != nil {
+		return "", err
+	}
+	return result.WorkflowTaskUpdate.GetUpdatedAt(), nil
 }
 
 // CreateWorkflowTaskChild creates a task inside an operator (for_each/switch).
-func (c *Client) CreateWorkflowTaskChild(ctx context.Context, operatorTaskID string, taskInput map[string]interface{}) (string, error) {
+// Returns (taskID, updatedAt, error).
+func (c *Client) CreateWorkflowTaskChild(ctx context.Context, operatorTaskID string, taskInput map[string]interface{}) (string, string, error) {
+	// Debug: log the raw input before conversion
+	rawJSON, _ := json.MarshalIndent(taskInput, "", "  ")
+	slog.Debug("CreateWorkflowTaskChild raw input", "operator_task_id", operatorTaskID, "task_input", string(rawJSON))
+
 	typedInput, err := mapToGenqlientTaskInput(taskInput)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
+
+	// Debug: log the typed input after conversion
+	typedJSON, _ := json.MarshalIndent(typedInput, "", "  ")
+	slog.Debug("CreateWorkflowTaskChild typed input", "typed_input", string(typedJSON))
 
 	result, err := CreateWorkflowTaskChild(ctx, c.Genqlient(), operatorTaskID, typedInput)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return result.WorkflowTaskChildCreate.GetId(), nil
+	return result.WorkflowTaskChildCreate.GetId(), result.WorkflowTaskChildCreate.GetUpdatedAt(), nil
 }
 
 // CreateWorkflowTaskOperatorChild creates a case/branch for a switch or fork/join operator.
@@ -278,6 +294,54 @@ const (
 						edges {
 							node {` + skillToolFields + `
 							}
+						}
+					}
+				}
+			}
+		}
+	`
+
+	// agentSkillFields are the common return fields for AgentSkill (A2A skill) mutations.
+	agentSkillFields = `
+		id
+		name
+		description
+		tags
+		examples
+		inputModes
+		outputModes
+	`
+
+	// CreateAgentA2ASkillMutation creates an A2A skill on an agent.
+	CreateAgentA2ASkillMutation = `
+		mutation CreateAgentSkill($agentId: ID!, $input: AgentSkillCreateInput!) {
+			agentSkillCreate(agentId: $agentId, input: $input) {` + agentSkillFields + `}
+		}
+	`
+
+	// UpdateAgentA2ASkillMutation updates an A2A skill on an agent.
+	UpdateAgentA2ASkillMutation = `
+		mutation UpdateAgentSkill($id: ID!, $input: AgentSkillUpdateInput!) {
+			agentSkillUpdate(id: $id, input: $input) {` + agentSkillFields + `}
+		}
+	`
+
+	// DeleteAgentA2ASkillMutation deletes an A2A skill from an agent.
+	DeleteAgentA2ASkillMutation = `
+		mutation DeleteAgentSkill($id: ID!) {
+			agentSkillDelete(id: $id) { id }
+		}
+	`
+
+	// GetAgentA2ASkillQuery fetches a single A2A skill by ID.
+	// A2A skills live on AgentCard, which is only on AgentElementum agents.
+	GetAgentA2ASkillQuery = `
+		query GetAgentSkill($agentId: ID!, $skillId: ID!) {
+			organization {
+				agent(id: $agentId) {
+					... on AgentElementum {
+						card {
+							skill(id: $skillId) {` + agentSkillFields + `}
 						}
 					}
 				}
