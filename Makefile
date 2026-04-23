@@ -13,6 +13,9 @@ clean:
 fmt:
 	gofmt -s -w -e .
 
+tidy:
+	${GO} mod tidy
+
 # Lint (requires golangci-lint)
 lint:
 	@if [ -f $(GOBIN)/golangci-lint ]; then \
@@ -74,6 +77,7 @@ help:
 	@echo "  clean             - Remove built binaries"
 	@echo "  fmt               - Format GO code"
 	@echo "  lint              - Run linter"
+	@echo "  tidy              - Tidy go modules"
 	@echo ""
 	@echo "Testing:"
 	@echo "  test              - Run all tests (provider + CLI)"
