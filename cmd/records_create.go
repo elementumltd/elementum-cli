@@ -16,9 +16,7 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -482,11 +480,6 @@ func collectFieldsInteractively(fields []discovery.AspectFieldInfo, input *disco
 	return nil
 }
 
-// displayDryRun shows what would be created without actually creating
-func displayDryRun(fields []discovery.AspectFieldInfo, input *discovery.RecordCreateInput) error {
-	return displayDryRunWithAspectInfo(fields, input, nil)
-}
-
 // displayDryRunWithAspectInfo shows what would be created with aspect type info
 func displayDryRunWithAspectInfo(fields []discovery.AspectFieldInfo, input *discovery.RecordCreateInput, aspectInfo *discovery.AspectInfo) error {
 	// Build field name lookup
@@ -537,11 +530,4 @@ func displayDryRunWithAspectInfo(fields []discovery.AspectFieldInfo, input *disc
 	fmt.Println()
 
 	return nil
-}
-
-// outputJSONForCreate outputs the result as JSON
-func outputJSONForCreate(data interface{}) error {
-	encoder := json.NewEncoder(os.Stdout)
-	encoder.SetIndent("", "  ")
-	return encoder.Encode(data)
 }

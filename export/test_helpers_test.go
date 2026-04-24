@@ -15,71 +15,12 @@
 package export
 
 import (
-	"encoding/json"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/elementumltd/elementum-cli/discovery"
 )
-
-// ============================================================================
-// Fixture Loading Functions
-// ============================================================================
-
-// loadTriggerFixture loads a trigger fixture from testdata/triggers
-func loadTriggerFixture(t *testing.T, name string) *discovery.Trigger {
-	t.Helper()
-	data, err := os.ReadFile(filepath.Join("testdata", "triggers", name+".json"))
-	if err != nil {
-		t.Fatalf("Failed to load trigger fixture %s: %v", name, err)
-	}
-	var trigger discovery.Trigger
-	if err := json.Unmarshal(data, &trigger); err != nil {
-		t.Fatalf("Failed to parse trigger fixture %s: %v", name, err)
-	}
-	return &trigger
-}
-
-// loadTaskFixture loads a task fixture from testdata/tasks
-func loadTaskFixture(t *testing.T, name string) *discovery.Task {
-	t.Helper()
-	data, err := os.ReadFile(filepath.Join("testdata", "tasks", name+".json"))
-	if err != nil {
-		t.Fatalf("Failed to load task fixture %s: %v", name, err)
-	}
-	var task discovery.Task
-	if err := json.Unmarshal(data, &task); err != nil {
-		t.Fatalf("Failed to parse task fixture %s: %v", name, err)
-	}
-	return &task
-}
-
-// loadAutomationFixture loads an automation fixture from testdata/automations
-func loadAutomationFixture(t *testing.T, name string) *discovery.Automation {
-	t.Helper()
-	data, err := os.ReadFile(filepath.Join("testdata", "automations", name+".json"))
-	if err != nil {
-		t.Fatalf("Failed to load automation fixture %s: %v", name, err)
-	}
-	var automation discovery.Automation
-	if err := json.Unmarshal(data, &automation); err != nil {
-		t.Fatalf("Failed to parse automation fixture %s: %v", name, err)
-	}
-	return &automation
-}
-
-// loadExpectedHCL loads expected HCL output from testdata/expected
-func loadExpectedHCL(t *testing.T, category, name string) string {
-	t.Helper()
-	data, err := os.ReadFile(filepath.Join("testdata", "expected", category, name+".hcl"))
-	if err != nil {
-		t.Fatalf("Failed to load expected HCL %s/%s: %v", category, name, err)
-	}
-	return string(data)
-}
 
 // ============================================================================
 // Test Data Creation Functions
@@ -232,26 +173,6 @@ func assertNoNullAttributes(t *testing.T, hcl string) {
 	}
 }
 
-// assertReferencesResolved checks that raw UUIDs have been resolved to terraform references
-func assertReferencesResolved(t *testing.T, hcl string) {
-	t.Helper()
-	// UUID pattern
-	uuidPattern := regexp.MustCompile(`"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"`)
-	matches := uuidPattern.FindAllString(hcl, -1)
-	if len(matches) > 0 {
-		t.Errorf("Found unresolved UUIDs in HCL: %v\nHCL:\n%s", matches, hcl)
-	}
-}
-
-// assertResourceBlockExists checks that a resource block with the given type and name exists
-func assertResourceBlockExists(t *testing.T, hcl, resourceType, resourceName string) {
-	t.Helper()
-	pattern := regexp.MustCompile(`resource\s+"` + regexp.QuoteMeta(resourceType) + `"\s+"` + regexp.QuoteMeta(resourceName) + `"\s*\{`)
-	if !pattern.MatchString(hcl) {
-		t.Errorf("Expected resource block %q %q not found in HCL:\n%s", resourceType, resourceName, hcl)
-	}
-}
-
 // assertAttributeValue checks that an attribute has the expected value in the HCL
 func assertAttributeValue(t *testing.T, hcl, attributeName, expectedValue string) {
 	t.Helper()
@@ -260,29 +181,6 @@ func assertAttributeValue(t *testing.T, hcl, attributeName, expectedValue string
 	if !pattern.MatchString(hcl) {
 		t.Errorf("Expected attribute %s = %s not found in HCL:\n%s", attributeName, expectedValue, hcl)
 	}
-}
-
-// assertHCLMatchesExpected compares generated HCL against expected HCL, ignoring whitespace differences
-func assertHCLMatchesExpected(t *testing.T, got, expected string) {
-	t.Helper()
-	gotNormalized := normalizeHCL(got)
-	expectedNormalized := normalizeHCL(expected)
-	if gotNormalized != expectedNormalized {
-		t.Errorf("HCL mismatch.\nGot:\n%s\n\nExpected:\n%s", got, expected)
-	}
-}
-
-// normalizeHCL normalizes HCL for comparison by trimming whitespace
-func normalizeHCL(hcl string) string {
-	lines := strings.Split(hcl, "\n")
-	var normalized []string
-	for _, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if trimmed != "" {
-			normalized = append(normalized, trimmed)
-		}
-	}
-	return strings.Join(normalized, "\n")
 }
 
 // ============================================================================
@@ -322,37 +220,6 @@ const (
 // ============================================================================
 // Complex Test Data Builders
 // ============================================================================
-
-// buildTestAutomationWithTriggerAndTask creates a complete automation for testing
-func buildTestAutomationWithTriggerAndTask(
-	automationName string,
-	triggerType string,
-	triggerRawData map[string]interface{},
-	taskType string,
-	taskRawData map[string]interface{},
-) (*discovery.App, []discovery.Automation, []ImportBlock) {
-	app := createTestApp(TestAppID, "Test App")
-
-	trigger := createTestTrigger(TestTriggerID, triggerType, "Test Trigger", triggerRawData, nil)
-	task := createTestTask(TestTaskID, taskType, "Test Task", TestWorkflowID, TestTriggerID, taskRawData, nil)
-
-	automation := createTestAutomation(
-		TestAutomationID,
-		automationName,
-		TestWorkflowID,
-		"ACTIVE",
-		[]discovery.Trigger{trigger},
-		[]discovery.Task{task},
-	)
-
-	imports := createTestImports(
-		ImportResource{TestAutomationID, "elementum_automation", SanitizeName(automationName)},
-		ImportResource{TestAutomationID + ":" + TestTriggerID, "elementum_" + triggerType + "_trigger", "test_trigger"},
-		ImportResource{TestAutomationID + ":" + TestTaskID, "elementum_" + taskType + "_task", "test_task"},
-	)
-
-	return app, []discovery.Automation{automation}, imports
-}
 
 // buildMinimalTriggerRawData creates minimal RawData for a trigger type
 func buildMinimalTriggerRawData(triggerType string) map[string]interface{} {

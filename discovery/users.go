@@ -103,6 +103,12 @@ func ListAllUsers(ctx context.Context, c *client.Client, opts UserListOptions) (
 			return nil, err
 		}
 		allUsers = append(allUsers, next.Users...)
+
+		// Guard against a server returning HasNextPage=true without advancing
+		// the cursor — would otherwise loop forever on the same request.
+		if next.EndCursor == "" || next.EndCursor == cursor {
+			break
+		}
 		cursor = next.EndCursor
 		first.HasNextPage = next.HasNextPage
 	}

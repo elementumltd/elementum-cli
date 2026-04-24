@@ -17,15 +17,11 @@ package cmd
 import (
 	"encoding/json"
 	"os"
-	"regexp"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
-
-// uuidRegex matches standard UUID format
-var uuidRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
 // isInteractive returns true if running in an interactive terminal
 func isInteractive() bool {
@@ -67,11 +63,6 @@ func outputJSON(data any) error {
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(data)
-}
-
-// isUUID checks if a string is a valid UUID
-func isUUID(s string) bool {
-	return uuidRegex.MatchString(s)
 }
 
 // EIFlags holds the extracted ei-specific flags from args.

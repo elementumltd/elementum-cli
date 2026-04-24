@@ -30,7 +30,6 @@ var (
 	labelStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("15"))
 	mutedStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 	statLabelStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Bold(true)
-	successStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("10"))
 	errStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
 )
 

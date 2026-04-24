@@ -189,10 +189,6 @@ func runRecordsImport(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func displayImportDryRun(cmd *cobra.Command, filePath string, format discovery.FileFormat, records []map[string]interface{}, fields []discovery.AspectFieldInfo) error {
-	return displayImportDryRunWithAspectInfo(cmd, filePath, format, records, fields, nil)
-}
-
 func displayImportDryRunWithAspectInfo(cmd *cobra.Command, filePath string, format discovery.FileFormat, records []map[string]interface{}, fields []discovery.AspectFieldInfo, aspectInfo *discovery.AspectInfo) error {
 	if isJSONOutput(cmd) {
 		result := map[string]interface{}{

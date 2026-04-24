@@ -2220,28 +2220,3 @@ func GetSupportedTaskTypesFromRegistry() []string {
 	}
 	return types
 }
-
-// hasDynamicReference checks if a value reference contains a dynamic reference
-// (triggerReference, taskReference, forEachReference, variableReference, or templateReference)
-// Static values (just "value" field) return false
-func hasDynamicReference(ref map[string]interface{}) bool {
-	// Check for direct references
-	if _, ok := ref["triggerReference"].(map[string]interface{}); ok {
-		return true
-	}
-	if _, ok := ref["taskReference"].(map[string]interface{}); ok {
-		return true
-	}
-	if _, ok := ref["forEachReference"].(map[string]interface{}); ok {
-		return true
-	}
-	if _, ok := ref["variableReference"].(map[string]interface{}); ok {
-		return true
-	}
-	// Check for templateReference which may contain dynamic refs
-	if _, ok := ref["templateReference"].(map[string]interface{}); ok {
-		return true
-	}
-	// Static value (just "value" field) - not dynamic
-	return false
-}

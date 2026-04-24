@@ -250,6 +250,12 @@ func ListAllRecords(ctx context.Context, c *client.Client, aspectID string, opts
 			return nil, err
 		}
 		allRecords = append(allRecords, nextResult.Records...)
+
+		// Guard against a server returning HasNextPage=true without advancing
+		// the cursor — would otherwise loop forever on the same request.
+		if nextResult.EndCursor == "" || nextResult.EndCursor == cursor {
+			break
+		}
 		cursor = nextResult.EndCursor
 		firstResult.HasNextPage = nextResult.HasNextPage
 	}

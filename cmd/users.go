@@ -71,11 +71,11 @@ func runUsersSearch(cmd *cobra.Command, args []string) error {
 
 	// Show spinner while searching (skip for JSON output)
 	if !isJSONOutput(cmd) {
-		fmt.Printf("%s %s...\n", ui.InfoStyle.Render("*"), ui.InfoStyle.Render(fmt.Sprintf("Searching users for %q", query)))
+		fmt.Printf("%s %s...\n", ui.InfoStyle.Render("⠿"), ui.InfoStyle.Render(fmt.Sprintf("Searching users for %q", query)))
 	}
 
 	result, err := discovery.ListUsers(ctx, c, discovery.UserListOptions{
-		Limit: 20,
+		Limit: 25,
 		Query: query,
 	})
 	if err != nil {

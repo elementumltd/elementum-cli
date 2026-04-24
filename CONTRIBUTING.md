@@ -45,6 +45,8 @@ Feature requests are welcome! [Open a GitHub Issue](https://github.com/elementum
    ```bash
    go build ./...
    go test ./...
+   go mod tidy
+   make lint
    ```
 6. **Open a PR** with a clear description of what the change does and why
 7. PRs require review from a code owner before merging
@@ -65,7 +67,7 @@ The bot will record your signature and update the PR status automatically.
 
 ### Prerequisites
 
-- Go 1.25.5 or later (see `go.mod` for the exact version)
+- Go 1.26 or later (see `go.mod` for the exact version)
 
 ### Clone and Build
 

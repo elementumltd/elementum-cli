@@ -31,13 +31,6 @@ import (
 // CLI-specific queries for discovering app resources
 // Note: Trigger and task type registries are now shared via internal/client package
 
-// getAppAutomationsWithWorkflowsQuery returns the query for fetching app automations
-// with complete trigger and task fragments from the shared registries.
-// NOTE: This query can timeout on large apps. Consider using the two-phase approach instead.
-func getAppAutomationsWithWorkflowsQuery() string {
-	return client.BuildAppAutomationsQuery()
-}
-
 // extractTriggerFromDiscovery converts genqlient DiscoveryTriggerFields to Trigger
 // This is a lightweight extraction that only populates fields available in the discovery fragment.
 func extractTriggerFromDiscovery(trigger client.DiscoveryTriggerFields) Trigger {
@@ -1374,7 +1367,6 @@ func getAppFields(ctx context.Context, c *client.Client, app *App) error {
 	type fieldInfo struct {
 		index            int
 		isStaticPicklist bool
-		relatedAspectID  string // for dynamic picklists
 	}
 	var staticPicklistFields []fieldInfo
 	dynamicAspectIDs := make(map[string]bool)

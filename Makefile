@@ -14,6 +14,7 @@ fmt:
 	gofmt -s -w -e .
 
 tidy:
+	${GO} vet ./...
 	${GO} mod tidy
 
 # Lint (requires golangci-lint)

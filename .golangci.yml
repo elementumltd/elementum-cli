@@ -1,8 +1,6 @@
 version: "2"
 
 linters:
-  disable:
-    - unused
   settings:
     staticcheck:
       checks:
@@ -15,7 +13,4 @@ linters:
         - "-ST1021"
         - "-ST1022"
         - "-ST1023"
-        - "-QF1001"  
-    govet:
-      disable:
-        - unusedwrite
+        - "-QF1001"  # Don't feel like the benefit outweighs the cost of the false positives in this case.
