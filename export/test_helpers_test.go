@@ -156,11 +156,7 @@ type ImportResource struct {
 func createTestImports(resources ...ImportResource) []ImportBlock {
 	imports := make([]ImportBlock, len(resources))
 	for i, r := range resources {
-		imports[i] = ImportBlock{
-			ID:           r.ID,
-			ResourceType: r.ResourceType,
-			ResourceName: r.ResourceName,
-		}
+		imports[i] = ImportBlock(r)
 	}
 	return imports
 }

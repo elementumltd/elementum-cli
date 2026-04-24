@@ -1,6 +1,8 @@
 version: "2"
 
 linters:
+  disable:
+    - unused
   settings:
     staticcheck:
       checks:
@@ -17,4 +19,3 @@ linters:
     govet:
       disable:
         - unusedwrite
-        - unusedfunc
