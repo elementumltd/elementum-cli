@@ -13,7 +13,7 @@ These are the things that Elementum dev team are planning for the Elementum CLI.
         - Windows
         - Linux
 - Enabling Claude
-    - Claude Code skill with [Skills](Skills/README.md)
+    - Claude Code skill with [Skills](/skills/README.md)
     - Claude Cowork installable skill with correct platform binaries in the VM
 - Refactor of Code:
     - Change of `ei records` to public API (CRUD)
@@ -26,3 +26,6 @@ These are the things that Elementum dev team are planning for the Elementum CLI.
     - Audit of user activity
     - Audit of changes to record
     - Audit of changes to app
+- Better documentation for automation 
+    - Showing of the If/Else Switch clauses and loops
+    - Export of diagram as Mermaid diagram
