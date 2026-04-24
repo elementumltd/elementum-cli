@@ -183,7 +183,7 @@ func triggerAutomationWebhook(ctx context.Context, c *client.Client, automationI
 	if err != nil {
 		return nil, fmt.Errorf("failed to trigger webhook: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

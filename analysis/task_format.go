@@ -389,12 +389,13 @@ func FormatVariables(variables []interface{}) []string {
 
 		typename, _ := vm["__typename"].(string)
 
-		if typename == "WorkflowVariableTaskParameterCreate" {
+		switch typename {
+		case "WorkflowVariableTaskParameterCreate":
 			name, _ := vm["name"].(string)
 			varType, _ := vm["type"].(string)
 			value := FormatValue(vm["createValue"])
 			result = append(result, fmt.Sprintf("%s (%s) = %s", name, varType, value))
-		} else if typename == "WorkflowVariableTaskParameterUpdate" {
+		case "WorkflowVariableTaskParameterUpdate":
 			varRef := FormatValue(vm["variable"])
 			value := FormatValue(vm["updateValue"])
 			result = append(result, fmt.Sprintf("%s = %s", varRef, value))

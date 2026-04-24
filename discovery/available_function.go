@@ -72,9 +72,10 @@ func convertAvailableFunctionData(af *client.AvailableFunctionData) AvailableFun
 
 	// Convert return type
 	if af.Output != nil {
-		if af.Output.OutputType == "simple" {
+		switch af.Output.OutputType {
+		case "simple":
 			result.ReturnType = af.Output.ReturnType
-		} else if af.Output.OutputType == "table" {
+		case "table":
 			result.ReturnType = "TABLE"
 		}
 	}

@@ -292,10 +292,10 @@ func generateAgentHCL(agent *agentDetail) string {
 	resourceName := export.SanitizeName(agent.Name)
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("resource \"elementum_agent\" %q {\n", resourceName))
+	fmt.Fprintf(&sb, "resource \"elementum_agent\" %q {\n", resourceName)
 	sb.WriteString("  app_id = elementum_app.<APP>.id\n")
-	sb.WriteString(fmt.Sprintf("  name = %q\n", agent.Name))
-	sb.WriteString(fmt.Sprintf("  description = %q\n", agent.Description))
+	fmt.Fprintf(&sb, "  name = %q\n", agent.Name)
+	fmt.Fprintf(&sb, "  description = %q\n", agent.Description)
 
 	if agent.Instructions != "" {
 		sb.WriteString("  instructions = <<-EOT\n")
@@ -307,11 +307,11 @@ func generateAgentHCL(agent *agentDetail) string {
 	}
 
 	if agent.FirstMessage != "" {
-		sb.WriteString(fmt.Sprintf("  first_message = %q\n", agent.FirstMessage))
+		fmt.Fprintf(&sb, "  first_message = %q\n", agent.FirstMessage)
 	}
 
 	if agent.ConnectorID != "" {
-		sb.WriteString(fmt.Sprintf("  ai_provider_connector_id = %q # %s (%s)\n", agent.ConnectorID, agent.Model, agent.Provider))
+		fmt.Fprintf(&sb, "  ai_provider_connector_id = %q # %s (%s)\n", agent.ConnectorID, agent.Model, agent.Provider)
 	}
 
 	sb.WriteString("}\n")

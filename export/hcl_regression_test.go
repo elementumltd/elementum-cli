@@ -695,10 +695,10 @@ func TestOnDemandTrigger_OmitsShowTriggeredByWhenFalse(t *testing.T) {
 	// (Nothing to assert on an unrelated block — the invariant is that
 	// `TriggerHCLGenerator` doesn't write the attribute when value is false.
 	// Code path is locked in by the source-level `&& boolVal` predicate.)
-	if false {
-		// Kept as an anchor for future grep-finding; the real test is
-		// covered end-to-end by the lumanow regression harness.
-	}
+	// if false {
+	// 	// Kept as an anchor for future grep-finding; the real test is
+	// 	// covered end-to-end by the lumanow regression harness.
+	// }
 }
 
 // =============================================================================

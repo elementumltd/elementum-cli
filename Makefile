@@ -47,8 +47,8 @@ skills-install:
 	@echo "Installing Elementum skills..."
 	@for dir in ~/.claude/skills ~/.agents/skills ~/.cursor/skills; do \
 		mkdir -p "$$dir"; \
-		rm -rf "$$dir"/elementum* "$$dir"/README.md 2>/dev/null || true; \
-		cp -r skills/elementum* "$$dir/"; \
+		rm -rf "$$dir"/elementum-cli "$$dir"/README.md 2>/dev/null || true; \
+		cp -r skills/elementum-cli "$$dir/"; \
 		cp skills/README.md "$$dir/" 2>/dev/null || true; \
 		echo "  ✓ $$dir"; \
 	done

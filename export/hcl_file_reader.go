@@ -218,7 +218,7 @@ func writeJSONValueAsHCL(sb *strings.Builder, v interface{}, indent int) {
 		sb.WriteString(strings.Repeat("  ", indent))
 		sb.WriteString("]")
 	case string:
-		sb.WriteString(fmt.Sprintf("%q", x))
+		fmt.Fprintf(sb, "%q", x)
 	case bool:
 		if x {
 			sb.WriteString("true")
@@ -228,9 +228,9 @@ func writeJSONValueAsHCL(sb *strings.Builder, v interface{}, indent int) {
 	case float64:
 		// Integers render without trailing decimals.
 		if x == float64(int64(x)) {
-			sb.WriteString(fmt.Sprintf("%d", int64(x)))
+			fmt.Fprintf(sb, "%d", int64(x))
 		} else {
-			sb.WriteString(fmt.Sprintf("%g", x))
+			fmt.Fprintf(sb, "%g", x)
 		}
 	case nil:
 		sb.WriteString("null")
@@ -302,7 +302,7 @@ func writeInlineValue(sb *strings.Builder, v interface{}) bool {
 		// Arrays force multi-line.
 		return false
 	case string:
-		sb.WriteString(fmt.Sprintf("%q", x))
+		fmt.Fprintf(sb, "%q", x)
 		return true
 	case bool:
 		if x {
@@ -313,9 +313,9 @@ func writeInlineValue(sb *strings.Builder, v interface{}) bool {
 		return true
 	case float64:
 		if x == float64(int64(x)) {
-			sb.WriteString(fmt.Sprintf("%d", int64(x)))
+			fmt.Fprintf(sb, "%d", int64(x))
 		} else {
-			sb.WriteString(fmt.Sprintf("%g", x))
+			fmt.Fprintf(sb, "%g", x)
 		}
 		return true
 	case nil:

@@ -554,7 +554,7 @@ func fetchActionIO(
 	}
 
 	// Try to parse as 1-based index first
-	var actionIdx int = -1
+	var actionIdx = -1
 	if idx, err := strconv.Atoi(target); err == nil {
 		if idx < 1 || idx > len(execAnalysis.Actions) {
 			return fmt.Errorf("action index %d out of range (1-%d)", idx, len(execAnalysis.Actions))

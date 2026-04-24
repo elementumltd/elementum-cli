@@ -427,9 +427,7 @@ func buildConfigTemplate(configs []missingConfig) []datasetConfig {
 					fc.ColumnName = *f.CloudFieldConnection.ColumnName
 				}
 
-				for _, tag := range f.SemanticTags {
-					fc.SemanticTags = append(fc.SemanticTags, tag)
-				}
+				fc.SemanticTags = append(fc.SemanticTags, f.SemanticTags...)
 
 				ds.Fields = append(ds.Fields, fc)
 			}
