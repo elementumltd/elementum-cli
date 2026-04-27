@@ -4,11 +4,20 @@ default: build
 GO ?= go
 GOBIN := $(shell $(GO) env GOPATH)/bin
 
+# Platform detection (GNU Make directive — evaluated at parse time, shell-agnostic)
+BINARY_NAME := ei
+ifeq ($(OS),Windows_NT)
+    WINDOWS := true
+    BINARY_NAME := ei.exe
+else
+    WINDOWS :=
+endif
+
 build:
-	${GO} build -o $(GOBIN)/ei -v .
+	${GO} build -o $(GOBIN)/$(BINARY_NAME) -v .
 
 clean:
-	rm -f $(GOBIN)/ei
+	rm -f $(GOBIN)/$(BINARY_NAME)
 
 fmt:
 	gofmt -s -w -e .
@@ -18,14 +27,10 @@ tidy:
 	${GO} mod tidy
 
 # Lint (requires golangci-lint)
+# Install from https://golangci-lint.run/docs/welcome/install/local/
+# curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.11.4
 lint:
-	@if [ -f $(GOBIN)/golangci-lint ]; then \
-		$(GOBIN)/golangci-lint run; \
-	else \
-		echo "Installing golangci-lint 1.26 from specific version v2.11.4"; \
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) v2.11.4; \
-		$(GOBIN)/golangci-lint run; \
-	fi
+	$(GOBIN)/golangci-lint run -v
 
 # Run only CLI tests
 test:
