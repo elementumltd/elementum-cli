@@ -219,8 +219,13 @@ These commands automatically:
 
 ### Config File Location
 
-- **macOS/Linux:** `~/.config/elementum/config.yaml`
-- **Windows:** `%APPDATA%\elementum\config.yaml`
+- **macOS/Linux:** `$HOME/.config/ei/config.yaml`(aka `~/.config/ei/config.yaml`)
+- **Windows:** `%USERPROFILE%\ei\config.yaml`
+
+The secrets mentioned in the file are stored in the system keychain using [go-keyring](https://pkg.go.dev/github.com/zalando/go-keyring)
+- **macOS:** use Keychain Access, look for items titled `elementum-cli` in `login` keychain
+- **Windows:** in Control Panel\User Accounts\Credential Manager\Windows Credentials, look for items starting with `elementum-cli`
+- **Linux:** use Seahorse or `secret-tool` from `libsecret-tools` to lookup `secret-tool search --all service elementum-cli`
 
 ### Multiple Profiles
 

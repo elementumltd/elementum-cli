@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 
 	"github.com/elementumltd/elementum-cli/logger"
 	"gopkg.in/yaml.v3"
@@ -57,23 +56,12 @@ func IsValidInstance(instance string) bool {
 
 // GetConfigPath returns the path to the config file
 func GetConfigPath() (string, error) {
-	var configDir string
-
-	switch runtime.GOOS {
-	case "windows":
-		configDir = os.Getenv("APPDATA")
-		if configDir == "" {
-			return "", fmt.Errorf("APPDATA environment variable not set")
-		}
-	default: // macOS, Linux
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return "", fmt.Errorf("failed to get home directory: %w", err)
-		}
-		configDir = filepath.Join(home, ".config")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to get home directory: %w", err)
 	}
 
-	configPath := filepath.Join(configDir, "ei", "config.yaml")
+	configPath := filepath.Join(home, ".config", "ei", "config.yaml")
 	return configPath, nil
 }
 
