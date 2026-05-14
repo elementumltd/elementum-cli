@@ -168,12 +168,14 @@ func runInterventionsList(cmd *cobra.Command, args []string) error {
 	}
 
 	// Display table
-	table := ui.NewTable([]string{"STATUS", "AUTOMATION", "FAILURE CODE", "CREATED"})
+	table := ui.NewTable([]string{"STATUS", "AUTOMATION", "AUTOMATION ID", "FAILURE CODE", "INTERVENTION ID", "CREATED"})
 	for _, intervention := range interventions {
 		table.AddRow(
 			styledInterventionStatus(intervention.Status),
 			ui.Truncate(intervention.AutomationName, 30),
+			intervention.AutomationID,
 			formatFailureCode(intervention.FailureCode),
+			intervention.ID,
 			formatTimestamp(intervention.CreatedAt),
 		)
 	}

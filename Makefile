@@ -53,14 +53,17 @@ skills-install:
 	@echo "Installing Elementum skills..."
 	@for dir in ~/.claude/skills ~/.agents/skills ~/.cursor/skills; do \
 		mkdir -p "$$dir"; \
-		rm -rf "$$dir"/elementum-cli "$$dir"/README.md 2>/dev/null || true; \
-		cp -r skills/elementum-cli "$$dir/"; \
+		rm -rf "$$dir"/elementum "$$dir"/README.md 2>/dev/null || true; \
+		cp -r skills/elementum "$$dir/"; \
 		cp skills/README.md "$$dir/" 2>/dev/null || true; \
 		echo "  ✓ $$dir"; \
 	done
 	@echo ""
 	@echo "Installed skills:"
-	@ls -1 ~/.claude/skills/ | grep elementum | sed 's/^/    /'
+	@for dir in ~/.claude/skills ~/.agents/skills ~/.cursor/skills; do \
+		echo $$dir; \
+		ls -1 "$$dir"/ | grep elementum | sed 's/^/    /'; \
+	done
 
 # Package skills as ZIP files for distribution
 skills-package:

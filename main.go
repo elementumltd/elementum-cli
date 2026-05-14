@@ -27,12 +27,9 @@ import (
 var version = "dev"
 
 var rootCmd = &cobra.Command{
-	Use:   "ei",
-	Short: "Elementum Infinity - The power to create and destroy",
-	Long: `A CLI tool for discovering and exporting Elementum resources to Terraform.
-
-Use this tool to generate import configurations for terraform plan -generate-config-out,
-making it easy to manage your Elementum apps with Infrastructure as Code.`,
+	Use:     "ei",
+	Short:   "Elementum Infinity - The power to create and destroy",
+	Long:    `A CLI tool for managing Elementum resources and configurations, deploying apps, and automating workflows.`,
 	Version: version,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		// Determine log level from flags and environment
@@ -158,7 +155,6 @@ func init() {
 	rootCmd.AddCommand(elementumcmd.GetApprovalsCmd())
 	rootCmd.AddCommand(elementumcmd.GetInterventionsCmd())
 	rootCmd.AddCommand(elementumcmd.GetFileReadersCmd())
-	rootCmd.AddCommand(elementumcmd.GetTableCmd())
 	rootCmd.AddCommand(elementumcmd.GetSearchTablesCmd())
 
 	// Deployment commands

@@ -337,6 +337,12 @@ func ExtractTablesFromGetTables(resp *GetTablesResponse) []TableData {
 			Editable:     node.Editable,
 			CloudManaged: node.CloudManaged,
 		}
+		if node.CloudLink != nil {
+			cloudLinkID := (*node.CloudLink).GetId()
+			cloudLinkName := (*node.CloudLink).GetName()
+			data.CloudLinkID = &cloudLinkID
+			data.CloudLinkName = &cloudLinkName
+		}
 		tables = append(tables, data)
 	}
 	return tables

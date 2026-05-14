@@ -208,7 +208,7 @@ query GetTable($id: ID!) {
 
 query GetTables($filter: Filter) {
   organization {
-    tables(filter: $filter, first: 100) {
+    tables(filter: $filter) {
       edges {
         node {
           id
@@ -218,6 +218,11 @@ query GetTables($filter: Filter) {
           configured
           editable
           cloudManaged
+          cloudLink {
+            __typename
+            id
+            name
+          }
         }
       }
     }

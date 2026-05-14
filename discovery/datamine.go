@@ -115,10 +115,11 @@ func ListTables(ctx context.Context, c *client.Client) ([]Table, error) {
 	var tables []Table
 	for _, t := range tablesData {
 		table := Table{
-			ID:     t.ID,
-			Name:   t.Name,
-			Handle: t.Handle,
-			Type:   t.Type,
+			ID:            t.ID,
+			Name:          t.Name,
+			Handle:        t.Handle,
+			Type:          t.Type,
+			CloudLinkName: *t.CloudLinkName,
 		}
 		tables = append(tables, table)
 	}
