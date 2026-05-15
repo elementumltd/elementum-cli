@@ -173,7 +173,7 @@ func TestSanitizeFileName(t *testing.T) {
 		{"My App", "my-app"},
 		{"app/sub", "app-sub"},
 		{"Test App (v2)", "test-app-v2"},
-		// CamelCase must be split into words. Hit by lumanow's automations
+		// CamelCase must be split into words. Hit by <app-namespace>'s automations
 		// named like "ValidateAdGroupRequest" — without splitting they
 		// collapse to "validateadgrouprequest" and diverge from the hand-
 		// authored truth filename "validate-ad-group-request".

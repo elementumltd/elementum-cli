@@ -1,5 +1,4 @@
 # File-readers
-
 Commands for listing, creating, showing, updating, and deleting Elementum file readers (document models).
 
 ## Available Commands
@@ -12,8 +11,7 @@ Commands for listing, creating, showing, updating, and deleting Elementum file r
 | show | Show file reader details |
 | update | Update a file reader |
 
-## create - TODO
-
+## create - Create new File Reader
 Create a new file reader (document model) in an Elementum app.
 
 Supported types:
@@ -29,64 +27,40 @@ Field format (for AI type): name:type:description:required
   - required: true or false
 
 ```bash
-# AI file reader with fields
-ei file-readers create support-tickets --type ai --name "Invoice Parser" \
+# Create AI file reader with fields
+ei file-readers create <namespace> --type ai --name "Invoice Parser" \
   --instructions "Extract invoice data from the document" \
   --field "vendor_name:text:Name of the vendor:true" \
   --field "amount:decimal:Total invoice amount:true" \
   --field "invoice_date:date:Date on the invoice:false"
 
-# Text/OCR file reader
-ei file-readers create support-tickets --type text --name "Document OCR"
+# Create Text/OCR file reader
+ei file-readers create <namespace> --type text --name "Document OCR"
 
-# JSON file reader with structure file
-ei file-readers create support-tickets --type json --name "API Response" \
-  --structure-file ./schema.json
+# Create JSON file reader with structure file
+ei file-readers create <namespace> --type json --name "API Response" --structure-file ./schema.json
 
-# Dry run
-ei file-readers create support-tickets --type ai --name "Test" \
-  --instructions "Test instructions" --dry-run
+# Create file reader in dry run mode without actually doing anything
+ei file-readers create <namespace> --type ai --name "Test" --instructions "Test instructions" --dry-run
 ```
 
-```bash
-# TODO Preview what would be created without creating
-ei file-readers create <app-namespace> --dry-run
-
-# TODO strings           Field definition: name:type:description:required (for type=ai, repeatable)
-ei file-readers create <app-namespace> --field
-
-# TODO AI instructions for extraction (required for type=ai)
-ei file-readers create <app-namespace> --instructions "<value>"
-
-# TODO File reader name (required)
-ei file-readers create <app-namespace> --name "<value>"
-
-# TODO JSON file with structure definition (for type=json/xml)
-ei file-readers create <app-namespace> --structure-file "<value>"
-
-# TODO File reader type: ai, text, json, xml (required)
-ei file-readers create <app-namespace> --type "<value>"
-```
-
-## delete - TODO
-
+## delete - Delete File Reader
 Delete a file reader by name or ID.
 
 WARNING: This permanently deletes the file reader.
 
 ```bash
-ei file-readers delete support-tickets "Invoice Parser"
-ei file-readers delete support-tickets "Invoice Parser" --force
-ei file-readers delete support-tickets 794e1e48-73af-4760-... --force
+# Delete file reader with user confirmation
+ei file-readers delete <namespace> "Invoice Parser"
+
+# Delete file reader without prompting
+ei file-readers delete <namespace> "Invoice Parser" --force
+
+# Delete file reader by ID
+ei file-readers delete <namespace> 9063aed1-bf8c-430d-882f-8c502355a3c7 --force
 ```
 
-```bash
-# TODO Skip confirmation prompt
-ei file-readers delete <app-namespace> <name-or-id> --force
-```
-
-## list - TODO
-
+## list - List File Readers
 List file readers (document models) in an Elementum app.
 
 File readers extract structured data from files. Supported types:
@@ -96,52 +70,40 @@ File readers extract structured data from files. Supported types:
   - xml:  XML parsing with schema
 
 ```bash
-ei file-readers list support-tickets
-ei file-readers list support-tickets --type ai
-ei file-readers list support-tickets --json
+# List all File Readers
+ei file-readers list <namespace>
+
+# List all File Readers of certain type (ai, text, json, xml)
+ei file-readers list <namespace> --type ai
+ei file-readers list <namespace> --json
 ```
 
-```bash
-# TODO Filter by type: ai, text, json, xml
-ei file-readers list <app-namespace> --type "<value>"
-```
-
-## show - TODO
-
+## show - Show Field Reader 
 Display detailed information about a file reader.
 
 ```bash
-ei file-readers show support-tickets "Invoice Parser"
-ei file-readers show support-tickets 794e1e48-73af-4760-...
+# Show File Reader
+ei file-readers show <namespace> "Invoice Parser"
+
+# Show File Reader by ID
+ei file-readers show <namespace> 794e19063aed1-bf8c-430d-882f-8c502355a3c7
 ```
 
-## update - TODO
-
+## update - Update File Reader
 Update properties of an existing file reader.
 
 ```bash
-# Update name
-ei file-readers update support-tickets "Invoice Parser" --name "New Invoice Parser"
+# Update File Reader name
+ei file-readers update <namespace> "Invoice Parser" --name "New Invoice Parser"
 
-# Update AI instructions
-ei file-readers update support-tickets "Invoice Parser" --instructions "New extraction instructions"
+# Update File Reader instructions
+ei file-readers update <namespace> "Invoice Parser" --instructions "New extraction instructions"
 
-# Update fields (replaces all fields)
-ei file-readers update support-tickets "Invoice Parser" \
+# Update AI Reader fields (replaces all fields)
+ei file-readers update <namespace> "Invoice Parser" \
   --field "vendor:text:Vendor name:true" \
   --field "total:decimal:Total amount:true"
-```
 
-```bash
-# TODO strings           Replace fields with new definitions: name:type:description:required (for AI type)
-ei file-readers update <app-namespace> <name-or-id> --field
-
-# TODO New AI instructions (for AI type only)
-ei file-readers update <app-namespace> <name-or-id> --instructions "<value>"
-
-# TODO New file reader name
-ei file-readers update <app-namespace> <name-or-id> --name "<value>"
-
-# TODO JSON file with new structure definition (for JSON/XML type)
+# Update JSON file reader with new structure definition (for JSON/XML type)
 ei file-readers update <app-namespace> <name-or-id> --structure-file "<value>"
 ```

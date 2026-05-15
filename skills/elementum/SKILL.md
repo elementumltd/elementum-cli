@@ -93,7 +93,8 @@ ei apps list --json
 | Manage Tables (create, read, export) | [tables.md](tables.md) |
 | Manage Tasks (read, delete, export) | [tasks.md](tasks.md) |
 | Update Elementum CLI | [update.md](update.md) |
-| Manage Users in Organization (list, search) | [users.md](users.md)
+| Manage Users in Organization (list, search) | [users.md](users.md) |
+| Document application configuration | [documentation.md](documentation.md) | 
 | TODO | [xdebugging.md](xdebugging.md) |
 | TODO | [xdeployment.md](xdeployment.md) |
 | TODO | [xparallel-testing.md](xparallel-testing.md) |

@@ -1,5 +1,4 @@
 # Skills
-
 Commands for listing, creating, showing, updating, and deleting agentic skills.
 
 ## Available Commands
@@ -12,91 +11,60 @@ Commands for listing, creating, showing, updating, and deleting agentic skills.
 | show | Show skill details |
 | update | Update an agentic skill |
 
-## create - TODO
-
+## create - Create Agent Skill
 Create a new agentic skill in an app.
 
 Skills define reusable capabilities for agents. They have instructions that guide
 agent behavior and can have tools attached for executing actions.
 
 ```bash
-# Create a skill on an app
-ei skills create support-tickets --name "ticket-triage" \
-  --description "Triages incoming support tickets" \
-  --instructions "When a ticket comes in, classify it by urgency..."
+# Create a skill on an app with description and instructions
+ei skills create <namespace> --name "ticket-triage" --description "Triages incoming support tickets" --instructions "When a ticket comes in, classify it by urgency..."
 
 # Create with a specific status
-ei skills create support-tickets --name "draft-skill" \
-  --description "Work in progress" \
-  --instructions "..." \
-  --status DRAFT
-```
+ei skills create <namespace> --name "draft-skill" --description "Work in progress" --instructions "..." --status DRAFT
 
-```bash
-# TODO Skill description (required)
-ei skills create <namespace> --description "<value>"
-
-# TODO Show what would be created without creating
+# Create skill in dry run mode without actually creating
 ei skills create <namespace> --dry-run
-
-# TODO Skill instructions (required)
-ei skills create <namespace> --instructions "<value>"
-
-# TODO Skill name (required)
-ei skills create <namespace> --name "<value>"
-
-# TODO Skill status: ACTIVE, DRAFT, INACTIVE (default "ACTIVE")
-ei skills create <namespace> --status "<value>"
 ```
 
-## delete - TODO
-
+## delete - Delete Agent Skill
 Delete an agentic skill by name within an app. Also deletes all tools on the skill.
 
 ```bash
-ei skills delete support-tickets "Ticket Triage"
-ei skills delete clm escalation-handler
+# Delete agent skill
+ei skills delete <namespace> "Ticket Triage"
 ```
 
-## list - TODO
-
+## list - List Agent Skills
 List agentic skills belonging to an app.
 
 ```bash
-ei skills list support-tickets
-ei skills list clm --json
+# List all skills
+ei skills list <namespace>
 ```
 
-## show - TODO
-
+## show - Show Agent Skill details 
 Display detailed information about an agentic skill within an app.
 
 ```bash
-ei skills show support-tickets "Ticket Triage"
-ei skills show clm escalation-handler --json
+# Show details about agent skill
+ei skills show <namespace> "Ticket Triage"
 ```
 
-## update - TODO
-
+## update - Update Agent Skill
 Update properties of an existing agentic skill within an app.
 
 ```bash
-ei skills update support-tickets "Ticket Triage" --name "New Triage Skill"
-ei skills update support-tickets "Ticket Triage" --description "Updated description"
+# Update skill name
+ei skills update <namespace> "Ticket Triage" --name "New Triage Skill"
+
+# Update skill description
+ei skills update <namespace> "Ticket Triage" --description "Updated description"
+
+# Update skill instructions
 ei skills update clm escalation-handler --instructions "New instructions..."
+
+# Set skill status (options ACTIVE, DRAFT, INACTIVE)
 ei skills update clm escalation-handler --status INACTIVE
-```
-
-```bash
-# TODO New skill description
-ei skills update <namespace> <skill-name> --description "<value>"
-
-# TODO New skill instructions
-ei skills update <namespace> <skill-name> --instructions "<value>"
-
-# TODO New skill name
-ei skills update <namespace> <skill-name> --name "<value>"
-
-# TODO New status: ACTIVE, DRAFT, INACTIVE
-ei skills update <namespace> <skill-name> --status "<value>"
 ```

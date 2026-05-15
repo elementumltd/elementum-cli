@@ -243,7 +243,7 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		// doesn't yet render `[ValueReference!]` arrays (only single
 		// ValueReference). If a future export of an app that uses
 		// send_email needs them, add an IsValueReferenceList flag +
-		// dedicated emitter — lumanow doesn't use send_email, so the
+		// dedicated emitter — <app-namespace> doesn't use send_email, so the
 		// array fields stay unfetched to avoid bloating RawData.
 		Fields: []TaskFieldConfig{
 			{Name: "subject", GraphQLPath: "subject", Required: true, IsValueReference: true},
@@ -309,7 +309,7 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		`,
 		// userValueReferences / groupValueReferences are `[ValueReference!]`
 		// arrays; rendering them needs an IsValueReferenceList flag that
-		// doesn't exist yet. lumanow doesn't use notification tasks, so
+		// doesn't exist yet. <app-namespace> doesn't use notification tasks, so
 		// we omit the array fields rather than half-implement.
 		Fields: []TaskFieldConfig{
 			{Name: "message", GraphQLPath: "messageReference", Required: true, IsValueReference: true},

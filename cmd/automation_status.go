@@ -62,47 +62,47 @@ Examples:
   ei automation status 9063aed1-bf8c-430d-882f-8c502355a3c7
 
   # By app namespace + automation name
-  ei automation status lumanow ValidateAndSubmit
-  ei automation status lumanow "Process Request" --status FAILURE
+  ei automation status <app-namespace> ValidateAndSubmit
+  ei automation status <app-namespace> "Process Request" --status FAILURE
 
   # Filter by status
-  ei automation status lumanow ValidateAndSubmit --status FAILURE
+  ei automation status <app-namespace> ValidateAndSubmit --status FAILURE
 
   # Show last 24 hours
-  ei automation status lumanow ValidateAndSubmit --since 24h
+  ei automation status <app-namespace> ValidateAndSubmit --since 24h
 
   # Auto-select latest execution and show details
-  ei automation status lumanow ValidateAndSubmit --latest
+  ei automation status <app-namespace> ValidateAndSubmit --latest
 
   # Auto-select latest failure and show timeline
-  ei automation status lumanow ValidateAndSubmit --latest-failure --timeline
+  ei automation status <app-namespace> ValidateAndSubmit --latest-failure --timeline
 
   # One-liner debugging: latest failure + specific action I/O
-  ei automation status lumanow ValidateAndSubmit --latest-failure --io "Send Email"
+  ei automation status <app-namespace> ValidateAndSubmit --latest-failure --io "Send Email"
 
   # Show detail for a specific execution (fast, no I/O)
-  ei automation status lumanow ValidateAndSubmit exec-456-uuid
+  ei automation status <app-namespace> ValidateAndSubmit exec-456-uuid
 
   # Fetch I/O for specific action by name
-  ei automation status lumanow ValidateAndSubmit exec-456-uuid --io "Send Email"
+  ei automation status <app-namespace> ValidateAndSubmit exec-456-uuid --io "Send Email"
 
   # Fetch I/O for specific action by index (1-based)
-  ei automation status lumanow ValidateAndSubmit exec-456-uuid --io 3
+  ei automation status <app-namespace> ValidateAndSubmit exec-456-uuid --io 3
 
   # Fetch I/O for all actions (slower)
-  ei automation status lumanow ValidateAndSubmit exec-456-uuid --all-io
+  ei automation status <app-namespace> ValidateAndSubmit exec-456-uuid --all-io
 
   # Execution detail with timeline
-  ei automation status lumanow ValidateAndSubmit exec-456-uuid --timeline
+  ei automation status <app-namespace> ValidateAndSubmit exec-456-uuid --timeline
 
   # Open HTML waterfall in browser (lazy loads I/O on click)
-  ei automation status lumanow ValidateAndSubmit exec-456-uuid --html
+  ei automation status <app-namespace> ValidateAndSubmit exec-456-uuid --html
 
   # Watch for new executions (live stream)
-  ei automation status lumanow ValidateAndSubmit --watch
+  ei automation status <app-namespace> ValidateAndSubmit --watch
 
   # JSON output
-  ei automation status lumanow ValidateAndSubmit --json`,
+  ei automation status <app-namespace> ValidateAndSubmit --json`,
 	Args: cobra.RangeArgs(1, 3),
 	RunE: runAutomationStatus,
 }

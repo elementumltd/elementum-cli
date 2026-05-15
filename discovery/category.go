@@ -92,7 +92,7 @@ func ListCategoryAspects(ctx context.Context, c *client.Client, categoryID strin
 
 	err := c.ExecuteInto(ctx, query, map[string]interface{}{
 		"categoryId": categoryID,
-		"first":      500, // lumanow has ~12 aspects; 500 is generous headroom
+		"first":      500, // <app-namespace> has ~12 aspects; 500 is generous headroom
 	}, &result)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list aspects in category %s: %w", categoryID, err)

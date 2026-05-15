@@ -14,7 +14,7 @@
 
 // Package export — regression unit tests for the HCL generation pipeline.
 //
-// These tests lock in the conventions that the lumanow export-and-diff
+// These tests lock in the conventions that the <app-namespace> export-and-diff
 // harness is measured against. Each test names the iteration(s) or
 // landmine it's protecting against so a future regression can be
 // investigated quickly from the test name alone.
@@ -116,7 +116,7 @@ func TestStripAgentSuffix(t *testing.T) {
 
 func TestRenderJSONAsHCL_InlineSmallMap(t *testing.T) {
 	t.Parallel()
-	// The lumanow pattern: one-line { bool = { name = "x" } } per property.
+	// The <app-namespace> pattern: one-line { bool = { name = "x" } } per property.
 	got := renderJSONAsHCL(`{"bool":{"name":"schema_valid"}}`, 0)
 	want := `{ bool = { name = "schema_valid" } }`
 	if got != want {
@@ -307,7 +307,7 @@ func TestJSONSchemaTypename2Tag(t *testing.T) {
 
 // Note: reshapeJSONStructureParams for json_file_reader.structure lives in
 // the `discovery` package and is covered by discovery-side tests. The
-// end-to-end rendering path is locked in via the lumanow regression
+// end-to-end rendering path is locked in via the <app-namespace> regression
 // harness.
 
 // =============================================================================
@@ -697,7 +697,7 @@ func TestOnDemandTrigger_OmitsShowTriggeredByWhenFalse(t *testing.T) {
 	// Code path is locked in by the source-level `&& boolVal` predicate.)
 	// if false {
 	// 	// Kept as an anchor for future grep-finding; the real test is
-	// 	// covered end-to-end by the lumanow regression harness.
+	// 	// covered end-to-end by the <app-namespace> regression harness.
 	// }
 }
 
@@ -724,7 +724,7 @@ func TestFormatHCLStringIR_MultilinePromotedToHeredoc(t *testing.T) {
 // These tests assert that each registry entry emits the TF attribute that
 // the provider schema expects. They're lightweight — we drive a task's
 // RawData directly and check the rendered block's attribute list —
-// because the tasks in question aren't used in lumanow truth, so the
+// because the tasks in question aren't used in <app-namespace> truth, so the
 // regression harness can't exercise them.
 
 // helper: generate HCL for a single task and return the rendered string.
