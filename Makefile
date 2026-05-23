@@ -77,6 +77,9 @@ skills-package:
 		fi \
 	done
 
+build-releases:
+	goreleaser build --snapshot --clean
+
 # Show help
 help:
 	@echo "Elementum CLI"

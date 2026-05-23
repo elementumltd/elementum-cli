@@ -4,13 +4,12 @@ query GetOrganization {
   organization {
     id
     name
-    snowflakeSigningPublicKey
   }
 }
 
 query GetCategories {
   organization {
-    categories(first: 100) {
+    categories {
       edges {
         node {
           id
