@@ -108,12 +108,13 @@ func runTasksList(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create table
-	table := ui.NewTable([]string{"NAME", "NAMESPACE", "ID"})
+	table := ui.NewTable([]string{"NAME", "NAMESPACE", "HANDLE", "ID"})
 
 	for _, task := range tasks {
 		table.AddRow(
 			task.Name,
 			task.Namespace,
+			task.Handle,
 			task.ID,
 		)
 	}

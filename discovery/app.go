@@ -235,6 +235,7 @@ func ListObjects(ctx context.Context, c *client.Client) ([]ObjectSummary, error)
 			Name:      aspect.Name,
 			Type:      objectType,
 			Namespace: aspect.Namespace,
+			Handle:    aspect.Handle,
 		})
 	}
 

@@ -488,6 +488,7 @@ type ObjectSummary struct {
 	Name      string
 	Type      string // "App" or "Element"
 	Namespace string
+	Handle    string
 }
 
 // ObjectDetails represents detailed information about an object (App, Element, or Task)

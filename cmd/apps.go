@@ -138,12 +138,13 @@ func runAppsList(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create table
-	table := ui.NewTable([]string{"NAME", "NAMESPACE", "ID"})
+	table := ui.NewTable([]string{"NAME", "NAMESPACE", "HANDLE", "ID"})
 
 	for _, app := range apps {
 		table.AddRow(
 			app.Name,
 			app.Namespace,
+			app.Handle,
 			app.ID,
 		)
 	}

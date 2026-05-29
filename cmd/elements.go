@@ -108,12 +108,13 @@ func runElementsList(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create table
-	table := ui.NewTable([]string{"NAME", "NAMESPACE", "ID"})
+	table := ui.NewTable([]string{"NAME", "NAMESPACE", "HANDLE", "ID"})
 
 	for _, elem := range elements {
 		table.AddRow(
 			elem.Name,
 			elem.Namespace,
+			elem.Handle,
 			elem.ID,
 		)
 	}
