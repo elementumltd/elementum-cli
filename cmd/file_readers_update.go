@@ -170,4 +170,3 @@ func runFileReadersUpdateCmd(cmd *cobra.Command, args []string) error {
 	fmt.Println(ui.SuccessStyle.Render("Updated file reader:") + fmt.Sprintf(" %s (%s)", displayName, updated.GetId()))
 	return nil
 }
-

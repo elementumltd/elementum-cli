@@ -18,6 +18,9 @@ query GetStageLayout($aspectId: ID!, $stageId: ID!) {
                 name
                 icon
                 color
+                agent {
+                  id
+                }
                 blocks {
                   edges {
                     node {
@@ -107,6 +110,31 @@ query GetDisplayWidget($aspectId: ID!, $widgetId: ID!) {
           color
           icon
           fullWidth
+        }
+        ... on DisplayWidgetRunAutomationAction {
+          automation {
+            id
+          }
+          buttonType
+          color
+          icon
+          fullWidth
+          parameters {
+            name
+            fieldType
+            multiple
+            required
+            value {
+              ... on AspectFieldFieldValueReference {
+                id
+                fieldId
+              }
+              ... on AspectFieldObjectValueReference {
+                id
+                value
+              }
+            }
+          }
         }
       }
     }

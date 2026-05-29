@@ -13,6 +13,9 @@ fragment PhoneRegistrationPropertiesInfo on PhoneRegistrationProperties {
 fragment PhoneServiceInfo on PhoneService {
   id
   phoneNumber
+  callerAccessConfig {
+    mode
+  }
   provider {
     id
     name

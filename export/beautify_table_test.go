@@ -279,7 +279,9 @@ func TestBuildTableUUIDMap_MultipleCloudLinks(t *testing.T) {
 	if ref := uuidMap["cloudlink-1"]; ref != "data.elementum_cloudlink.snowflake_prod.id" {
 		t.Errorf("First CloudLink not mapped correctly, got: %s", ref)
 	}
-	if ref := uuidMap["cloudlink-2"]; ref != "data.elementum_cloudlink.bigquery_dev.id" {
+	// SanitizeName now splits CamelCase at word boundaries — "BigQuery Dev"
+	// becomes "big_query_dev" rather than "bigquery_dev".
+	if ref := uuidMap["cloudlink-2"]; ref != "data.elementum_cloudlink.big_query_dev.id" {
 		t.Errorf("Second CloudLink not mapped correctly, got: %s", ref)
 	}
 }

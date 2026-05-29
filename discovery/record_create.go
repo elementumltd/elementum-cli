@@ -26,8 +26,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/elementumltd/elementum-cli/logger"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/logger"
 )
 
 // AspectFieldInfo contains field information for record creation

@@ -1,0 +1,44 @@
+# App Flow queries and mutations
+
+query GetAppFlow($aspectId: ID!, $flowId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      id
+      ... on AspectApp {
+        appFlow(id: $flowId) {
+          id
+          name
+          description
+          status
+          starts
+        }
+      }
+    }
+  }
+}
+
+mutation CreateAppFlow($input: AppFlowCreateInput!) {
+  appFlowCreate(input: $input) {
+    id
+    app { id }
+    name
+    description
+    status
+    starts
+  }
+}
+
+mutation UpdateAppFlow($id: ID!, $input: AppFlowUpdateInput!) {
+  appFlowUpdate(id: $id, input: $input) {
+    id
+    app { id }
+    name
+    description
+    status
+    starts
+  }
+}
+
+mutation DeleteAppFlow($id: ID!) {
+  appFlowDelete(id: $id) { id }
+}

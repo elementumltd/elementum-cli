@@ -337,6 +337,12 @@ func ExtractTablesFromGetTables(resp *GetTablesResponse) []TableData {
 			Editable:     node.Editable,
 			CloudManaged: node.CloudManaged,
 		}
+		if node.CloudLink != nil {
+			cloudLinkID := (*node.CloudLink).GetId()
+			cloudLinkName := (*node.CloudLink).GetName()
+			data.CloudLinkID = &cloudLinkID
+			data.CloudLinkName = &cloudLinkName
+		}
 		tables = append(tables, data)
 	}
 	return tables
@@ -702,10 +708,16 @@ func ExtractSearchTables(resp *GetAspectSearchTablesResponse) []SearchTableData 
 				if edge.Node.GetErrorMessage() != nil {
 					errorMsg = *edge.Node.GetErrorMessage()
 				}
+				var fieldID, fieldName string
+				if fieldPtr := edge.Node.GetField(); fieldPtr != nil {
+					field := *fieldPtr
+					fieldID = field.GetId()
+					fieldName = field.GetName()
+				}
 				tables = append(tables, SearchTableData{
 					ID:           edge.Node.GetId(),
-					FieldID:      edge.Node.GetField().GetId(),
-					FieldName:    edge.Node.GetField().GetName(),
+					FieldID:      fieldID,
+					FieldName:    fieldName,
 					Status:       string(edge.Node.GetStatus()),
 					ErrorMessage: errorMsg,
 				})
@@ -718,10 +730,16 @@ func ExtractSearchTables(resp *GetAspectSearchTablesResponse) []SearchTableData 
 				if edge.Node.GetErrorMessage() != nil {
 					errorMsg = *edge.Node.GetErrorMessage()
 				}
+				var fieldID, fieldName string
+				if fieldPtr := edge.Node.GetField(); fieldPtr != nil {
+					field := *fieldPtr
+					fieldID = field.GetId()
+					fieldName = field.GetName()
+				}
 				tables = append(tables, SearchTableData{
 					ID:           edge.Node.GetId(),
-					FieldID:      edge.Node.GetField().GetId(),
-					FieldName:    edge.Node.GetField().GetName(),
+					FieldID:      fieldID,
+					FieldName:    fieldName,
 					Status:       string(edge.Node.GetStatus()),
 					ErrorMessage: errorMsg,
 				})

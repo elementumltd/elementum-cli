@@ -726,6 +726,10 @@ func TestEdgeCase_EmptyStrings(t *testing.T) {
 // =============================================================================
 
 func TestSanitizeName_VariousInputs(t *testing.T) {
+	// SanitizeName now splits CamelCase at word boundaries so platform names
+	// like "ValidateAdGroupRequest" become "validate_ad_group_request"
+	// (matching the hand-authored truth HCL) rather than collapsing to
+	// "validateadgrouprequest".
 	tests := []struct {
 		input    string
 		expected string
@@ -734,14 +738,20 @@ func TestSanitizeName_VariousInputs(t *testing.T) {
 		{"Name with 123 numbers", "name_with_123_numbers"},
 		{"Name!@#$%^&*()", "name"},
 		{"UPPERCASE", "uppercase"},
-		{"CamelCase", "camelcase"},
+		{"CamelCase", "camel_case"},
 		{"with-dashes", "with_dashes"},
 		{"with.dots", "with_dots"},
-		{"123StartWithNumber", "_123startwithnumber"},
-		{"___multiple___underscores___", "___multiple___underscores___"}, // Underscores preserved
-		{"", "resource"},                                                 // Empty returns "resource"
-		{"   spaces   ", "___spaces___"},                                 // Spaces become underscores
-		{"日本語", "resource"},                                              // Unicode becomes empty, falls back to "resource"
+		{"123StartWithNumber", "_123start_with_number"},
+		{"___multiple___underscores___", "multiple_underscores"}, // trimmed + collapsed
+		{"", "resource"},                                         // Empty returns "resource"
+		{"   spaces   ", "spaces"},                               // trimmed + collapsed
+		{"日本語", "resource"},                                      // Unicode becomes empty, falls back to "resource"
+		// Acronyms stay together; word-to-acronym ≥3 splits.
+		{"WaaSRequest", "waas_request"},
+		{"DLUpdate", "dl_update"},
+		{"ValidateDLUpdateRequest", "validate_dl_update_request"},
+		{"APIKey", "api_key"},
+		{"A2ATranscript", "a2a_transcript"},
 	}
 
 	for _, tt := range tests {
@@ -831,4 +841,37 @@ func TestEdgeCase_NoMatchingImports(t *testing.T) {
 		// No matching imports should result in empty or minimal output
 		_ = hcl
 	})
+}
+
+// ============================================================================
+// ISS-76: PostProcessHCL safety — code field content must not be corrupted
+// ============================================================================
+
+func TestPostProcessHCL_DoesNotCorruptCodeHeredoc(t *testing.T) {
+	// Simulate serialized HCL with a script task whose code heredoc contains
+	// patterns that could match beautify regexes (value = "...", UUIDs, etc.)
+	hcl := `resource "elementum_execute_script_task" "analyze" {
+  parent = elementum_record_created_trigger.my_trigger.id
+  name   = "Analyze Data"
+  code   = <<-EOT
+/**
+ * Process the record value = "test-value"
+ * UUID: 12345678-1234-1234-1234-123456789abc
+ **/
+const value = "trigger.record.12345678-1234-1234-1234-123456789abc.name";
+const ref = "task.12345678-1234-1234-1234-123456789abc.result";
+return { value, ref };
+EOT
+  inputs = []
+}
+`
+	// PostProcessHCL should NOT modify the content inside the code heredoc
+	result := PostProcessHCL(hcl, []ImportBlock{}, nil)
+
+	// The heredoc content must remain unchanged
+	assert.Contains(t, result, `value = "test-value"`)
+	assert.Contains(t, result, "12345678-1234-1234-1234-123456789abc")
+	assert.Contains(t, result, "/**")
+	assert.Contains(t, result, "**/")
+	assert.Contains(t, result, `const value = "trigger.record.12345678-1234-1234-1234-123456789abc.name";`)
 }

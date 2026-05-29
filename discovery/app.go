@@ -19,12 +19,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"sort"
 	"strings"
 	"sync"
 
-	"github.com/elementumltd/elementum-cli/logger"
 	"github.com/elementumltd/elementum-cli/internal/client"
 	"github.com/elementumltd/elementum-cli/internal/fieldtypes"
+	"github.com/elementumltd/elementum-cli/logger"
 )
 
 // CLI-specific queries for discovering app resources
@@ -80,30 +81,48 @@ func extractTaskFromDiscovery(task client.DiscoveryTaskFields, workflowID string
 		result.ParentID = (*prev).GetId()
 	}
 
-	// Extract aspect references based on task type
-	switch t := task.(type) {
-	case *client.DiscoveryTaskFieldsWorkflowCreateRecordTask:
-		if t.Aspect != nil {
-			result.ObjectID = (*t.Aspect).GetId()
+	// Extract aspect references based on task type.
+	//
+	// genqlient generates a distinct concrete type per query site even when
+	// those types share a fragment, so a `switch t := task.(type)` on the
+	// concrete `*client.DiscoveryTaskFields...` names never matches tasks
+	// that actually came from a full query (e.g. those prefixed
+	// `GetWorkflowDetailsForDiscoveryOrganizationAspectWorkflow...`).
+	// Instead we dispatch via the shared getter interfaces declared on the
+	// fragment, so every query site flows through the same code.
+	switch typename {
+	case "WorkflowCreateRecordTask",
+		"WorkflowUpdateFieldTask",
+		"WorkflowRecordSearchTask",
+		"WorkflowAspectRecordFieldLockingTask",
+		"WorkflowBulkExcelTask":
+		if t, ok := task.(interface {
+			GetAspect() *client.DiscoveryTaskFieldsAspect
+		}); ok {
+			if a := t.GetAspect(); a != nil {
+				result.ObjectID = (*a).GetId()
+			}
 		}
-	case *client.DiscoveryTaskFieldsWorkflowUpdateFieldTask:
-		if t.Aspect != nil {
-			result.ObjectID = (*t.Aspect).GetId()
+	case "WorkflowFindRelatedRecordsTask":
+		if t, ok := task.(interface {
+			GetRelatedAspect() client.DiscoveryTaskFieldsRelatedAspect
+		}); ok {
+			if a := t.GetRelatedAspect(); a != nil {
+				result.RelatedObjectID = a.GetId()
+			}
 		}
-	case *client.DiscoveryTaskFieldsWorkflowRecordSearchTask:
-		if t.Aspect != nil {
-			result.ObjectID = (*t.Aspect).GetId()
-		}
-	case *client.DiscoveryTaskFieldsWorkflowFindRelatedRecordsTask:
-		// RelatedAspect is an interface (not pointer to interface)
-		result.RelatedObjectID = t.RelatedAspect.GetId()
-	case *client.DiscoveryTaskFieldsWorkflowAspectRecordFieldLockingTask:
-		if t.Aspect != nil {
-			result.ObjectID = (*t.Aspect).GetId()
-		}
-	case *client.DiscoveryTaskFieldsWorkflowBulkExcelTask:
-		if t.Aspect != nil {
-			result.ObjectID = (*t.Aspect).GetId()
+	case "WorkflowAiSearchTableTask":
+		// An AI search table task targets a SearchTable that lives on a parent
+		// aspect (typically an Element). For recursive discovery we need the
+		// parent aspect ID so the element gets enqueued and exported.
+		if t, ok := task.(interface {
+			GetSearchTable() *client.DiscoveryTaskFieldsSearchTableAspectSearchTable
+		}); ok {
+			if st := t.GetSearchTable(); st != nil {
+				if aspect := (*st).GetAspect(); aspect != nil {
+					result.ObjectID = aspect.GetId()
+				}
+			}
 		}
 	}
 
@@ -216,6 +235,7 @@ func ListObjects(ctx context.Context, c *client.Client) ([]ObjectSummary, error)
 			Name:      aspect.Name,
 			Type:      objectType,
 			Namespace: aspect.Namespace,
+			Handle:    aspect.Handle,
 		})
 	}
 
@@ -957,16 +977,20 @@ func getAppAutomationsListOnly(ctx context.Context, c *client.Client, app *App) 
 	// Populate app.Automations with basic info
 	app.Automations = make([]Automation, 0, len(automations))
 	for _, info := range automations {
-		automation := Automation{
-			ID:     info.ID,
-			Name:   info.Name,
-			Status: info.Status,
+		// Only export automations that have a published (current) workflow
+		// This ensures we query consistently through automation.current
+		if info.CurrentWorkflowID == "" {
+			logger.Debug("skipping unpublished automation", "name", info.Name, "id", info.ID)
+			continue
 		}
-		if info.CurrentWorkflowID != "" {
-			automation.HasPublished = true
-			automation.WorkflowID = info.CurrentWorkflowID
-		} else if info.DraftWorkflowID != "" {
-			automation.WorkflowID = info.DraftWorkflowID
+
+		automation := Automation{
+			ID:           info.ID,
+			Name:         info.Name,
+			Status:       info.Status,
+			HasPublished: true,
+			Terminal:     true, // Default: terminal (does NOT trigger other automations)
+			WorkflowID:   info.CurrentWorkflowID,
 		}
 		if info.DraftWorkflowID != "" {
 			automation.HasDraft = true
@@ -1008,6 +1032,9 @@ func fetchAutomationDetailsParallel(ctx context.Context, c *client.Client, app *
 			if workflowResp.Organization.Aspect != nil {
 				workflow := (*workflowResp.Organization.Aspect).GetWorkflow()
 				if workflow != nil {
+					// Extract terminal flag (non-terminal = triggers other automations)
+					automation.Terminal = workflow.GetTerminal()
+
 					automation.Triggers = make([]Trigger, 0, len(workflow.Triggers))
 					for _, trigger := range workflow.Triggers {
 						automation.Triggers = append(automation.Triggers, extractTriggerFromDiscovery(trigger))
@@ -1127,6 +1154,14 @@ func fetchAutomationDetailsParallel(ctx context.Context, c *client.Client, app *
 							if task.Type == "variable" && isUpdateVariableTask(taskData) {
 								task.Type = "update_variable"
 							}
+							// Extract operator children (switch cases, fork/join branches)
+							if childrenArr, ok := taskData["children"].([]interface{}); ok {
+								for _, childInterface := range childrenArr {
+									if childData, ok := childInterface.(map[string]interface{}); ok {
+										task.Children = append(task.Children, childData)
+									}
+								}
+							}
 						}
 					}
 				}
@@ -1230,7 +1265,7 @@ func fetchAutomationDetailsParallel(ctx context.Context, c *client.Client, app *
 				parentTaskID = &ref.leafTask.ID
 			}
 
-			allRefs, err := queryAvailableReferences(ctx, c, app.ID, automation.WorkflowID, parentTaskID)
+			allRefs, err := queryAvailableReferences(ctx, c, app.ID, automation.ID, parentTaskID)
 			if err != nil {
 				// Non-fatal - continue with other refs
 				return nil
@@ -1523,38 +1558,127 @@ func getAppLayouts(ctx context.Context, c *client.Client, app *App) error {
 				IsInitiate: stage.Name == "Initiate", // Mark Initiate layout - it needs empty stage_id
 			}
 
-			// Add display blocks for informational purposes (used by show command)
-			layout.DisplayBlocks = make([]DisplayBlock, 0, len(stage.DisplayBlocks.Edges))
-			for _, blockEdge := range stage.DisplayBlocks.Edges {
-				if blockEdge == nil {
-					continue
-				}
-				// Get block name if it's a group display block
-				blockName := ""
-				if groupBlock, ok := blockEdge.Node.(*client.GetAspectStagesWithDisplayBlocksOrganizationAspectAspectAppStagesAspectStageDisplayBlocksAspectDisplayBlockConnectionEdgesAspectDisplayBlockEdgeNodeAspectGroupDisplayBlock); ok {
-					blockName = groupBlock.Name
-				}
-
-				typename := ""
-				if blockEdge.Node.GetTypename() != nil {
-					typename = *blockEdge.Node.GetTypename()
-				}
-
-				block := DisplayBlock{
-					ID:       blockEdge.Node.GetId(),
-					Type:     mapDisplayBlockType(typename),
-					Name:     blockName,
-					StageID:  stage.Id,
-					AspectID: app.ID,
-				}
-				layout.DisplayBlocks = append(layout.DisplayBlocks, block)
+			// Fetch full layout details via GetStageLayout for complete display block data
+			// (field IDs, icon, color, displayOrder, sideNavItem, displayLocation)
+			stageResult, stageErr := client.GetStageLayout(ctx, c.Genqlient(), app.ID, stage.Id)
+			if stageErr != nil {
+				logger.Warn("failed to fetch detailed layout for stage, falling back to minimal data",
+					"stageId", stage.Id, "error", stageErr.Error())
+				// Fall back to minimal display block data from the initial query
+				layout.DisplayBlocks = buildMinimalDisplayBlocks(stage.DisplayBlocks.Edges, stage.Id, app.ID)
+				app.Layouts = append(app.Layouts, layout)
+				continue
 			}
+
+			stageAspect := stageResult.Organization.Aspect
+			if stageAspect == nil {
+				layout.DisplayBlocks = buildMinimalDisplayBlocks(stage.DisplayBlocks.Edges, stage.Id, app.ID)
+				app.Layouts = append(app.Layouts, layout)
+				continue
+			}
+
+			stageDetail := (*stageAspect).GetStage()
+			layout.DisplayBlocks = buildDetailedDisplayBlocks(stageDetail.DisplayBlocks.Edges, stage.Id, app.ID)
 
 			app.Layouts = append(app.Layouts, layout)
 		}
 	}
 
 	return nil
+}
+
+// buildMinimalDisplayBlocks creates DisplayBlock entries from the initial discovery query edges
+// (fallback when the detailed GetStageLayout query fails).
+func buildMinimalDisplayBlocks(edges []*client.GetAspectStagesWithDisplayBlocksOrganizationAspectAspectAppStagesAspectStageDisplayBlocksAspectDisplayBlockConnectionEdgesAspectDisplayBlockEdge, stageID, aspectID string) []DisplayBlock {
+	blocks := make([]DisplayBlock, 0, len(edges))
+	for _, blockEdge := range edges {
+		if blockEdge == nil {
+			continue
+		}
+		blockName := ""
+		if groupBlock, ok := blockEdge.Node.(*client.GetAspectStagesWithDisplayBlocksOrganizationAspectAspectAppStagesAspectStageDisplayBlocksAspectDisplayBlockConnectionEdgesAspectDisplayBlockEdgeNodeAspectGroupDisplayBlock); ok {
+			blockName = groupBlock.Name
+		}
+		typename := ""
+		if blockEdge.Node.GetTypename() != nil {
+			typename = *blockEdge.Node.GetTypename()
+		}
+		blocks = append(blocks, DisplayBlock{
+			ID:       blockEdge.Node.GetId(),
+			Type:     mapDisplayBlockType(typename),
+			Name:     blockName,
+			StageID:  stageID,
+			AspectID: aspectID,
+		})
+	}
+	return blocks
+}
+
+// buildDetailedDisplayBlocks creates DisplayBlock entries from the GetStageLayout response,
+// including full details like field IDs, icon, color, displayOrder, etc.
+func buildDetailedDisplayBlocks(edges []*client.GetStageLayoutOrganizationAspectStageDisplayBlocksAspectDisplayBlockConnectionEdgesAspectDisplayBlockEdge, stageID, aspectID string) []DisplayBlock {
+	blocks := make([]DisplayBlock, 0, len(edges))
+	for _, edge := range edges {
+		if edge == nil {
+			continue
+		}
+		node := edge.Node
+		if node == nil {
+			continue
+		}
+
+		typename := ""
+		if node.GetTypename() != nil {
+			typename = *node.GetTypename()
+		}
+
+		block := DisplayBlock{
+			ID:              node.GetId(),
+			Type:            mapDisplayBlockType(typename),
+			StageID:         stageID,
+			AspectID:        aspectID,
+			DisplayOrder:    node.GetDisplayOrder(),
+			SideNavItem:     node.GetSideNavItem() == nil || *node.GetSideNavItem(),
+			DisplayLocation: displayLocationString(node.GetDisplayLocation()),
+		}
+
+		// Extract group-specific fields
+		if groupBlock, ok := node.(*client.GetStageLayoutOrganizationAspectStageDisplayBlocksAspectDisplayBlockConnectionEdgesAspectDisplayBlockEdgeNodeAspectGroupDisplayBlock); ok {
+			block.Name = groupBlock.Name
+			block.Icon = groupBlock.Icon
+			block.Color = groupBlock.Color
+
+			// Extract field/widget IDs from child blocks
+			for _, childEdge := range groupBlock.Blocks.Edges {
+				if childEdge == nil {
+					continue
+				}
+				switch cb := childEdge.Node.(type) {
+				case *client.GetStageLayoutOrganizationAspectStageDisplayBlocksAspectDisplayBlockConnectionEdgesAspectDisplayBlockEdgeNodeAspectGroupDisplayBlockBlocksAspectDisplayBlockConnectionEdgesAspectDisplayBlockEdgeNodeAspectFieldDisplayBlock:
+					fieldID := cb.Field.GetId()
+					if fieldID != "" {
+						block.FieldIDs = append(block.FieldIDs, fieldID)
+					}
+				case *client.GetStageLayoutOrganizationAspectStageDisplayBlocksAspectDisplayBlockConnectionEdgesAspectDisplayBlockEdgeNodeAspectGroupDisplayBlockBlocksAspectDisplayBlockConnectionEdgesAspectDisplayBlockEdgeNodeAspectWidgetDisplayBlock:
+					widgetID := cb.Widget.GetId()
+					if widgetID != "" {
+						block.FieldIDs = append(block.FieldIDs, widgetID)
+					}
+				}
+			}
+		}
+
+		blocks = append(blocks, block)
+	}
+	return blocks
+}
+
+// displayLocationString converts an AspectDisplayBlockLocation pointer to a string.
+func displayLocationString(loc *client.AspectDisplayBlockLocation) string {
+	if loc == nil {
+		return "CENTER"
+	}
+	return string(*loc)
 }
 
 // automationInfo is a simplified struct for automation metadata from the list query
@@ -1642,9 +1766,10 @@ func getAppAutomations(ctx context.Context, c *client.Client, app *App, ec ...*E
 
 	for _, info := range automations {
 		automation := Automation{
-			ID:     info.ID,
-			Name:   info.Name,
-			Status: info.Status,
+			ID:       info.ID,
+			Name:     info.Name,
+			Status:   info.Status,
+			Terminal: true, // Default: terminal (does NOT trigger other automations)
 		}
 
 		// Determine which workflow to fetch (prefer current/published, fall back to draft)
@@ -1684,6 +1809,9 @@ func getAppAutomations(ctx context.Context, c *client.Client, app *App, ec ...*E
 			if workflowResp.Organization.Aspect != nil {
 				workflow := (*workflowResp.Organization.Aspect).GetWorkflow()
 				if workflow != nil {
+					// Extract terminal flag (non-terminal = triggers other automations)
+					automation.Terminal = workflow.GetTerminal()
+
 					// Extract triggers
 					automation.Triggers = make([]Trigger, 0, len(workflow.Triggers))
 					for _, trigger := range workflow.Triggers {
@@ -1830,6 +1958,14 @@ func fetchFullTaskDetails(ctx context.Context, c *client.Client, app *App) error
 						if task.Type == "variable" && isUpdateVariableTask(taskData) {
 							task.Type = "update_variable"
 						}
+						// Extract operator children (switch cases, fork/join branches)
+						if childrenArr, ok := taskData["children"].([]interface{}); ok {
+							for _, childInterface := range childrenArr {
+								if childData, ok := childInterface.(map[string]interface{}); ok {
+									task.Children = append(task.Children, childData)
+								}
+							}
+						}
 					}
 				}
 			}
@@ -1856,6 +1992,7 @@ func buildTriggersQueryFragment() string {
 			changedFields { id name }
 		}
 		... on WorkflowOnDemandTrigger {
+			showTriggeredBy
 			parameters {
 				id
 				name
@@ -1890,6 +2027,119 @@ func extractWorkflowData(result map[string]interface{}) map[string]interface{} {
 		return nil
 	}
 	return workflow
+}
+
+// extractTrigger extracts a Trigger from the raw GraphQL response, including all type-specific fields
+func extractTrigger(triggerData map[string]interface{}) Trigger {
+	triggerType := mapTriggerType(getString(triggerData, "__typename"))
+
+	t := Trigger{
+		ID:      getString(triggerData, "id"),
+		Type:    triggerType,
+		Name:    triggerType, // Use type as name since triggers don't have explicit names
+		RawData: triggerData, // Store the full raw data for type-specific extraction
+	}
+
+	// Extract datamine ID for datamine triggers
+	if datamine, ok := triggerData["datamine"].(map[string]interface{}); ok && datamine != nil {
+		t.DatamineID = getString(datamine, "id")
+	}
+
+	return t
+}
+
+// extractTask extracts a Task from the raw GraphQL response, including all type-specific fields
+func extractTask(taskData map[string]interface{}, workflowID string) Task {
+	// Extract parent_id from previous task
+	parentID := ""
+	if previous, ok := taskData["previous"].(map[string]interface{}); ok && previous != nil {
+		parentID = getString(previous, "id")
+	}
+
+	// Extract object_id from aspect
+	objectID := ""
+	if aspect, ok := taskData["aspect"].(map[string]interface{}); ok && aspect != nil {
+		objectID = getString(aspect, "id")
+	}
+
+	// Extract related_object_id from relatedAspect (for find_related_records task)
+	relatedObjectID := ""
+	if relatedAspect, ok := taskData["relatedAspect"].(map[string]interface{}); ok && relatedAspect != nil {
+		relatedObjectID = getString(relatedAspect, "id")
+	}
+
+	// Extract document_model_id from documentModel (for ai_file_read and bulk_excel tasks)
+	documentModelID := ""
+	if documentModel, ok := taskData["documentModel"].(map[string]interface{}); ok && documentModel != nil {
+		documentModelID = getString(documentModel, "id")
+	}
+
+	// Extract dynamic_category_source aspect ID from categorySource (for ai_classify task)
+	dynamicCategoryAspectID := ""
+	if categorySource, ok := taskData["categorySource"].(map[string]interface{}); ok && categorySource != nil {
+		if typename := getString(categorySource, "__typename"); typename == "AiClassifyCategoryDynamicSource" {
+			if aspect, ok := categorySource["aspect"].(map[string]interface{}); ok && aspect != nil {
+				dynamicCategoryAspectID = getString(aspect, "id")
+			}
+		}
+	}
+
+	// Extract AI provider connector info for AI tasks (ai_file_read, ai_classify, ai_summarize, etc.)
+	var aiProviderConnectorID, aiProviderConnectorModelName, aiProviderConnectorProvider string
+	if aiConnector, ok := taskData["aiProviderConnector"].(map[string]interface{}); ok && aiConnector != nil {
+		aiProviderConnectorID = getString(aiConnector, "id")
+		if model, ok := aiConnector["model"].(map[string]interface{}); ok && model != nil {
+			aiProviderConnectorModelName = getString(model, "name")
+		}
+		if provider, ok := aiConnector["provider"].(map[string]interface{}); ok && provider != nil {
+			aiProviderConnectorProvider = getString(provider, "name")
+		}
+	}
+
+	// Extract stored function info for procedure tasks
+	var storedFunctionID, storedFunctionName, cloudLinkID string
+	if storedFunction, ok := taskData["storedFunction"].(map[string]interface{}); ok && storedFunction != nil {
+		storedFunctionID = getString(storedFunction, "id")
+		storedFunctionName = getString(storedFunction, "displayName")
+		if storedFunctionName == "" {
+			storedFunctionName = getString(storedFunction, "name")
+		}
+	}
+	// Extract cloudLinkId for procedure tasks
+	cloudLinkID = getString(taskData, "cloudLinkId")
+
+	// Extract field IDs from workflowFields
+	var fieldIDs []string
+	if wfFields, ok := taskData["workflowFields"].([]interface{}); ok {
+		fieldIDs = make([]string, 0, len(wfFields))
+		for _, wfInterface := range wfFields {
+			if wf, ok := wfInterface.(map[string]interface{}); ok {
+				if field, ok := wf["field"].(map[string]interface{}); ok {
+					fieldIDs = append(fieldIDs, getString(field, "id"))
+				}
+			}
+		}
+	}
+
+	return Task{
+		ID:                           getString(taskData, "id"),
+		Type:                         determineTaskType(taskData),
+		Name:                         getString(taskData, "name"),
+		WorkflowID:                   workflowID,
+		ParentID:                     parentID,
+		ObjectID:                     objectID,
+		RelatedObjectID:              relatedObjectID,
+		DocumentModelID:              documentModelID,
+		DynamicCategoryAspectID:      dynamicCategoryAspectID,
+		FieldIDs:                     fieldIDs,
+		RawData:                      taskData, // Store the full raw data for type-specific extraction
+		AiProviderConnectorID:        aiProviderConnectorID,
+		AiProviderConnectorModelName: aiProviderConnectorModelName,
+		AiProviderConnectorProvider:  aiProviderConnectorProvider,
+		StoredFunctionID:             storedFunctionID,
+		StoredFunctionName:           storedFunctionName,
+		CloudLinkID:                  cloudLinkID,
+	}
 }
 
 // getString safely extracts a string from a map
@@ -1996,7 +2246,7 @@ func fetchAutomationRefs(ctx context.Context, c *client.Client, appID string, au
 
 	if len(leafTasks) == 0 {
 		// No tasks - query at workflow start for trigger refs only
-		allRefs, err := queryAvailableReferences(ctx, c, appID, automation.WorkflowID, nil)
+		allRefs, err := queryAvailableReferences(ctx, c, appID, automation.ID, nil)
 		if err != nil {
 			return
 		}
@@ -2004,10 +2254,17 @@ func fetchAutomationRefs(ctx context.Context, c *client.Client, appID string, au
 		return
 	}
 
-	// Query refs from EACH leaf task and merge results
+	// First query refs from workflow START (null parent) to get trigger refs available BEFORE any task
+	// This is important because the leaf task query returns refs available AFTER the task (its outputs)
+	startRefs, err := queryAvailableReferences(ctx, c, appID, automation.ID, nil)
+	if err == nil {
+		processAvailableRefs(startRefs, automation, taskByID)
+	}
+
+	// Then query refs from EACH leaf task and merge results
 	// This captures refs from all branches (switch cases, for-each loops, etc.)
 	for _, leafTask := range leafTasks {
-		allRefs, err := queryAvailableReferences(ctx, c, appID, automation.WorkflowID, &leafTask.ID)
+		allRefs, err := queryAvailableReferences(ctx, c, appID, automation.ID, &leafTask.ID)
 		if err != nil {
 			// Non-fatal - continue with other branches
 			continue
@@ -2022,6 +2279,14 @@ func processAvailableRefs(allRefs []AvailableRef, automation *Automation, taskBy
 		for _, prop := range ref.Properties {
 			if prop.Deprecated {
 				continue
+			}
+
+			// ALWAYS store by reference ID in the first trigger's FieldRefs
+			// This ensures we can look up ANY ref by ID, even if it doesn't have
+			// a specific reference type (triggerReference, taskReference, etc.)
+			if prop.Reference.ID != "" && len(automation.Triggers) > 0 {
+				trigger := &automation.Triggers[0]
+				trigger.FieldRefs["id:"+prop.Reference.ID] = prop.Name
 			}
 
 			// Handle trigger references - store in first trigger's FieldRefs
@@ -2151,17 +2416,17 @@ type AvailableRef struct {
 	Properties []AvailableRefProperty
 }
 
-// queryAvailableReferences queries the workflow for available references at a given point
-// Uses the lightweight query that skips the expensive 'entity' field to avoid timeouts.
-func queryAvailableReferences(ctx context.Context, c *client.Client, appID, workflowID string, parentTaskID *string) ([]AvailableRef, error) {
-	// Use lightweight genqlient query that skips expensive entity fragments
+// queryAvailableReferences queries the published workflow for available references at a given point.
+// Uses the lightweight query through automation.current to ensure consistent querying.
+func queryAvailableReferences(ctx context.Context, c *client.Client, appID, automationID string, parentTaskID *string) ([]AvailableRef, error) {
+	// Use lightweight genqlient query through automation.current
 	isOperatorChild := false
-	resp, err := client.GetWorkflowAvailableReferencesLightweight(
+	resp, err := client.GetCurrentWorkflowAvailableReferencesLightweight(
 		ctx,
 		c.Genqlient(),
-		workflowID,
-		parentTaskID,
 		appID,
+		automationID,
+		parentTaskID,
 		&isOperatorChild,
 	)
 	if err != nil {
@@ -2172,15 +2437,32 @@ func queryAvailableReferences(ctx context.Context, c *client.Client, appID, work
 		return nil, fmt.Errorf("aspect not found")
 	}
 
-	// Get workflow from aspect (works for any aspect type via interface)
-	workflow := (*resp.Organization.Aspect).GetWorkflow()
-	if workflow == nil {
-		return nil, fmt.Errorf("workflow not found")
+	// Get automation from aspect
+	automation := (*resp.Organization.Aspect).GetAutomation()
+	if automation == nil {
+		return nil, fmt.Errorf("automation not found")
+	}
+
+	// Get current (published) workflow
+	current := automation.GetCurrent()
+	if current == nil {
+		return nil, fmt.Errorf("published workflow not found")
 	}
 
 	// Convert genqlient response to our struct format
-	availableRefs := workflow.GetAvailableReferences()
+	availableRefs := current.GetAvailableReferences()
 	refs := make([]AvailableRef, 0, len(availableRefs))
+
+	// Debug: log raw API response
+	logger.Debug("availableReferences API response", "groupCount", len(availableRefs), "automationID", automationID)
+	for _, ar := range availableRefs {
+		logger.Debug("  ref group", "name", ar.GetName(), "propCount", len(ar.GetProperties()))
+		for _, p := range ar.GetProperties() {
+			reference := p.GetReference()
+			logger.Debug("    property", "name", p.GetName(), "refID", reference.GetId())
+		}
+	}
+
 	for _, ar := range availableRefs {
 		ref := AvailableRef{
 			Name:       ar.GetName(),
@@ -2286,6 +2568,13 @@ func getAppAgents(ctx context.Context, c *client.Client, app *App) error {
 	app.Agents = make([]Agent, 0, len(aspectApp.AgentsV2.Edges))
 	for _, edge := range aspectApp.AgentsV2.Edges {
 		agent := extractAgentFromNode(edge.Node)
+		// A2A skills live on the AgentCard (AgentElementum-only) and need
+		// their own query — the AgentsV2 fragment doesn't include them.
+		if a2a, err := GetA2ASkillsForAgent(ctx, c, agent.ID); err != nil {
+			logger.Warn("failed to fetch a2a skills", "agent", agent.Name, "error", err)
+		} else {
+			agent.A2ASkills = a2a
+		}
 		app.Agents = append(app.Agents, agent)
 	}
 
@@ -2293,6 +2582,15 @@ func getAppAgents(ctx context.Context, c *client.Client, app *App) error {
 
 	// Collect unique AI provider connectors from agents
 	collectAgentAiProviderConnectors(app)
+
+	// Discover agentic skills + their tools. Skills are an independent
+	// resource tree referenced from agents via skill_ids — they aren't
+	// returned by the AgentsV2 fragment and need their own fetch.
+	if skills, err := GetSkillsForApp(ctx, c, app.ID); err != nil {
+		logger.Warn("failed to fetch agentic skills", "app", app.Name, "error", err)
+	} else {
+		app.Skills = skills
+	}
 
 	return nil
 }
@@ -2956,30 +3254,32 @@ func extractSearchTableToolConfigFromGetter(t searchTableToolGetter) map[string]
 
 func extractExecuteWorkflowToolConfigFromGetter(t executeWorkflowToolGetter) map[string]interface{} {
 	config := make(map[string]interface{})
-	// Inputs
+	// Inputs: parameter_name (required) is the binding; display_name (optional) is agent-facing when different
 	inputsData := t.GetInputs()
 	inputs := make([]map[string]interface{}, 0, len(inputsData))
 	for _, inp := range inputsData {
+		paramName := inp.TriggerParameter.Name
 		input := map[string]interface{}{
-			"name":        inp.Name,
-			"description": inp.Description,
-			"required":    inp.Required,
+			"parameter_name": paramName,
+			"description":    inp.Description,
+			"required":       inp.Required,
 		}
-		// TriggerParameter is an embedded struct, check if its Id is set
-		if inp.TriggerParameter.Id != nil {
-			input["trigger_parameter_id"] = *inp.TriggerParameter.Id
-			input["trigger_parameter_name"] = inp.TriggerParameter.Name
+		if inp.Name != "" && inp.Name != paramName {
+			input["display_name"] = inp.Name
 		}
 		inputs = append(inputs, input)
 	}
 	config["inputs"] = inputs
-	// Outputs
+	// Outputs: workflow_property_name (required) is the binding; display_name (optional) is agent-facing when different
 	outputsData := t.GetOutputs()
 	outputs := make([]map[string]interface{}, 0, len(outputsData))
 	for _, out := range outputsData {
+		propName := out.WorkflowPropertyName
 		output := map[string]interface{}{
-			"name":        out.Name,
-			"output_name": out.WorkflowPropertyName,
+			"workflow_property_name": propName,
+		}
+		if out.Name != "" && out.Name != propName {
+			output["display_name"] = out.Name
 		}
 		outputs = append(outputs, output)
 	}
@@ -3091,6 +3391,18 @@ func getAppWidgets(ctx context.Context, c *client.Client, app *App) error {
 		case *client.GetAspectDisplayWidgetsOrganizationAspectAspectAppDisplayWidgetsDisplayWidgetConnectionEdgesDisplayWidgetEdgeNodeDisplayWidgetRelatedCreateAction:
 			if w.Aspect != nil {
 				widget.AspectID = (*w.Aspect).GetId()
+			}
+			widget.ButtonType = string(w.ButtonType)
+			if w.Color != nil {
+				widget.Color = *w.Color
+			}
+			if w.Icon != nil {
+				widget.Icon = *w.Icon
+			}
+			widget.FullWidth = w.FullWidth
+		case *client.GetAspectDisplayWidgetsOrganizationAspectAspectAppDisplayWidgetsDisplayWidgetConnectionEdgesDisplayWidgetEdgeNodeDisplayWidgetRunAutomationAction:
+			if w.Automation != nil {
+				widget.AutomationID = w.Automation.GetId()
 			}
 			widget.ButtonType = string(w.ButtonType)
 			if w.Color != nil {
@@ -3279,7 +3591,58 @@ func getAppAIFileReaders(ctx context.Context, c *client.Client, app *App) error 
 		app.AIFileReaders = append(app.AIFileReaders, *reader)
 	}
 
+	app.AIFileReaders, app.FileReaderIDAlias = dedupeFileReadersByName(app.AIFileReaders)
+
 	return nil
+}
+
+// dedupeFileReadersByName collapses file readers that share the same name into
+// a single canonical reader. Platform APIs often return one DocumentModel per
+// workflow that references it, so a single logical "Validation Output" reader
+// can appear 4+ times with identical name and structure. Truth HCL is
+// hand-authored to have one resource per name. This dedup keeps the first
+// occurrence (sorted by ID for determinism) and records the
+// duplicate-ID → canonical-ID mapping so downstream resolution can rewrite
+// file_reader_id references that pointed at the dropped copies.
+func dedupeFileReadersByName(readers []FileReader) ([]FileReader, map[string]string) {
+	if len(readers) == 0 {
+		return readers, nil
+	}
+	// Sort by ID for determinism.
+	sorted := make([]FileReader, len(readers))
+	copy(sorted, readers)
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i].ID < sorted[j].ID })
+
+	canonical := make(map[string]*FileReader) // key: type + "\x00" + name
+	alias := make(map[string]string)          // duplicate ID -> canonical ID
+	out := make([]FileReader, 0, len(sorted))
+
+	for i := range sorted {
+		r := sorted[i]
+		key := r.Type + "\x00" + r.Name
+		if existing, ok := canonical[key]; ok {
+			// Prefer the one with non-empty structure (platform sometimes
+			// returns partial data for dupes); otherwise keep the existing.
+			if existing.Structure == "" && r.Structure != "" {
+				// Swap: the newly-seen copy is richer, promote it.
+				alias[existing.ID] = r.ID
+				// Replace in out[]
+				for idx := range out {
+					if out[idx].ID == existing.ID {
+						out[idx] = r
+						break
+					}
+				}
+				canonical[key] = &out[len(out)-1] // re-aim pointer
+				continue
+			}
+			alias[r.ID] = existing.ID
+			continue
+		}
+		out = append(out, r)
+		canonical[key] = &out[len(out)-1]
+	}
+	return out, alias
 }
 
 // getAIFileReaderDetails fetches full details for a single AI file reader
@@ -3432,7 +3795,18 @@ func getTextFileReaderDetails(ctx context.Context, c *client.Client, appID, docu
 	}, nil
 }
 
-// getJSONFileReaderDetails fetches details for a JSON file reader
+// getJSONFileReaderDetails fetches details for a JSON file reader.
+//
+// NOTE: the schema has no scalar `structure` field on DocumentModelJson — the
+// real shape is `jsonStructure { properties { ... } }` where each property is
+// a polymorphic DocumentModelJsonStructureParameter (text, bool, number,
+// date, datetime, decimal, object, array). We fetch the typename + name of
+// each parameter and reshape the result into the tagged-union form that the
+// elementum_json_file_reader terraform resource expects:
+//
+//	{ properties: [ {text: {name: "x"}}, {bool: {name: "y"}}, ... ] }
+//
+// which is jsonencode()'d by the HCL generator.
 func getJSONFileReaderDetails(ctx context.Context, c *client.Client, appID, documentModelID string) (*FileReader, error) {
 	query := `
 		query GetDocumentModel($aspectId: ID!, $documentModelId: ID!) {
@@ -3444,7 +3818,42 @@ func getJSONFileReaderDetails(ctx context.Context, c *client.Client, appID, docu
 							id
 							... on DocumentModelJson {
 								name
-								structure
+								jsonStructure {
+									properties {
+										__typename
+										... on DocumentModelJsonStructureTextValue { name }
+										... on DocumentModelJsonStructureBooleanValue { name }
+										... on DocumentModelJsonStructureNumberValue { name }
+										... on DocumentModelJsonStructureDecimalValue { name }
+										... on DocumentModelJsonStructureDateValue { name format }
+										... on DocumentModelJsonStructureDateTimeValue { name format }
+										... on DocumentModelJsonStructureObject {
+											name
+											properties {
+												__typename
+												... on DocumentModelJsonStructureTextValue { name }
+												... on DocumentModelJsonStructureBooleanValue { name }
+												... on DocumentModelJsonStructureNumberValue { name }
+												... on DocumentModelJsonStructureDecimalValue { name }
+												... on DocumentModelJsonStructureDateValue { name format }
+												... on DocumentModelJsonStructureDateTimeValue { name format }
+											}
+										}
+										... on DocumentModelJsonStructureArray {
+											name
+											arrayType {
+												__typename
+												... on DocumentModelJsonStructureTextValue { name }
+												... on DocumentModelJsonStructureBooleanValue { name }
+												... on DocumentModelJsonStructureNumberValue { name }
+												... on DocumentModelJsonStructureDecimalValue { name }
+												... on DocumentModelJsonStructureDateValue { name format }
+												... on DocumentModelJsonStructureDateTimeValue { name format }
+												... on DocumentModelJsonStructureObject { name }
+											}
+										}
+									}
+								}
 							}
 						}
 					}
@@ -3462,10 +3871,12 @@ func getJSONFileReaderDetails(ctx context.Context, c *client.Client, appID, docu
 		Organization struct {
 			Aspect struct {
 				DocumentModel *struct {
-					Typename  string                 `json:"__typename"`
-					ID        string                 `json:"id"`
-					Name      string                 `json:"name"`
-					Structure map[string]interface{} `json:"structure"`
+					Typename      string `json:"__typename"`
+					ID            string `json:"id"`
+					Name          string `json:"name"`
+					JsonStructure *struct {
+						Properties []map[string]interface{} `json:"properties"`
+					} `json:"jsonStructure"`
 				} `json:"documentModel"`
 			} `json:"aspect"`
 		} `json:"organization"`
@@ -3482,10 +3893,13 @@ func getJSONFileReaderDetails(ctx context.Context, c *client.Client, appID, docu
 
 	docModel := result.Organization.Aspect.DocumentModel
 
-	// Encode the structure back to JSON string for terraform
+	// Reshape the GraphQL response into the tagged-union form Terraform expects.
 	structureJSON := ""
-	if docModel.Structure != nil {
-		if b, err := json.Marshal(docModel.Structure); err == nil {
+	if docModel.JsonStructure != nil {
+		reshaped := map[string]interface{}{
+			"properties": reshapeJSONStructureParams(docModel.JsonStructure.Properties),
+		}
+		if b, err := json.Marshal(reshaped); err == nil {
 			structureJSON = string(b)
 		}
 	}
@@ -3496,6 +3910,67 @@ func getJSONFileReaderDetails(ctx context.Context, c *client.Client, appID, docu
 		Type:      docModel.Typename,
 		Structure: structureJSON,
 	}, nil
+}
+
+// reshapeJSONStructureParams converts a raw list of GraphQL-returned params
+// (each with `__typename` + type-specific fields) into the tagged-union form
+// { text: {name}, bool: {name}, date: {name, format}, ... } used by the
+// elementum_json_file_reader resource's `structure` attribute.
+func reshapeJSONStructureParams(params []map[string]interface{}) []map[string]interface{} {
+	if len(params) == 0 {
+		return nil
+	}
+	out := make([]map[string]interface{}, 0, len(params))
+	for _, p := range params {
+		tn, _ := p["__typename"].(string)
+		name, _ := p["name"].(string)
+		var tag string
+		inner := map[string]interface{}{"name": name}
+		switch tn {
+		case "DocumentModelJsonStructureTextValue":
+			tag = "text"
+		case "DocumentModelJsonStructureBooleanValue":
+			tag = "bool"
+		case "DocumentModelJsonStructureNumberValue":
+			tag = "number"
+		case "DocumentModelJsonStructureDecimalValue":
+			tag = "decimal"
+		case "DocumentModelJsonStructureDateValue":
+			tag = "date"
+			if f, ok := p["format"].(string); ok && f != "" {
+				inner["format"] = f
+			}
+		case "DocumentModelJsonStructureDateTimeValue":
+			tag = "datetime"
+			if f, ok := p["format"].(string); ok && f != "" {
+				inner["format"] = f
+			}
+		case "DocumentModelJsonStructureObject":
+			tag = "object"
+			if nested, ok := p["properties"].([]interface{}); ok {
+				nestedMaps := make([]map[string]interface{}, 0, len(nested))
+				for _, n := range nested {
+					if m, ok := n.(map[string]interface{}); ok {
+						nestedMaps = append(nestedMaps, m)
+					}
+				}
+				inner["properties"] = reshapeJSONStructureParams(nestedMaps)
+			}
+		case "DocumentModelJsonStructureArray":
+			tag = "array"
+			if at, ok := p["arrayType"].(map[string]interface{}); ok {
+				reshapedElem := reshapeJSONStructureParams([]map[string]interface{}{at})
+				if len(reshapedElem) == 1 {
+					inner["array_type"] = reshapedElem[0]
+				}
+			}
+		default:
+			// Unknown typename — skip rather than corrupt the output.
+			continue
+		}
+		out = append(out, map[string]interface{}{tag: inner})
+	}
+	return out
 }
 
 // getXMLFileReaderDetails fetches details for an XML file reader

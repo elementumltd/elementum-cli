@@ -38,3 +38,77 @@ func ListCategories(ctx context.Context, c *client.Client) ([]Category, error) {
 
 	return categories, nil
 }
+
+// CategoryAspect is a lightweight descriptor of an aspect (app/element/task)
+// inside a category, as returned by ListCategoryAspects.
+type CategoryAspect struct {
+	ID       string
+	Typename string // "AspectApp", "AspectElement", "AspectTask"
+	Name     string
+}
+
+// ListCategoryAspects returns all aspects that live inside a category so we
+// can pull in child elements that the recursive task/tool graph wouldn't
+// reach on its own (e.g., elements referenced only by standalone AI search
+// tables or by field-id lookups in the hand-authored truth).
+func ListCategoryAspects(ctx context.Context, c *client.Client, categoryID string) ([]CategoryAspect, error) {
+	query := `
+		query GetCategoryAspects($categoryId: ID!, $first: Int!) {
+			organization {
+				category(id: $categoryId) {
+					id
+					aspects(first: $first) {
+						edges {
+							node {
+								__typename
+								id
+								... on AspectApp { name }
+								... on AspectElement { name }
+								... on AspectTask { name }
+							}
+						}
+					}
+				}
+			}
+		}
+	`
+
+	var result struct {
+		Organization struct {
+			Category *struct {
+				ID      string `json:"id"`
+				Aspects struct {
+					Edges []struct {
+						Node struct {
+							Typename string `json:"__typename"`
+							ID       string `json:"id"`
+							Name     string `json:"name"`
+						} `json:"node"`
+					} `json:"edges"`
+				} `json:"aspects"`
+			} `json:"category"`
+		} `json:"organization"`
+	}
+
+	err := c.ExecuteInto(ctx, query, map[string]interface{}{
+		"categoryId": categoryID,
+		"first":      500, // <app-namespace> has ~12 aspects; 500 is generous headroom
+	}, &result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list aspects in category %s: %w", categoryID, err)
+	}
+
+	if result.Organization.Category == nil {
+		return nil, nil
+	}
+
+	out := make([]CategoryAspect, 0, len(result.Organization.Category.Aspects.Edges))
+	for _, edge := range result.Organization.Category.Aspects.Edges {
+		out = append(out, CategoryAspect{
+			ID:       edge.Node.ID,
+			Typename: edge.Node.Typename,
+			Name:     edge.Node.Name,
+		})
+	}
+	return out, nil
+}

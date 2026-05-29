@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/elementumltd/elementum-cli/logger"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/logger"
 )
 
 // SnowflakeDatabaseInfo represents a discovered Snowflake database
@@ -231,4 +231,85 @@ func GetSnowflakeTableSchemaByCloudLinkName(ctx context.Context, c *client.Clien
 
 	// Then fetch the table schema
 	return GetSnowflakeTableSchema(ctx, c, cloudLink.ID, databaseName, schemaName, tableName)
+}
+
+// SnowflakeCortexSearchService represents a Cortex Search Service discovered in Snowflake
+type SnowflakeCortexSearchService struct {
+	Name     string
+	Database string
+	Schema   string
+}
+
+// ListSnowflakeCortexSearchServices lists Cortex Search Services available via a CloudLink or AI Provider
+func ListSnowflakeCortexSearchServices(ctx context.Context, c *client.Client, cloudLinkIDOrName, database, schema string) ([]SnowflakeCortexSearchService, error) {
+	logger.Debug("fetching snowflake cortex search services",
+		"cloudlink_or_provider", cloudLinkIDOrName,
+		"database", database,
+		"schema", schema,
+	)
+
+	// Step 1: Find the Snowflake AI provider
+	providerResult, err := client.GetAiProvidersForCloudLink(ctx, c.Genqlient())
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch AI providers: %w", err)
+	}
+
+	var snowflakeProviderID string
+
+	// Try to match by cloudLink ID first, then by cloudLink name, then by AI provider name
+	for _, provider := range providerResult.Organization.AiProviders {
+		switch p := provider.(type) {
+		case *client.GetAiProvidersForCloudLinkOrganizationAiProvidersAiSnowflakeProvider:
+			// Check if CloudLink matches by ID or name
+			if p.CloudLink != nil {
+				if p.CloudLink.GetId() == cloudLinkIDOrName || p.CloudLink.GetName() == cloudLinkIDOrName {
+					snowflakeProviderID = p.Id
+					break
+				}
+			}
+			// Also check if the AI provider name matches
+			if p.Name == cloudLinkIDOrName {
+				snowflakeProviderID = p.Id
+				break
+			}
+		}
+	}
+
+	if snowflakeProviderID == "" {
+		return nil, fmt.Errorf("no Snowflake AI provider found matching %q (tried as cloudLink ID, cloudLink name, and AI provider name)", cloudLinkIDOrName)
+	}
+
+	logger.Debug("found snowflake AI provider", "provider_id", snowflakeProviderID)
+
+	// Step 2: Query search services on that provider
+	servicesResult, err := client.GetSnowflakeSearchServices(ctx, c.Genqlient(), snowflakeProviderID, database, schema)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch search services: %w", err)
+	}
+
+	// Step 3: Extract search services from response
+	services := make([]SnowflakeCortexSearchService, 0)
+	if servicesResult.Organization.AiProvider == nil {
+		return services, nil
+	}
+
+	// Handle the AiProvider union - it should be AiSnowflakeProvider
+	switch p := (*servicesResult.Organization.AiProvider).(type) {
+	case *client.GetSnowflakeSearchServicesOrganizationAiProviderAiSnowflakeProvider:
+		for _, svc := range p.SnowflakeSearchServices {
+			services = append(services, SnowflakeCortexSearchService{
+				Name:     svc.Name,
+				Database: svc.Database,
+				Schema:   svc.Schema,
+			})
+		}
+	}
+
+	// Sort by name
+	sort.Slice(services, func(i, j int) bool {
+		return services[i].Name < services[j].Name
+	})
+
+	logger.Debug("got snowflake cortex search services", "count", len(services))
+	return services, nil
 }

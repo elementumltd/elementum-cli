@@ -37,7 +37,7 @@
           {
             "__typename": "WorkflowSwitchCase",
             "id": "case-approved-4444-444444444444",
-            "name": "Approved",
+            "label": "Approved",
             "filter": {
               "type": "equals",
               "fieldId": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
@@ -47,7 +47,7 @@
           {
             "__typename": "WorkflowSwitchCase",
             "id": "case-rejected-4444-444444444444",
-            "name": "Rejected",
+            "label": "Rejected",
             "filter": {
               "type": "equals",
               "fieldId": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
@@ -57,11 +57,39 @@
           {
             "__typename": "WorkflowSwitchCase",
             "id": "case-default-4444-444444444444",
-            "name": "Default",
+            "label": "Default",
             "filter": null
           }
         ]
-      }
+      },
+      "children": [
+        {
+          "__typename": "WorkflowSwitchCase",
+          "id": "case-approved-4444-444444444444",
+          "label": "Approved",
+          "filter": {
+            "type": "equals",
+            "fieldId": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+            "value": "APPROVED"
+          }
+        },
+        {
+          "__typename": "WorkflowSwitchCase",
+          "id": "case-rejected-4444-444444444444",
+          "label": "Rejected",
+          "filter": {
+            "type": "equals",
+            "fieldId": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+            "value": "REJECTED"
+          }
+        },
+        {
+          "__typename": "WorkflowSwitchCase",
+          "id": "case-default-4444-444444444444",
+          "label": "Default",
+          "filter": null
+        }
+      ]
     }
   ]
 }

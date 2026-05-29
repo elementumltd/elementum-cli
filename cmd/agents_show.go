@@ -21,39 +21,55 @@ import (
 	"strings"
 
 	"github.com/elementumltd/elementum-cli/auth"
-	"github.com/elementumltd/elementum-cli/ui"
+	"github.com/elementumltd/elementum-cli/export"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/spf13/cobra"
 )
 
 var agentsShowCmd = &cobra.Command{
-	Use:   "show <agent-name-or-id>",
+	Use:   "show <namespace> <agent-name>",
 	Short: "Show agent details",
-	Long: `Display detailed information about an agent.
+	Long: `Display detailed information about an agent within an app.
 
 Examples:
-  ei agents show "Support Agent"
-  ei agents show 794e1e48-73af-4760-8a1f-...`,
-	Args: cobra.ExactArgs(1),
+  ei agents show support-tickets "Support Agent"
+  ei agents show clm ticket-classifier --json`,
+	Args: cobra.ExactArgs(2),
 	RunE: runAgentsShow,
 }
 
 func runAgentsShow(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
+	namespace := args[0]
+	agentName := args[1]
 
 	apiClient, err := auth.GetClientFromCmd(cmd)
 	if err != nil {
 		return err
 	}
 
-	agentID, err := resolveAgentID(ctx, cmd, apiClient, args[0])
+	// Resolve namespace to aspect ID
+	aspectID, _, err := resolveAspectByNamespace(ctx, apiClient, namespace)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to resolve app %q: %w", namespace, err)
+	}
+
+	// Find agent by name in the app
+	agentID, err := findAgentByNameInApp(ctx, apiClient, aspectID, agentName)
+	if err != nil {
+		return fmt.Errorf("failed to find agent %q in app %q: %w", agentName, namespace, err)
 	}
 
 	agent, err := getAgentFull(ctx, apiClient, agentID)
 	if err != nil {
 		return err
+	}
+
+	hclOutput, _ := cmd.Flags().GetBool("hcl")
+	if hclOutput {
+		fmt.Print(generateAgentHCL(agent))
+		return nil
 	}
 
 	if isJSONOutput(cmd) {
@@ -156,7 +172,7 @@ func getAgentFull(ctx context.Context, apiClient *client.Client, agentID string)
 						aiProviderConnector { id model { name } provider { name } }
 						app { id name }
 						tools { edges { node { __typename id name description } } }
-						skills { id name }
+						skills { edges { node { id name } } }
 					}
 					... on AgentSnowflake {
 						instructions
@@ -164,7 +180,7 @@ func getAgentFull(ctx context.Context, apiClient *client.Client, agentID string)
 						aiProviderConnector { id model { name } provider { name } }
 						app { id name }
 						tools { edges { node { __typename id name description } } }
-						skills { id name }
+						skills { edges { node { id name } } }
 					}
 					... on AgentBedrock {
 						instructions
@@ -172,7 +188,7 @@ func getAgentFull(ctx context.Context, apiClient *client.Client, agentID string)
 						aiProviderConnector { id model { name } provider { name } }
 						app { id name }
 						tools { edges { node { __typename id name description } } }
-						skills { id name }
+						skills { edges { node { id name } } }
 					}
 					... on AgentBrowserUse {
 						instructions
@@ -184,7 +200,7 @@ func getAgentFull(ctx context.Context, apiClient *client.Client, agentID string)
 						aiProviderConnector { id model { name } provider { name } }
 						app { id name }
 						tools { edges { node { __typename id name description } } }
-						skills { id name }
+						skills { edges { node { id name } } }
 					}
 				}
 			}
@@ -247,13 +263,17 @@ func getAgentFull(ctx context.Context, apiClient *client.Client, agentID string)
 		}
 	}
 
-	if skills, ok := raw["skills"].([]interface{}); ok {
-		for _, s := range skills {
-			if sk, ok := s.(map[string]interface{}); ok {
-				detail.Skills = append(detail.Skills, skillBrief{
-					ID:   getString(sk, "id"),
-					Name: getString(sk, "name"),
-				})
+	if skills, ok := raw["skills"].(map[string]interface{}); ok {
+		if edges, ok := skills["edges"].([]interface{}); ok {
+			for _, edge := range edges {
+				if e, ok := edge.(map[string]interface{}); ok {
+					if node, ok := e["node"].(map[string]interface{}); ok {
+						detail.Skills = append(detail.Skills, skillBrief{
+							ID:   getString(node, "id"),
+							Name: getString(node, "name"),
+						})
+					}
+				}
 			}
 		}
 	}
@@ -266,4 +286,35 @@ func getString(m map[string]interface{}, key string) string {
 		return v
 	}
 	return ""
+}
+
+func generateAgentHCL(agent *agentDetail) string {
+	resourceName := export.SanitizeName(agent.Name)
+
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "resource \"elementum_agent\" %q {\n", resourceName)
+	sb.WriteString("  app_id = elementum_app.<APP>.id\n")
+	fmt.Fprintf(&sb, "  name = %q\n", agent.Name)
+	fmt.Fprintf(&sb, "  description = %q\n", agent.Description)
+
+	if agent.Instructions != "" {
+		sb.WriteString("  instructions = <<-EOT\n")
+		sb.WriteString(agent.Instructions)
+		if !strings.HasSuffix(agent.Instructions, "\n") {
+			sb.WriteString("\n")
+		}
+		sb.WriteString("EOT\n")
+	}
+
+	if agent.FirstMessage != "" {
+		fmt.Fprintf(&sb, "  first_message = %q\n", agent.FirstMessage)
+	}
+
+	if agent.ConnectorID != "" {
+		fmt.Fprintf(&sb, "  ai_provider_connector_id = %q # %s (%s)\n", agent.ConnectorID, agent.Model, agent.Provider)
+	}
+
+	sb.WriteString("}\n")
+
+	return sb.String()
 }

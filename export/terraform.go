@@ -23,7 +23,7 @@ import (
 	"github.com/elementumltd/elementum-cli/logger"
 )
 
-// TerraformRunner handles running Terraform commands
+// Deprecated: TerraformRunner is no longer used. Export uses CLI IR generators instead.
 type TerraformRunner struct {
 	WorkDir string
 }
@@ -212,6 +212,7 @@ func (tr *TerraformRunner) GenerateConfig(outputFile string) (string, error) {
 		}
 
 		if err != nil {
+			// Still print output even on error for debugging
 			_, _ = os.Stdout.Write(stdout)
 			return string(stdout), fmt.Errorf("terraform/tofu plan failed: %w", err)
 		}

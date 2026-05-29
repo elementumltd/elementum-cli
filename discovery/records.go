@@ -21,8 +21,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/elementumltd/elementum-cli/logger"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/logger"
 )
 
 // recordListItemGetter is an interface for accessing RecordListItem fields.
@@ -141,7 +141,7 @@ func ListRecords(ctx context.Context, c *client.Client, aspectID string, opts Re
 		after = &opts.After
 	}
 
-	resp, err := client.ListAspectRecords(ctx, c.Genqlient(), aspectID, &limit, after)
+	resp, err := client.ListAspectRecords(ctx, c.Genqlient(), aspectID, &limit, after, opts.Filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch records: %w", err)
 	}
@@ -228,8 +228,9 @@ func ListAllRecords(ctx context.Context, c *client.Client, aspectID string, opts
 
 	// First fetch to get metadata
 	firstResult, err := ListRecords(ctx, c, aspectID, RecordListOptions{
-		Limit: opts.Limit,
-		After: cursor,
+		Limit:  opts.Limit,
+		After:  cursor,
+		Filter: opts.Filter,
 	})
 	if err != nil {
 		return nil, err
@@ -241,13 +242,20 @@ func ListAllRecords(ctx context.Context, c *client.Client, aspectID string, opts
 	// Continue fetching while there are more pages
 	for firstResult.HasNextPage {
 		nextResult, err := ListRecords(ctx, c, aspectID, RecordListOptions{
-			Limit: opts.Limit,
-			After: cursor,
+			Limit:  opts.Limit,
+			After:  cursor,
+			Filter: opts.Filter,
 		})
 		if err != nil {
 			return nil, err
 		}
 		allRecords = append(allRecords, nextResult.Records...)
+
+		// Guard against a server returning HasNextPage=true without advancing
+		// the cursor — would otherwise loop forever on the same request.
+		if nextResult.EndCursor == "" || nextResult.EndCursor == cursor {
+			break
+		}
 		cursor = nextResult.EndCursor
 		firstResult.HasNextPage = nextResult.HasNextPage
 	}

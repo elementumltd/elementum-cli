@@ -86,6 +86,30 @@ func createTestTask(id, taskType, name, workflowID, parentID string, rawData map
 	}
 }
 
+// ImportResource is a helper struct for creating import blocks
+type ImportResource struct {
+	ID           string
+	ResourceType string
+	ResourceName string
+}
+
+// createTestImports creates import blocks for testing from a list of resources
+func createTestImports(resources ...ImportResource) []ImportBlock {
+	imports := make([]ImportBlock, len(resources))
+	for i, r := range resources {
+		imports[i] = ImportBlock(r)
+	}
+	return imports
+}
+
+// createTestUUIDMap creates a UUID map for testing
+func createTestUUIDMap(mappings map[string]string) map[string]string {
+	if mappings == nil {
+		return make(map[string]string)
+	}
+	return mappings
+}
+
 // ============================================================================
 // Assertion Helpers
 // ============================================================================
@@ -146,6 +170,16 @@ func assertNoNullAttributes(t *testing.T, hcl string) {
 		if nullPattern.MatchString(line) {
 			t.Errorf("Found null attribute at line %d: %q\nHCL should have null attributes stripped", i+1, line)
 		}
+	}
+}
+
+// assertAttributeValue checks that an attribute has the expected value in the HCL
+func assertAttributeValue(t *testing.T, hcl, attributeName, expectedValue string) {
+	t.Helper()
+	// Simple pattern to find attribute = value
+	pattern := regexp.MustCompile(`\b` + regexp.QuoteMeta(attributeName) + `\s*=\s*` + regexp.QuoteMeta(expectedValue))
+	if !pattern.MatchString(hcl) {
+		t.Errorf("Expected attribute %s = %s not found in HCL:\n%s", attributeName, expectedValue, hcl)
 	}
 }
 
@@ -485,6 +519,18 @@ func buildMinimalTaskRawData(taskType string) map[string]interface{} {
 		baseData["inputMappings"] = []interface{}{}
 		baseData["dynamicInputMappings"] = []interface{}{}
 		baseData["outputMappings"] = []interface{}{}
+	case "execute_script":
+		baseData["code"] = "/**\n * Access your input values from the `input.parameters` object\n * Example:\n * const { participants } = input.parameters;\n**/\n\nconst { participants } = input.parameters;\nlet numParticipants = participants.length;\nreturn { numParticipants };"
+		baseData["inputs"] = []interface{}{
+			map[string]interface{}{
+				"name": "participants",
+				"value": map[string]interface{}{
+					"id":    "ref-1",
+					"label": "participants",
+					"value": "participants",
+				},
+			},
+		}
 	}
 
 	return baseData
@@ -563,7 +609,7 @@ func getGraphQLTypename(typeName, category string) string {
 		case "ai_transform":
 			return "WorkflowAiTransformTask"
 		case "approval_chain":
-			return "WorkflowApprovalChainTask"
+			return "WorkflowApprovalChainTemplateTask"
 		case "approval_status_update":
 			return "WorkflowApprovalStatusUpdateTask"
 		case "aspect_record_field_locking":

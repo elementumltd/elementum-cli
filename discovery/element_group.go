@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/elementumltd/elementum-cli/logger"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/logger"
 )
 
 // GetElementByNamespace retrieves an element by its namespace
@@ -151,6 +151,10 @@ func GetElementFull(ctx context.Context, c *client.Client, elementID string) (*E
 		logger.Warn("failed to get element automations (optional)", "elementID", elementID, "error", err)
 	} else {
 		element.Automations = automations
+		// Fetch full task/trigger details (including RawData) for HCL generation
+		if err := FetchAutomationFullDetails(ctx, c, elementID, element.Automations); err != nil {
+			logger.Warn("failed to fetch element automation details (optional)", "elementID", elementID, "error", err)
+		}
 	}
 
 	// Get relationships for this element
@@ -479,6 +483,18 @@ func getElementWidgets(ctx context.Context, c *client.Client, element *Element) 
 		case *client.GetAspectDisplayWidgetsOrganizationAspectAspectElementDisplayWidgetsDisplayWidgetConnectionEdgesDisplayWidgetEdgeNodeDisplayWidgetRelatedCreateAction:
 			if w.Aspect != nil {
 				widget.AspectID = (*w.Aspect).GetId()
+			}
+			widget.ButtonType = string(w.ButtonType)
+			if w.Color != nil {
+				widget.Color = *w.Color
+			}
+			if w.Icon != nil {
+				widget.Icon = *w.Icon
+			}
+			widget.FullWidth = w.FullWidth
+		case *client.GetAspectDisplayWidgetsOrganizationAspectAspectElementDisplayWidgetsDisplayWidgetConnectionEdgesDisplayWidgetEdgeNodeDisplayWidgetRunAutomationAction:
+			if w.Automation != nil {
+				widget.AutomationID = w.Automation.GetId()
 			}
 			widget.ButtonType = string(w.ButtonType)
 			if w.Color != nil {

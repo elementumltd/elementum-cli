@@ -17,8 +17,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/elementumltd/elementum-cli/ui"
 	eclient "github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/ui"
 )
 
 // renderFullWorkflow renders a workflow's full details (triggers, tasks, outputs) as a tree.

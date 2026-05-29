@@ -19,8 +19,8 @@ import (
 	"fmt"
 
 	"github.com/elementumltd/elementum-cli/auth"
-	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -186,24 +186,22 @@ func getAutomationBlockers(ctx context.Context, c *client.Client, automationID s
 
 	var blockers []string
 
-	// Check for dependent automations (e.g., RunAutomation tasks)
+	// Check for dependent automations (Node is a value type)
 	for _, edge := range automation.Usage.Automations.Edges {
-		if edge.Node != nil {
-			blockers = append(blockers, fmt.Sprintf("  • Automation: %s (%s)", edge.Node.Name, edge.Node.Id))
-		}
+		blockers = append(blockers, fmt.Sprintf("  • Automation: %s (%s)", edge.Node.Name, edge.Node.Id))
 	}
 
-	// Check for dependent agents
+	// Check for dependent agents (Node is an interface)
 	for _, edge := range automation.Usage.Agents.Edges {
 		if edge.Node != nil {
-			blockers = append(blockers, fmt.Sprintf("  • Agent: %s", (*edge.Node).GetName()))
+			blockers = append(blockers, fmt.Sprintf("  • Agent: %s", edge.Node.GetName()))
 		}
 	}
 
-	// Check for dependent agent tools
+	// Check for dependent agent tools (Node is an interface)
 	for _, edge := range automation.Usage.AgentTools.Edges {
 		if edge.Node != nil {
-			blockers = append(blockers, fmt.Sprintf("  • Agent Tool: %s", (*edge.Node).GetName()))
+			blockers = append(blockers, fmt.Sprintf("  • Agent Tool: %s", edge.Node.GetName()))
 		}
 	}
 

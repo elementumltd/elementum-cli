@@ -50,8 +50,11 @@ var (
 	agentIDPatternAny       = regexp.MustCompile(`agent_id\s*=\s*"([^"]+)"`)
 
 	// Value reference patterns
-	triggerRefPattern    = regexp.MustCompile(`((?:value|record_reference|value_reference)\s*=\s*)"(trigger\.record\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?:\.[a-zA-Z_]+)?)"`)
-	taskRefPatternGlobal = regexp.MustCompile(`((?:value|record_reference|value_reference)\s*=\s*)"(task\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[^"]+)"`)
+	// Pattern for record-based trigger refs: trigger.record.<UUID> or trigger.record.<UUID>.<suffix>
+	triggerRefPattern = regexp.MustCompile(`((?:value|record_reference|value_reference)\s*=\s*)"(trigger\.record\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?:\.[a-zA-Z_]+)?)"`)
+	// Pattern for on_demand trigger parameter refs: trigger.<paramName> (no "record." prefix, no UUID)
+	triggerParamRefPattern = regexp.MustCompile(`((?:value|record_reference|value_reference)\s*=\s*)"(trigger\.[a-zA-Z][a-zA-Z0-9_]*)"`)
+	taskRefPatternGlobal   = regexp.MustCompile(`((?:value|record_reference|value_reference)\s*=\s*)"(task\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[^"]+)"`)
 
 	// Table patterns
 	tableResourcePattern     = regexp.MustCompile(`resource "elementum_table" "([^"]+)"`)
@@ -338,6 +341,51 @@ func buildUUIDMap(imports []ImportBlock, app *discovery.App) map[string]string {
 		resourceName := findResourceName(imports, resourceType, reader.ID)
 		if resourceName != "" {
 			mergeMaps(uuidMap, reader.GetUUIDMappings(resourceName))
+		}
+	}
+	// If file-readers were deduped by name, rewrite every dropped ID to the
+	// same reference as the canonical ID that replaced it. Without this,
+	// file_reader_id attributes on tasks that were pointing at the dropped
+	// duplicates would emit raw UUIDs (broken) instead of TF references.
+	for droppedID, canonicalID := range app.FileReaderIDAlias {
+		if canonicalRef, ok := uuidMap[canonicalID]; ok {
+			uuidMap[droppedID] = canonicalRef
+		}
+	}
+
+	// Agentic skill + skill-tool mappings. Agents reference skills via
+	// skill_ids, and tools reference parents via skill_id — both need to
+	// resolve to proper TF references rather than raw UUIDs. The empty-ID
+	// guard matters: findResourceName does a `strings.Contains(imp.ID, id)`
+	// which is always true for "", which would poison `uuidMap[""]` and
+	// cause every quoted empty string in the output (`description = ""`,
+	// etc.) to be rewritten to that resource's reference during
+	// beautification.
+	for _, skill := range app.Skills {
+		if skill.ID != "" {
+			if resourceName := findResourceName(imports, "elementum_agentic_skill", skill.ID); resourceName != "" {
+				uuidMap[skill.ID] = "elementum_agentic_skill." + resourceName + ".id"
+			}
+		}
+		for _, tool := range skill.Tools {
+			if tool.ID == "" {
+				continue
+			}
+			if toolResourceName := findResourceName(imports, "elementum_agentic_skill_tool", tool.ID); toolResourceName != "" {
+				uuidMap[tool.ID] = "elementum_agentic_skill_tool." + toolResourceName + ".id"
+			}
+		}
+	}
+
+	// Agent-to-agent skills on agent cards.
+	for _, agent := range app.AllAgents() {
+		for _, sk := range agent.A2ASkills {
+			if sk.ID == "" {
+				continue
+			}
+			if name := findResourceName(imports, "elementum_agent_a2a_skill", sk.ID); name != "" {
+				uuidMap[sk.ID] = "elementum_agent_a2a_skill." + name + ".id"
+			}
 		}
 	}
 
@@ -943,6 +991,13 @@ func buildUUIDMap(imports []ImportBlock, app *discovery.App) map[string]string {
 
 // findResourceName finds the resource name from import blocks for a given resource type and ID
 func findResourceName(imports []ImportBlock, resourceType, id string) string {
+	// Defensive guard: `strings.Contains(x, "")` is always true, so an empty
+	// id would match the first import of the requested type and poison the
+	// caller's uuidMap (every empty string in the output would then be
+	// rewritten to that resource's ref during beautification).
+	if id == "" {
+		return ""
+	}
 	for _, imp := range imports {
 		if imp.ResourceType == resourceType && strings.Contains(imp.ID, id) {
 			return imp.ResourceName
@@ -1540,8 +1595,34 @@ func beautifyValueReferences(hcl string, uuidMap map[string]string, app *discove
 		}
 
 		// Replace trigger refs using automation-scoped map if available, otherwise global
+		// First handle record-based trigger refs (trigger.record.<UUID>)
 		line = triggerRefPattern.ReplaceAllStringFunc(line, func(match string) string {
 			submatch := triggerRefPattern.FindStringSubmatch(match)
+			if len(submatch) < 3 {
+				return match
+			}
+			prefix := submatch[1]
+			ref := submatch[2]
+
+			// Try automation-scoped refs first
+			if currentAutomationSlug != "" {
+				if triggerRefs, ok := perAutomationTriggerRefs[currentAutomationSlug]; ok {
+					if replacement, ok := triggerRefs[ref]; ok {
+						return prefix + replacement
+					}
+				}
+			}
+
+			// Fallback to global refs
+			if replacement, ok := globalTriggerRefMap[ref]; ok {
+				return prefix + replacement
+			}
+			return match
+		})
+
+		// Then handle on_demand trigger parameter refs (trigger.<paramName>)
+		line = triggerParamRefPattern.ReplaceAllStringFunc(line, func(match string) string {
+			submatch := triggerParamRefPattern.FindStringSubmatch(match)
 			if len(submatch) < 3 {
 				return match
 			}
@@ -1587,26 +1668,48 @@ func beautifyValueReferences(hcl string, uuidMap map[string]string, app *discove
 	return hcl
 }
 
+// buildTriggerRefEntries builds ref map entries for a single trigger.
+// Returns entries mapping raw refs (trigger.<path>) to Terraform refs syntax.
+func buildTriggerRefEntries(trigger discovery.Trigger, uuidMap map[string]string) map[string]string {
+	resourceType := "elementum_" + trigger.Type + "_trigger"
+	resourceName := findResourceNameByID(uuidMap, trigger.ID, resourceType)
+	if resourceName == "" {
+		return nil
+	}
+
+	entries := make(map[string]string)
+	for fieldRef, fieldName := range trigger.FieldRefs {
+		// Skip id: prefixed refs (they're UUID-based, not path-based)
+		if strings.HasPrefix(fieldRef, "id:") {
+			continue
+		}
+
+		refsRef := fmt.Sprintf(`%s.%s.refs["%s"]`, resourceType, resourceName, fieldName)
+
+		// Store both "trigger.<path>" and "trigger.record.<path>" formats
+		// because different trigger types output different formats:
+		// - record_created/updated triggers use: trigger.record.<UUID>.<suffix>
+		// - on_demand triggers use: trigger.<paramName>
+		rawRef := "trigger." + fieldRef
+		entries[rawRef] = refsRef
+
+		if !strings.HasPrefix(fieldRef, "record.") {
+			// Also store with record. prefix for record-based triggers
+			rawRefWithRecord := "trigger.record." + fieldRef
+			entries[rawRefWithRecord] = refsRef
+		}
+	}
+	return entries
+}
+
 // buildGlobalTriggerRefMap creates a global trigger ref map (for backward compatibility)
 func buildGlobalTriggerRefMap(app *discovery.App, uuidMap map[string]string) map[string]string {
 	refMap := make(map[string]string)
 
 	for _, automation := range app.AllAutomations() {
 		for _, trigger := range automation.Triggers {
-			resourceType := "elementum_" + trigger.Type + "_trigger"
-			resourceName := findResourceNameByID(uuidMap, trigger.ID, resourceType)
-			if resourceName == "" {
-				continue
-			}
-
-			for fieldRef, fieldName := range trigger.FieldRefs {
-				rawRef := "trigger." + fieldRef
-				if !strings.HasPrefix(fieldRef, "record.") {
-					rawRef = "trigger.record." + fieldRef
-				}
-
-				refsRef := fmt.Sprintf(`%s.%s.refs["%s"]`, resourceType, resourceName, fieldName)
-				refMap[rawRef] = refsRef
+			for k, v := range buildTriggerRefEntries(trigger, uuidMap) {
+				refMap[k] = v
 			}
 		}
 	}
@@ -1635,20 +1738,8 @@ func buildPerAutomationTriggerRefMap(app *discovery.App, uuidMap map[string]stri
 		triggerRefs := make(map[string]string)
 
 		for _, trigger := range automation.Triggers {
-			resourceType := "elementum_" + trigger.Type + "_trigger"
-			resourceName := findResourceNameByID(uuidMap, trigger.ID, resourceType)
-			if resourceName == "" {
-				continue
-			}
-
-			for fieldRef, fieldName := range trigger.FieldRefs {
-				rawRef := "trigger." + fieldRef
-				if !strings.HasPrefix(fieldRef, "record.") {
-					rawRef = "trigger.record." + fieldRef
-				}
-
-				refsRef := fmt.Sprintf(`%s.%s.refs["%s"]`, resourceType, resourceName, fieldName)
-				triggerRefs[rawRef] = refsRef
+			for k, v := range buildTriggerRefEntries(trigger, uuidMap) {
+				triggerRefs[k] = v
 			}
 		}
 

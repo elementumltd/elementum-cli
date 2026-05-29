@@ -43,7 +43,7 @@ fragment MultiPicklistFieldInfo on AspectMultiPicklistField {
   }
 }
 
-query ListAspectRecords($aspectId: ID!, $first: Int, $after: String) {
+query ListAspectRecords($aspectId: ID!, $first: Int, $after: String, $filter: Filter) {
   organization {
     aspect(id: $aspectId) {
       id
@@ -51,7 +51,7 @@ query ListAspectRecords($aspectId: ID!, $first: Int, $after: String) {
       __typename
       ... on AspectApp {
         namespace
-        records(first: $first, after: $after) {
+        records(first: $first, after: $after, filter: $filter) {
           edges {
             node {
               ...RecordListItem
@@ -67,7 +67,7 @@ query ListAspectRecords($aspectId: ID!, $first: Int, $after: String) {
       }
       ... on AspectElement {
         namespace
-        records(first: $first, after: $after) {
+        records(first: $first, after: $after, filter: $filter) {
           edges {
             node {
               ...RecordListItem
@@ -83,7 +83,7 @@ query ListAspectRecords($aspectId: ID!, $first: Int, $after: String) {
       }
       ... on AspectTask {
         namespace
-        records(first: $first, after: $after) {
+        records(first: $first, after: $after, filter: $filter) {
           edges {
             node {
               ...RecordListItem

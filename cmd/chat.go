@@ -23,12 +23,13 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
 	"github.com/elementumltd/elementum-cli/auth"
-	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -449,7 +450,7 @@ func streamAgentMessage(ctx context.Context, apiClient *client.Client, conversat
 	instance := apiClient.GetInstance()
 	host := getHostForInstance(instance)
 	req.Header.Set("x-elementum-organization", fmt.Sprintf("%s.%s", org, host))
-	req.Header.Set("x-elementum-platform", "IOS")
+	req.Header.Set("x-elementum-platform", runtime.GOOS)
 	req.Header.Set("x-elementum-toe", uuid.New().String())
 	req.Header.Set("x-elementum-base-url", host)
 

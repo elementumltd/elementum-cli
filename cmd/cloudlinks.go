@@ -22,9 +22,9 @@ import (
 	"github.com/elementumltd/elementum-cli/auth"
 	"github.com/elementumltd/elementum-cli/discovery"
 	"github.com/elementumltd/elementum-cli/export"
+	"github.com/elementumltd/elementum-cli/internal/client"
 	"github.com/elementumltd/elementum-cli/logger"
 	"github.com/elementumltd/elementum-cli/ui"
-	"github.com/elementumltd/elementum-cli/internal/client"
 	"github.com/spf13/cobra"
 )
 
@@ -42,37 +42,40 @@ var cloudlinksListCmd = &cobra.Command{
 }
 
 var cloudlinksFunctionsCmd = &cobra.Command{
-	Use:   "functions <cloudlink-id-or-name>",
+	Use:   "functions <cloudlink-id-or-name> --database <DB> --schema <SCHEMA>",
 	Short: "List configured and available Snowflake functions on a cloudlink",
 	Long: `Show both configured (stored) and available Snowflake functions for a cloudlink.
 
 Configured functions are already set up in Elementum. Available functions are discovered
 from the Snowflake database and can be configured as elementum_function resources.
 
-Use --database and --schema to filter available functions by location.`,
+The --database and --schema flags are required to scope the Snowflake query and avoid timeouts.`,
 	Args: cobra.ExactArgs(1),
 	RunE: runCloudlinksFunctions,
 }
 
 var cloudlinksExploreCmd = &cobra.Command{
-	Use:   "explore <cloudlink> [database] [schema]",
-	Short: "Explore databases, schemas, and tables in a Snowflake cloudlink",
+	Use:   "explore <cloudlink> [database] [schema] [table]",
+	Short: "Explore databases, schemas, tables, and columns in a Snowflake cloudlink",
 	Long: `Hierarchically explore a Snowflake cloudlink's structure.
 
 With no extra arguments, lists databases.
 With a database name, lists schemas in that database.
 With database and schema, lists tables in that schema.
+With database, schema, and table, lists columns in that table.
 
-Use --database and --schema flags to jump directly to a level:
-  --database ANALYTICS           Jump to schemas in ANALYTICS
-  --database ANALYTICS --schema PUBLIC  Jump to tables
+Use flags to jump directly to a level:
+  --database ANALYTICS                        Jump to schemas in ANALYTICS
+  --database ANALYTICS --schema PUBLIC        Jump to tables
+  --database DB --schema SCH --table TBL      Jump to columns
 
 Examples:
   ei cloudlinks explore my-snowflake              # List databases
   ei cloudlinks explore my-snowflake ANALYTICS    # List schemas in ANALYTICS
   ei cloudlinks explore my-snowflake ANALYTICS PUBLIC  # List tables
-  ei cloudlinks explore my-snowflake --database ANALYTICS --schema PUBLIC  # Same as above`,
-	Args: cobra.RangeArgs(1, 3),
+  ei cloudlinks explore my-snowflake ANALYTICS PUBLIC MY_TABLE  # List columns
+  ei cloudlinks explore my-snowflake --database DB --schema SCH --table TBL  # Same as above`,
+	Args: cobra.RangeArgs(1, 4),
 	RunE: runCloudlinksExplore,
 }
 
@@ -90,18 +93,45 @@ The command will generate an import block and run terraform to create the config
 	RunE: runCloudlinksExport,
 }
 
+var cloudlinksSearchServicesCmd = &cobra.Command{
+	Use:   "search-services <cloudlink-or-ai-provider> --database <DB> --schema <SCHEMA>",
+	Short: "List Cortex Search Services on a Snowflake cloudlink or AI provider",
+	Long: `List available Snowflake Cortex Search Services that can be linked via elementum_linked_ai_search_table.
+
+This command discovers existing Cortex Search Services in your Snowflake account that can be
+connected to Elementum. Use the service name, database, and schema in your Terraform configuration.
+
+You can specify either:
+- A CloudLink name or ID
+- A Snowflake AI provider name
+
+The --database and --schema flags are required to scope the query.
+
+Examples:
+  ei cloudlinks search-services my-snowflake --database ANALYTICS --schema PUBLIC
+  ei cloudlinks search-services "Snowflake" --database ELEMENTUM --schema PUBLIC`,
+	Args: cobra.ExactArgs(1),
+	RunE: runCloudlinksSearchServices,
+}
+
 func init() {
 	cloudlinksCmd.AddCommand(cloudlinksListCmd)
 	cloudlinksCmd.AddCommand(cloudlinksFunctionsCmd)
 	cloudlinksCmd.AddCommand(cloudlinksExploreCmd)
 	cloudlinksCmd.AddCommand(cloudlinksExportCmd)
+	cloudlinksCmd.AddCommand(cloudlinksSearchServicesCmd)
 
 	cloudlinksFunctionsCmd.Flags().String("type", "", "Filter by function type: procedure, udf")
 	cloudlinksFunctionsCmd.Flags().String("database", "", "Filter available functions by database name")
 	cloudlinksFunctionsCmd.Flags().String("schema", "", "Filter available functions by schema name")
 	cloudlinksExploreCmd.Flags().String("database", "", "Filter to specific database")
 	cloudlinksExploreCmd.Flags().String("schema", "", "Filter to specific schema (requires --database)")
+	cloudlinksExploreCmd.Flags().String("table", "", "Filter to specific table (requires --database and --schema)")
 	cloudlinksExportCmd.Flags().StringP("output", "o", "generated.tf", "Output file for generated Terraform configuration")
+	cloudlinksSearchServicesCmd.Flags().String("database", "", "Filter by database name (required)")
+	cloudlinksSearchServicesCmd.Flags().String("schema", "", "Filter by schema name (required)")
+	_ = cloudlinksSearchServicesCmd.MarkFlagRequired("database")
+	_ = cloudlinksSearchServicesCmd.MarkFlagRequired("schema")
 }
 
 // GetCloudlinksCmd returns the cloudlinks command for registration
@@ -178,16 +208,21 @@ func runCloudlinksList(cmd *cobra.Command, args []string) error {
 func runCloudlinksFunctions(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
+	cloudLinkRef := args[0]
+	functionType, _ := cmd.Flags().GetString("type")
+	database, _ := cmd.Flags().GetString("database")
+	schema, _ := cmd.Flags().GetString("schema")
+
+	// Require both database and schema to avoid slow unfiltered queries
+	if database == "" || schema == "" {
+		return fmt.Errorf("--database and --schema are required to avoid Snowflake query timeouts\n\nExample:\n  ei cloudlinks functions %s --database MYDB --schema MYSCHEMA", cloudLinkRef)
+	}
+
 	// Get authenticated client
 	c, err := auth.GetClientFromCmd(cmd)
 	if err != nil {
 		return err
 	}
-
-	cloudLinkRef := args[0]
-	functionType, _ := cmd.Flags().GetString("type")
-	database, _ := cmd.Flags().GetString("database")
-	schema, _ := cmd.Flags().GetString("schema")
 
 	// Resolve cloudlink name to ID
 	cloudLinkID, err := discovery.ResolveCloudLinkID(ctx, c, cloudLinkRef)
@@ -238,10 +273,10 @@ func runCloudlinksFunctions(cmd *cobra.Command, args []string) error {
 	if len(available) == 0 {
 		if len(result.StoredFunctions) == 0 {
 			fmt.Println()
-			fmt.Println(ui.WarningStyle.Render("No functions found on this cloudlink."))
+			fmt.Println(ui.WarningStyle.Render(fmt.Sprintf("No functions found in %s.%s", database, schema)))
 			fmt.Println()
 		} else {
-			fmt.Println(ui.MutedStyle.Render("No additional available functions found."))
+			fmt.Println(ui.MutedStyle.Render(fmt.Sprintf("No additional available functions found in %s.%s", database, schema)))
 			fmt.Println()
 		}
 		return nil
@@ -304,10 +339,12 @@ func runCloudlinksExplore(cmd *cobra.Command, args []string) error {
 	cloudLinkRef := args[0]
 	dbFlag, _ := cmd.Flags().GetString("database")
 	schemaFlag, _ := cmd.Flags().GetString("schema")
+	tableFlag, _ := cmd.Flags().GetString("table")
 
-	// Determine database and schema from args or flags
+	// Determine database, schema, and table from args or flags
 	database := ""
 	schema := ""
+	table := ""
 
 	if len(args) >= 2 {
 		database = args[1]
@@ -319,6 +356,12 @@ func runCloudlinksExplore(cmd *cobra.Command, args []string) error {
 		schema = args[2]
 	} else if schemaFlag != "" {
 		schema = schemaFlag
+	}
+
+	if len(args) >= 4 {
+		table = args[3]
+	} else if tableFlag != "" {
+		table = tableFlag
 	}
 
 	// Resolve cloudlink name to ID
@@ -333,8 +376,10 @@ func runCloudlinksExplore(cmd *cobra.Command, args []string) error {
 		return showDatabases(ctx, c, cloudLinkID, cloudLinkRef, cmd)
 	case schema == "":
 		return showSchemas(ctx, c, cloudLinkID, cloudLinkRef, database, cmd)
-	default:
+	case table == "":
 		return showTables(ctx, c, cloudLinkID, cloudLinkRef, database, schema, cmd)
+	default:
+		return showColumns(ctx, c, cloudLinkID, cloudLinkRef, database, schema, table, cmd)
 	}
 }
 
@@ -474,6 +519,62 @@ func showTables(ctx context.Context, c *client.Client, cloudLinkID, cloudLinkRef
 	fmt.Println()
 	fmt.Println(ui.MutedStyle.Render(fmt.Sprintf("Total: %d tables", len(tables))))
 	fmt.Println()
+	fmt.Println(ui.MutedStyle.Render(fmt.Sprintf("Tip: ei cloudlinks explore %s %s %s <TABLE> to list columns", cloudLinkRef, database, schema)))
+	fmt.Println()
+
+	return nil
+}
+
+func showColumns(ctx context.Context, c *client.Client, cloudLinkID, cloudLinkRef, database, schema, tableName string, cmd *cobra.Command) error {
+	// Show spinner while loading (skip for JSON output)
+	if !isJSONOutput(cmd) {
+		fmt.Println(ui.InfoStyle.Render(fmt.Sprintf("Loading columns in %s.%s.%s...", database, schema, tableName)))
+	}
+
+	tableSchema, err := discovery.GetSnowflakeTableSchema(ctx, c, cloudLinkID, database, schema, tableName)
+	if err != nil {
+		return fmt.Errorf("failed to get table schema: %w", err)
+	}
+
+	// JSON output
+	if isJSONOutput(cmd) {
+		return outputJSON(tableSchema.Columns)
+	}
+
+	if len(tableSchema.Columns) == 0 {
+		fmt.Println()
+		fmt.Println(ui.WarningStyle.Render(fmt.Sprintf("No columns found in %s.%s.%s.", database, schema, tableName)))
+		fmt.Println()
+		return nil
+	}
+
+	// Create table
+	table := ui.NewTable([]string{"NAME", "TYPE", "NULLABLE", "PRIMARY KEY", "COMMENT"})
+
+	for _, col := range tableSchema.Columns {
+		nullable := "No"
+		if col.Nullable {
+			nullable = "Yes"
+		}
+		pk := ""
+		if col.PrimaryKey {
+			pk = "Yes"
+		}
+		comment := col.Comment
+		if len(comment) > 40 {
+			comment = comment[:37] + "..."
+		}
+		table.AddRow(col.Name, col.DatabaseType, nullable, pk, comment)
+	}
+
+	// Display table
+	fmt.Println()
+	fmt.Println(ui.TitleStyle.Render(fmt.Sprintf("Columns in %s.%s.%s on CloudLink: %s", database, schema, tableName, cloudLinkRef)))
+	fmt.Println()
+	fmt.Println(table.Render())
+	fmt.Println()
+	fmt.Println(ui.MutedStyle.Render(fmt.Sprintf("Total: %d columns", len(tableSchema.Columns))))
+	fmt.Println()
 
 	return nil
 }
@@ -514,13 +615,6 @@ func runCloudlinksExport(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Get credentials for provider config
-	config, _ := auth.LoadConfig()
-	creds, err := auth.GetCredentials(cmd, config)
-	if err != nil {
-		return err
-	}
-
 	fmt.Println(ui.InfoStyle.Render("Looking up CloudLink..."))
 
 	// Try to get CloudLink by name first, then by ID
@@ -536,58 +630,9 @@ func runCloudlinksExport(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(ui.SuccessStyle.Render(fmt.Sprintf("Found CloudLink: %s (%s)", cloudlink.Name, cloudlink.ID)))
 
-	// Check if terraform is installed
-	if err := export.CheckTerraformInstalled(); err != nil {
-		return fmt.Errorf("terraform is required: %w", err)
-	}
-
-	// Generate import block
-	blocks := []export.ImportBlock{
-		{
-			ID:           cloudlink.ID,
-			ResourceType: "elementum_cloudlink",
-			ResourceName: export.SanitizeName(cloudlink.Name),
-		},
-	}
-
-	// Create Terraform runner
-	runner, err := export.NewTerraformRunner()
-	if err != nil {
-		return fmt.Errorf("failed to create terraform runner: %w", err)
-	}
-	fmt.Printf("Working directory: %s\n", runner.WorkDir)
-
-	// Write imports and provider config
-	providerConfig := export.RenderProviderConfig(creds.Organization, creds.Instance, creds.Environment, creds.ClientID, creds.ClientSecret)
-	imports := export.RenderImportBlocks(blocks)
-
-	err = runner.WriteImports(providerConfig, imports)
-	if err != nil {
-		return fmt.Errorf("failed to write import files: %w", err)
-	}
-
-	fmt.Println(ui.SuccessStyle.Render("Generated import block"))
-
-	// Run terraform init
-	fmt.Println(ui.InfoStyle.Render("Running terraform init..."))
-	if err := runner.Init(); err != nil {
-		return fmt.Errorf("terraform init failed: %w", err)
-	}
-	fmt.Println(ui.SuccessStyle.Render("Terraform initialized"))
-
-	// Run terraform plan -generate-config-out
+	// Generate HCL from discovered data
 	fmt.Println(ui.InfoStyle.Render("Generating Terraform configuration..."))
-	generatedFile := "generated.tf"
-	_, err = runner.GenerateConfig(generatedFile)
-	if err != nil {
-		return fmt.Errorf("terraform plan failed: %w", err)
-	}
-
-	// Read the generated file
-	content, err := runner.GetGeneratedFile(generatedFile)
-	if err != nil {
-		return fmt.Errorf("failed to read generated config: %w", err)
-	}
+	content := export.GenerateCloudLinkHCL(cloudlink)
 
 	// Write to output file
 	err = os.WriteFile(outputFile, []byte(content), 0644)
@@ -599,7 +644,73 @@ func runCloudlinksExport(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 	fmt.Println(ui.SubtitleStyle.Render("Next steps:"))
 	fmt.Printf("  %s Review %s\n", ui.RenderBullet(), outputFile)
-	fmt.Printf("  %s Run: terraform plan\n", ui.RenderBullet())
+	fmt.Printf("  %s Run: tofu plan\n", ui.RenderBullet())
+	fmt.Println()
+
+	return nil
+}
+
+func runCloudlinksSearchServices(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+
+	providerRef := args[0]
+	database, _ := cmd.Flags().GetString("database")
+	schema, _ := cmd.Flags().GetString("schema")
+
+	// Get authenticated client
+	c, err := auth.GetClientFromCmd(cmd)
+	if err != nil {
+		return err
+	}
+
+	// Show spinner while loading (skip for JSON output)
+	if !isJSONOutput(cmd) {
+		fmt.Println(ui.InfoStyle.Render(fmt.Sprintf("Loading Cortex Search Services from %s.%s...", database, schema)))
+	}
+
+	// Discover search services (providerRef can be cloudlink ID/name or AI provider name)
+	services, err := discovery.ListSnowflakeCortexSearchServices(ctx, c, providerRef, database, schema)
+	if err != nil {
+		return fmt.Errorf("failed to list search services: %w", err)
+	}
+
+	// JSON output
+	if isJSONOutput(cmd) {
+		return outputJSON(services)
+	}
+
+	if len(services) == 0 {
+		fmt.Println()
+		fmt.Println(ui.WarningStyle.Render(fmt.Sprintf("No Cortex Search Services found in %s.%s", database, schema)))
+		fmt.Println()
+		return nil
+	}
+
+	// Create table
+	table := ui.NewTable([]string{"SERVICE NAME", "DATABASE", "SCHEMA"})
+
+	for _, svc := range services {
+		table.AddRow(svc.Name, svc.Database, svc.Schema)
+	}
+
+	// Display table
+	fmt.Println()
+	fmt.Println(ui.TitleStyle.Render(fmt.Sprintf("Cortex Search Services (%s.%s)", database, schema)))
+	fmt.Println(ui.MutedStyle.Render(fmt.Sprintf("Provider: %s", providerRef)))
+	fmt.Println()
+	fmt.Println(table.Render())
+	fmt.Println()
+	fmt.Println(ui.MutedStyle.Render(fmt.Sprintf("Total: %d services", len(services))))
+	fmt.Println()
+	fmt.Println(ui.SubtitleStyle.Render("Usage:"))
+	fmt.Println("  Link a service with elementum_linked_ai_search_table:")
+	fmt.Printf("  resource \"elementum_linked_ai_search_table\" \"example\" {\n")
+	fmt.Printf("    object_id     = data.elementum_app.my_app.id\n")
+	fmt.Printf("    cloud_link_id = data.elementum_cloudlink.%s.id\n", export.SanitizeName(providerRef))
+	fmt.Printf("    database      = \"%s\"\n", database)
+	fmt.Printf("    schema_name   = \"%s\"\n", schema)
+	fmt.Printf("    service_name  = \"<SERVICE_NAME>\"\n")
+	fmt.Printf("  }\n")
 	fmt.Println()
 
 	return nil

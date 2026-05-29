@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"runtime"
 
 	"github.com/Khan/genqlient/graphql"
 	"github.com/elementumltd/elementum-cli/internal/logging"
@@ -119,6 +120,9 @@ func (g *GenqlientClient) MakeRequest(
 			}
 		}
 
+		// Generate trace ID for this request
+		reqToe := uuid.New().String()
+
 		// Execute with HTTP-level retry logic (handles 429, 5xx, network errors)
 		httpResp, err := ExecuteWithRetry(ctx, func() (*http.Response, error) {
 			httpReq, err := http.NewRequestWithContext(ctx, "POST", c.baseURL, bytes.NewBuffer(jsonBody))
@@ -129,10 +133,16 @@ func (g *GenqlientClient) MakeRequest(
 			httpReq.Header.Set("Content-Type", "application/json")
 			httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
-			httpReq.Header.Set("x-elementum-organization", fmt.Sprintf("%s.%s", orgPart, host))
-			httpReq.Header.Set("x-elementum-platform", "IOS")
-			httpReq.Header.Set("x-elementum-toe", uuid.New().String())
+			xElemOrg := fmt.Sprintf("%s.%s", orgPart, host)
+			httpReq.Header.Set("x-elementum-organization", xElemOrg)
+			httpReq.Header.Set("x-elementum-platform", runtime.GOOS)
+			httpReq.Header.Set("x-elementum-toe", reqToe)
 			httpReq.Header.Set("x-elementum-base-url", host)
+
+			tflog.Trace(ctx, "GraphQL request", map[string]interface{}{
+				"operation":       req.OpName,
+				"x-elementum-toe": reqToe,
+			})
 
 			return c.httpClient.Do(httpReq)
 		})
@@ -145,6 +155,18 @@ func (g *GenqlientClient) MakeRequest(
 		if err != nil {
 			return fmt.Errorf("failed to read response: %w", err)
 		}
+
+		// Log response headers for debugging (trace headers help correlate with backend logs)
+		toeHeader := httpResp.Header.Get("x-elementum-toe")
+		requestID := httpResp.Header.Get("x-request-id")
+		traceID := httpResp.Header.Get("x-trace-id")
+		tflog.Trace(ctx, "GraphQL response headers", map[string]interface{}{
+			"operation":       req.OpName,
+			"status":          httpResp.StatusCode,
+			"x-elementum-toe": toeHeader,
+			"x-request-id":    requestID,
+			"x-trace-id":      traceID,
+		})
 
 		if httpResp.StatusCode != http.StatusOK {
 			return fmt.Errorf("unexpected status code %d: %s", httpResp.StatusCode, string(body))
@@ -160,6 +182,13 @@ func (g *GenqlientClient) MakeRequest(
 		if len(resp.Errors) > 0 {
 			for _, gqlErr := range resp.Errors {
 				logging.GraphQLWarn(gqlErr.Message, req.OpName, gqlErr.Path, variables)
+				tflog.Debug(ctx, "GraphQL error details", map[string]interface{}{
+					"operation":       req.OpName,
+					"error":           gqlErr.Message,
+					"path":            gqlErr.Path,
+					"x-elementum-toe": toeHeader,
+					"x-request-id":    requestID,
+				})
 			}
 
 			if resp.Data != nil {

@@ -6,7 +6,7 @@
     {
       "__typename": "WorkflowSwitchCase",
       "id": "case-1111-1111-1111-111111111111",
-      "name": "High Priority",
+      "label": "High Priority",
       "filter": {
         "type": "equals",
         "fieldId": "ffffffff-ffff-ffff-ffff-ffffffffffff",
@@ -16,7 +16,7 @@
     {
       "__typename": "WorkflowSwitchCase",
       "id": "case-2222-2222-2222-222222222222",
-      "name": "Default",
+      "label": "Default",
       "filter": null
     }
   ]

@@ -1,0 +1,68 @@
+# Deployment queries and mutations
+
+query ListDeployments($first: Int, $filter: Filter) {
+  organization {
+    deployments(first: $first, filter: $filter) {
+      edges {
+        node {
+          id
+          name
+          status
+          errors
+          message
+          createdAt
+          updatedAt
+          createdBy {
+            id
+            name
+          }
+          sourceEnvironment {
+            id
+            name
+          }
+          targetEnvironment {
+            id
+            name
+          }
+          app {
+            id
+            name
+            ... on AspectApp {
+              namespace
+            }
+          }
+        }
+      }
+      total
+    }
+  }
+}
+
+mutation CreateDeployment($input: DeploymentCreateInput!) {
+  deploymentCreate(input: $input) {
+    id
+    status
+    errors
+    asyncTask {
+      id
+      status
+      completedSteps
+      totalSteps
+    }
+    sourceEnvironment {
+      id
+      name
+    }
+    targetEnvironment {
+      id
+      name
+    }
+    app {
+      id
+      name
+      ... on AspectApp {
+        namespace
+      }
+    }
+  }
+}

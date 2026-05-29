@@ -98,6 +98,32 @@ mutation RetryAspectSearchTable($id: ID!) {
   }
 }
 
+# Refresh (incremental re-indexing of Cortex Search Service)
+mutation RefreshAspectSearchTable($id: ID!) {
+  aspectSearchTableRefresh(id: $id) {
+    ...AspectSearchTableFieldsV3
+  }
+}
+
+# Rebuild (full re-index with CREATE OR REPLACE)
+mutation RebuildAspectSearchTable($id: ID!) {
+  aspectSearchTableRebuild(id: $id) {
+    ...AspectSearchTableFieldsV3
+  }
+}
+
+# Query an Aspect search table (Cortex search)
+query AspectSearchTableQuery($tableId: ID!, $input: AspectSearchTableQueryInput!) {
+  aspectSearchTableQuery(tableId: $tableId, input: $input) {
+    records {
+      values {
+        field
+        value
+      }
+    }
+  }
+}
+
 # Get a single search table by ID through the aspect
 # Note: searchTable(id:) is on AspectApp and AspectElement, not Organization
 query GetAspectSearchTableById($aspectId: ID!, $searchTableId: ID!) {
@@ -112,6 +138,40 @@ query GetAspectSearchTableById($aspectId: ID!, $searchTableId: ID!) {
       ... on AspectElement {
         searchTable(id: $searchTableId) {
           ...AspectSearchTableFieldsV3
+        }
+      }
+    }
+  }
+}
+
+# Get search table dependencies (usages) for deletion checks
+# Uses RefreshStatus mutation since there's no direct query for search tables by ID at org level
+mutation GetAspectSearchTableDependencies($id: ID!) {
+  aspectSearchTableRefreshStatus(id: $id) {
+    id
+    usage {
+      agentTools(first: 100) {
+        edges {
+          node {
+            id
+            name
+          }
+        }
+      }
+      agents(first: 100) {
+        edges {
+          node {
+            id
+            name
+          }
+        }
+      }
+      automations(first: 100) {
+        edges {
+          node {
+            id
+            name
+          }
         }
       }
     }

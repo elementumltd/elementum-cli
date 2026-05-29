@@ -1,0 +1,360 @@
+# Task Details Query for Read/Drift Detection
+# Uses fragments for all task types to enable proper CRUD operations
+
+# Standard fragment for value references - includes all fields needed to reconstruct
+# the value when the API returns null for the 'value' field but the reference is valid.
+# Matches the ValueRefFragment constant in task_types.go.
+fragment ValueReferenceFields on ValueReference {
+  id
+  label
+  value
+  valid
+  taskReference { name taskId }
+  triggerReference { name }
+  forEachReference { name forEachTask { id } }
+  variableReference { variableId name type }
+  templateReference {
+    template
+    parameters {
+      ... on ValueReferenceTemplateValueParameter {
+        name
+        value {
+          triggerReference { name }
+          taskReference { name task { id } }
+          variableReference { variableId name type }
+          forEachReference { name forEachTask { id } }
+        }
+      }
+    }
+  }
+}
+
+query GetTaskDetails($aspectId: ID!, $automationId: ID!, $taskId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      automation(id: $automationId) {
+        draft {
+          task(id: $taskId) {
+            __typename
+            id
+            name
+            updatedAt
+            previous { id }
+            next { id }
+
+            # Message task
+            ... on WorkflowMessageTask {
+              contentsReference { ...ValueReferenceFields }
+              recordReference { ...ValueReferenceFields }
+            }
+
+            # Notification task
+            ... on WorkflowNotificationTask {
+              messageReference { ...ValueReferenceFields }
+              titleReference { ...ValueReferenceFields }
+              userValueReferences { ...ValueReferenceFields }
+              groupValueReferences { ...ValueReferenceFields }
+              notifyWatchers
+            }
+
+            # Variable task
+            ... on WorkflowVariableTask {
+              variables {
+                __typename
+                ... on WorkflowVariableTaskParameterCreate {
+                  id
+                  name
+                  type
+                  createValue: value { ...ValueReferenceFields }
+                }
+                ... on WorkflowVariableTaskParameterUpdate {
+                  updateValue: value { ...ValueReferenceFields }
+                  variable { ...ValueReferenceFields }
+                }
+              }
+            }
+
+            # Update Field task
+            ... on WorkflowUpdateFieldTask {
+              aspect { id name }
+              recordReference { ...ValueReferenceFields }
+              workflowFields {
+                field { id name }
+                valueReference { ...ValueReferenceFields }
+              }
+            }
+
+            # Create Record task
+            ... on WorkflowCreateRecordTask {
+              aspect { id name }
+              recordReference { ...ValueReferenceFields }
+              relateToRecord
+              workflowFields {
+                field { id name }
+                valueReference { ...ValueReferenceFields }
+              }
+            }
+
+            # Record Search task
+            ... on WorkflowRecordSearchTask {
+              aspect { id name }
+              limit
+              filter
+              filterValueReferences {
+                valueReferences { ...ValueReferenceFields }
+              }
+            }
+
+            # AI Agent task
+            ... on WorkflowAiAgentTask {
+              agent { id name }
+              agentPrompt { ...ValueReferenceFields }
+              outputType
+            }
+
+            # Send Email task
+            ... on WorkflowSendEmailTask {
+              subject { ...ValueReferenceFields }
+              messageBody { ...ValueReferenceFields }
+              emailUsers: users { ...ValueReferenceFields }
+              emailGroups: groups { ...ValueReferenceFields }
+              externalEmails { ...ValueReferenceFields }
+            }
+
+            # For Each task
+            ... on WorkflowForEachTask {
+              forEach { ...ValueReferenceFields }
+              children {
+                id
+                label
+                tasks { id __typename name }
+              }
+            }
+
+            # Switch task
+            ... on WorkflowSwitchTask {
+              children {
+                id
+                label
+                filter
+                tasks { id __typename name }
+              }
+            }
+
+            # Save Attachment task
+            ... on WorkflowSaveAttachmentTask {
+              recordId { ...ValueReferenceFields }
+              file { ... on ValueReference { ...ValueReferenceFields } }
+              tag { ...ValueReferenceFields }
+            }
+
+            # Add Watcher task
+            ... on WorkflowAddWatcherTask {
+              recordReference { ...ValueReferenceFields }
+              watcherUsers: users { id }
+              watcherGroups: groups { id }
+            }
+
+            # Relate Records task
+            ... on WorkflowRelateRecordsTask {
+              sourceRecordIds { ...ValueReferenceFields }
+              targetRecordId { ...ValueReferenceFields }
+            }
+
+            # Find Related Records task
+            ... on WorkflowFindRelatedRecordsTask {
+              recordId { ...ValueReferenceFields }
+              relatedAspect { id name }
+              limit
+            }
+
+            # User Search task
+            ... on WorkflowUserSearchTask {
+              filter
+              filterValueReferences {
+                valueReferences { ...ValueReferenceFields }
+              }
+            }
+
+            # Calculation task
+            ... on WorkflowCalculationTask {
+              calculations {
+                id
+                name
+                calculation
+                calculationReference { ...ValueReferenceFields }
+              }
+            }
+
+            # AI Summarize task
+            ... on WorkflowAiSummarizeTask {
+              aiProviderConnector { id }
+              textToSummarize { ...ValueReferenceFields }
+              context { ...ValueReferenceFields }
+              length
+            }
+
+            # AI Transform task
+            ... on WorkflowAiTransformTask {
+              aiProviderConnector { id }
+              prompt { ...ValueReferenceFields }
+              fieldType
+            }
+
+            # AI Classify task
+            ... on WorkflowAiClassifyTask {
+              aiProviderConnector { id }
+              textToClassify { ...ValueReferenceFields }
+              context { ...ValueReferenceFields }
+              categorySource {
+                __typename
+                ... on AiClassifyCategoryStaticSource {
+                  categories {
+                    name { ...ValueReferenceFields }
+                    description { ...ValueReferenceFields }
+                  }
+                }
+                ... on AiClassifyCategoryDynamicSource {
+                  aspect { id name }
+                  labelField { id name }
+                  descriptionField { id name }
+                  filter
+                  limit
+                }
+              }
+            }
+
+            # AI File Read task
+            ... on WorkflowAiFileAnalysisTask {
+              documentModel { id }
+              attachment { ...ValueReferenceFields }
+              aiProviderConnector { id }
+            }
+
+            # API task
+            ... on WorkflowApiTask {
+              method
+              urlReference { ...ValueReferenceFields }
+              headers { header value { ...ValueReferenceFields } }
+              responseType
+              continueOnError
+              authorization {
+                __typename
+                ... on ApiBearerAuthorization { token }
+                ... on ApiBasicAuthorization { username password }
+                ... on ApiOauthAuthorization { clientId clientSecret url requestType }
+              }
+              body {
+                __typename
+                ... on ApiCustomBody { body { ...ValueReferenceFields } contentType }
+                ... on ApiJsonBody { jsonReference { ...ValueReferenceFields } }
+                ... on ApiFormBody { values { key value { ...ValueReferenceFields } } }
+              }
+            }
+
+            # Approval Chain Template task
+            ... on WorkflowApprovalChainTemplateTask {
+              approvalChainTemplate { id }
+              dynamicApprovers { id { ...ValueReferenceFields } }
+              recordId { ...ValueReferenceFields }
+              requesterId { ...ValueReferenceFields }
+              reason { ...ValueReferenceFields }
+              summary { ...ValueReferenceFields }
+            }
+
+            # Approval Status Update task
+            ... on WorkflowApprovalStatusUpdateTask {
+              approvalChainTemplate { id }
+              status
+              reason { ...ValueReferenceFields }
+            }
+
+            # Aspect Record Field Locking task
+            ... on WorkflowAspectRecordFieldLockingTask {
+              aspect { id name }
+              recordId { ...ValueReferenceFields }
+              fieldsToLock { id name }
+              fieldsToUnlock { id name }
+            }
+
+            # Execute Script task
+            ... on WorkflowExecuteScriptTask {
+              code
+              inputs {
+                name
+                value { ...ValueReferenceFields }
+                fieldMappings { alias field { id name } }
+              }
+              outputSchema {
+                __typename
+                name
+                ... on JsonSchemaString { format }
+                ... on JsonSchemaObject {
+                  properties {
+                    __typename
+                    name
+                    ... on JsonSchemaString { format }
+                  }
+                }
+              }
+            }
+
+            # Procedure task
+            ... on WorkflowProcedureTask {
+              cloudLinkId
+              storedFunction { id name }
+              parameters {
+                index
+                value { ...ValueReferenceFields }
+              }
+            }
+
+            # Run Automation task
+            ... on WorkflowRunAutomationTask {
+              automation { id name }
+              automationRef { ...ValueReferenceFields }
+              synchronous
+              inputMappings {
+                parameter { id name }
+                value { ...ValueReferenceFields }
+              }
+              dynamicInputMappings {
+                name
+                value { ...ValueReferenceFields }
+              }
+              outputMappings { name }
+            }
+
+            # AI Search Table task
+            ... on WorkflowAiSearchTableTask {
+              searchTable { id }
+              query { ...ValueReferenceFields }
+              aiSearchFilter: filter
+              limit
+            }
+
+            # File Reader task (DocumentModel in GraphQL)
+            ... on WorkflowDocumentModelTask {
+              documentModelDataSource {
+                attachment { ...ValueReferenceFields }
+                attachmentId { ...ValueReferenceFields }
+                file { ...ValueReferenceFields }
+                rawText { ...ValueReferenceFields }
+              }
+              documentModel { id }
+            }
+
+            # Fork Join task
+            ... on WorkflowForkJoinTask {
+              children {
+                id
+                label
+                tasks { id __typename name }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

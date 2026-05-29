@@ -74,6 +74,23 @@ func (g *AutomationHCLGenerator) getAutomationResourceName(automationID string) 
 	return ""
 }
 
+// getTriggerResourceRef finds the full Terraform resource reference for an automation's first trigger
+func (g *AutomationHCLGenerator) getTriggerResourceRef(automation discovery.Automation) string {
+	if len(automation.Triggers) == 0 {
+		return ""
+	}
+	// Use the first trigger - on_demand automations typically have one trigger
+	trigger := automation.Triggers[0]
+	triggerType := "elementum_" + trigger.Type + "_trigger"
+	// Find the import for this trigger
+	for _, imp := range g.imports {
+		if imp.ResourceType == triggerType && strings.HasSuffix(imp.ID, ":"+trigger.ID) {
+			return triggerType + "." + imp.ResourceName
+		}
+	}
+	return ""
+}
+
 // GetTriggerGenerator returns the trigger HCL generator for direct access
 func (g *AutomationHCLGenerator) GetTriggerGenerator() *TriggerHCLGenerator {
 	return g.triggerGen
@@ -126,27 +143,69 @@ func (g *AutomationHCLGenerator) GenerateWorkflowPublishIR() []*HCLBlock {
 			}
 
 			b := NewResourceBlock("elementum_workflow_publish", publishResourceName)
-			b.SetAttr("automation_id", Ref("elementum_automation."+automationResourceName+".id"))
+			// Use whole resource reference (not .id) for automation attribute
+			b.SetAttr("automation", Ref("elementum_automation."+automationResourceName))
+			// workflow_revision is required - use 1.0.0 as default for export
+			b.SetAttr("workflow_revision", Str("1.0.0"))
 
-			// Build task_ids list - collect all task references
-			var taskRefs []HCLValue
+			// Build depends_on. Two kinds of dependencies go here:
+			// 1. Cross-automation: any run_automation_task calls another
+			//    automation, and that target automation's workflow_publish
+			//    must be applied FIRST (otherwise the call has nothing to
+			//    hit). Emit these before the task deps — matches truth's
+			//    "called automations must be published first" comment.
+			// 2. Per-task: every task in this automation's workflow is a
+			//    dependency of the publish so Terraform creates tasks
+			//    before publishing the revision.
+			var dependsOnRefs []HCLValue
+			seen := map[string]bool{}
+			for _, task := range automation.Tasks {
+				if task.Type != "run_automation" || task.RawData == nil {
+					continue
+				}
+				autoMap, ok := task.RawData["automation"].(map[string]interface{})
+				if !ok {
+					continue
+				}
+				targetID, _ := autoMap["id"].(string)
+				if targetID == "" || targetID == automation.ID {
+					continue
+				}
+				targetPublishName := ""
+				for _, imp := range g.imports {
+					if imp.ResourceType == "elementum_workflow_publish" && imp.ID == targetID {
+						targetPublishName = imp.ResourceName
+						break
+					}
+				}
+				if targetPublishName == "" {
+					continue
+				}
+				key := "elementum_workflow_publish." + targetPublishName
+				if seen[key] {
+					continue
+				}
+				seen[key] = true
+				dependsOnRefs = append(dependsOnRefs, Ref(key))
+			}
 			for _, task := range automation.Tasks {
 				if task.Type == "unknown" {
 					continue
 				}
-				taskType := "elementum_" + task.Type + "_task"
-				// Find the task import to get resource name
+				taskResourceType := "elementum_" + task.Type + "_task"
 				for _, imp := range g.imports {
-					if imp.ResourceType == taskType && strings.HasSuffix(imp.ID, ":"+task.ID) {
-						taskRef := Ref(taskType + "." + imp.ResourceName + ".id")
-						taskRefs = append(taskRefs, taskRef)
+					if imp.ResourceType == taskResourceType && strings.HasSuffix(imp.ID, ":"+task.ID) {
+						key := taskResourceType + "." + imp.ResourceName
+						if !seen[key] {
+							seen[key] = true
+							dependsOnRefs = append(dependsOnRefs, Ref(key))
+						}
 						break
 					}
 				}
 			}
-
-			if len(taskRefs) > 0 {
-				b.SetAttr("task_ids", List(taskRefs...))
+			if len(dependsOnRefs) > 0 {
+				b.SetAttr("depends_on", List(dependsOnRefs...))
 			}
 
 			// Add outputs if present (for on-demand automations)
@@ -255,11 +314,11 @@ func (g *AutomationHCLGenerator) buildOutputValueJSON(valueRef map[string]interf
 				}
 			}
 
-			// Format 2: "record.<field_id>" - this is a trigger field reference, use automation refs
+			// Format 2: "record.<field_id>" - this is a trigger field reference, use trigger refs
 			if strings.HasPrefix(refName, "record.") {
-				automationResourceName := g.getAutomationResourceName(automation.ID)
-				if automationResourceName != "" {
-					return "elementum_automation." + automationResourceName + ".refs[\"" + refName + "\"]"
+				triggerRef := g.getTriggerResourceRef(automation)
+				if triggerRef != "" {
+					return triggerRef + ".refs[\"" + refName + "\"]"
 				}
 			}
 
@@ -294,13 +353,13 @@ func (g *AutomationHCLGenerator) buildOutputValueJSON(valueRef map[string]interf
 		}
 	}
 
-	// Check for triggerReference
-	if triggerRef, ok := valueRef["triggerReference"].(map[string]interface{}); ok && triggerRef != nil {
-		refName := getStringValue(triggerRef, "name")
+	// Check for triggerReference - use trigger refs, not automation refs
+	if triggerRefMap, ok := valueRef["triggerReference"].(map[string]interface{}); ok && triggerRefMap != nil {
+		refName := getStringValue(triggerRefMap, "name")
 		if refName != "" {
-			automationResourceName := g.getAutomationResourceName(automation.ID)
-			if automationResourceName != "" {
-				return "elementum_automation." + automationResourceName + ".refs[\"" + refName + "\"]"
+			triggerRef := g.getTriggerResourceRef(automation)
+			if triggerRef != "" {
+				return triggerRef + ".refs[\"" + refName + "\"]"
 			}
 		}
 	}
@@ -327,6 +386,13 @@ func (g *AutomationHCLGenerator) GenerateAutomationsOnlyIR() []*HCLBlock {
 			b := NewResourceBlock("elementum_automation", automationName)
 			b.SetAttr("app_id", Ref(appRef))
 			b.SetAttr("name", Str(automation.Name))
+			// description is a TF-only attribute — the platform Automation
+			// type has no description field to read from. Emit an empty
+			// string so the attribute exists and roundtrips cleanly.
+			b.SetAttr("description", Str(""))
+			// triggers_other_automations is the inverse of Terminal. Emit
+			// explicitly (matches truth's convention).
+			b.SetAttr("triggers_other_automations", Bool(!automation.Terminal))
 			blocks = append(blocks, b)
 		}
 	}
@@ -343,13 +409,13 @@ func (g *AutomationHCLGenerator) GenerateAutomationsOnlyIR() []*HCLBlock {
 
 	// Discovered element automations (elements use element resource type)
 	for _, de := range g.app.DiscoveredElements {
-		deRef := "elementum_element." + SanitizeName(de.Name) + ".id"
+		deRef := "elementum_element." + ElementResourceName(de) + ".id"
 		generateForApp(de.Automations, deRef)
 	}
 
 	// Discovered task automations (tasks use task resource type)
 	for _, dt := range g.app.DiscoveredTasks {
-		dtRef := "elementum_task." + SanitizeName(dt.Name) + ".id"
+		dtRef := "elementum_task." + TaskResourceName(dt) + ".id"
 		generateForApp(dt.Automations, dtRef)
 	}
 
@@ -358,8 +424,13 @@ func (g *AutomationHCLGenerator) GenerateAutomationsOnlyIR() []*HCLBlock {
 
 // BeautifyAutomation applies beautification to an automation resource block in HCL
 func (g *AutomationHCLGenerator) BeautifyAutomation(hcl string, automation *discovery.Automation) string {
-	// Replace UUID strings with terraform references
+	// Replace UUID strings with terraform references. Skip empty keys —
+	// fmt.Sprintf("%q", "") is `""`, which would match every empty string
+	// literal in the HCL and rewrite it.
 	for uuid, ref := range g.uuidMap {
+		if uuid == "" {
+			continue
+		}
 		hcl = strings.ReplaceAll(hcl, fmt.Sprintf("%q", uuid), ref)
 	}
 
@@ -423,6 +494,98 @@ func (g *AspectAutomationHCLGenerator) GenerateAllIR() []*HCLBlock {
 	blocks = append(blocks, g.generateAutomationsOnlyIR()...)
 	blocks = append(blocks, g.triggerGen.GenerateAllIR()...)
 	blocks = append(blocks, g.taskGen.GenerateAllIR()...)
+	blocks = append(blocks, g.GenerateWorkflowPublishIR()...)
+	return blocks
+}
+
+// GenerateWorkflowPublishIR generates IR blocks for workflow_publish resources on aspect automations.
+func (g *AspectAutomationHCLGenerator) GenerateWorkflowPublishIR() []*HCLBlock {
+	var blocks []*HCLBlock
+
+	for _, automation := range g.automations {
+		if !automation.HasPublished || automation.Status != "ACTIVE" {
+			continue
+		}
+
+		// Find the workflow_publish import for this automation
+		var publishResourceName string
+		for _, imp := range g.imports {
+			if imp.ResourceType == "elementum_workflow_publish" &&
+				imp.ID == automation.ID {
+				publishResourceName = imp.ResourceName
+				break
+			}
+		}
+		if publishResourceName == "" {
+			continue
+		}
+
+		// Get automation resource name for the reference
+		automationResourceName := g.getAutomationResourceName(automation.ID)
+		if automationResourceName == "" {
+			continue
+		}
+
+		b := NewResourceBlock("elementum_workflow_publish", publishResourceName)
+		b.SetAttr("automation", Ref("elementum_automation."+automationResourceName))
+		b.SetAttr("workflow_revision", Str("1.0.0"))
+
+		// Build depends_on: cross-automation (called workflow_publishes) +
+		// per-task refs. Same logic as the main-app path.
+		var dependsOnRefs []HCLValue
+		seen := map[string]bool{}
+		for _, task := range automation.Tasks {
+			if task.Type != "run_automation" || task.RawData == nil {
+				continue
+			}
+			autoMap, ok := task.RawData["automation"].(map[string]interface{})
+			if !ok {
+				continue
+			}
+			targetID, _ := autoMap["id"].(string)
+			if targetID == "" || targetID == automation.ID {
+				continue
+			}
+			targetPublishName := ""
+			for _, imp := range g.imports {
+				if imp.ResourceType == "elementum_workflow_publish" && imp.ID == targetID {
+					targetPublishName = imp.ResourceName
+					break
+				}
+			}
+			if targetPublishName == "" {
+				continue
+			}
+			key := "elementum_workflow_publish." + targetPublishName
+			if seen[key] {
+				continue
+			}
+			seen[key] = true
+			dependsOnRefs = append(dependsOnRefs, Ref(key))
+		}
+		for _, task := range automation.Tasks {
+			if task.Type == "unknown" {
+				continue
+			}
+			taskResourceType := "elementum_" + task.Type + "_task"
+			for _, imp := range g.imports {
+				if imp.ResourceType == taskResourceType && strings.HasSuffix(imp.ID, ":"+task.ID) {
+					key := taskResourceType + "." + imp.ResourceName
+					if !seen[key] {
+						seen[key] = true
+						dependsOnRefs = append(dependsOnRefs, Ref(key))
+					}
+					break
+				}
+			}
+		}
+		if len(dependsOnRefs) > 0 {
+			b.SetAttr("depends_on", List(dependsOnRefs...))
+		}
+
+		blocks = append(blocks, b)
+	}
+
 	return blocks
 }
 
@@ -454,6 +617,10 @@ func (g *AspectAutomationHCLGenerator) generateAutomationsOnlyIR() []*HCLBlock {
 		b := NewResourceBlock("elementum_automation", automationName)
 		b.SetAttr(idAttr, Ref(resourceType+"."+aspectResourceName+".id"))
 		b.SetAttr("name", Str(automation.Name))
+		// Platform has no description on Automation — emit empty so the TF
+		// attribute exists and roundtrips cleanly.
+		b.SetAttr("description", Str(""))
+		b.SetAttr("triggers_other_automations", Bool(!automation.Terminal))
 		blocks = append(blocks, b)
 	}
 	return blocks

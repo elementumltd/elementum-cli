@@ -15,8 +15,10 @@
 package discovery
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 )
 
@@ -60,14 +62,20 @@ type App struct {
 	Flows           []Flow
 	Automations     []Automation
 	Agents          []Agent
+	Skills          []AgenticSkill
 	Approvals       []ApprovalProcess
 	Widgets         []Widget
 	Views           []View
 	AIFileReaders   []AIFileReader
-	Relationships   []Relationship
-	RelatedObjects  []RelatedObject // Objects discovered through relationships
-	AccessPolicies  []AccessPolicy  // Access policies for row-level security
-	Roles           []Role          // Roles for this app (managed + custom)
+	// FileReaderIDAlias maps dropped duplicate file-reader IDs to the
+	// canonical ID that was kept after dedup by (type, name). Used at UUID
+	// resolution time so file_reader_id references in tasks that pointed at
+	// dropped duplicates get rewritten to the canonical resource.
+	FileReaderIDAlias map[string]string
+	Relationships     []Relationship
+	RelatedObjects    []RelatedObject // Objects discovered through relationships
+	AccessPolicies    []AccessPolicy  // Access policies for row-level security
+	Roles             []Role          // Roles for this app (managed + custom)
 
 	// Referenced resources discovered from automation dependencies
 	ReferencedDatamines []*Datamine
@@ -89,7 +97,8 @@ type App struct {
 	PhoneServices []PhoneService
 
 	// AI Search Tables on this app
-	AISearchTables []AISearchTable
+	AISearchTables       []AISearchTable
+	LinkedAISearchTables []LinkedAISearchTable
 
 	// Managed view order (singleton per aspect, nil if no views)
 	ManagedViewOrder *ManagedViewOrder
@@ -133,11 +142,17 @@ type Layout struct {
 
 // DisplayBlock represents a display block in a layout/stage
 type DisplayBlock struct {
-	ID       string
-	Type     string // group, field, widget, activity_log, approvals, attachments, etc.
-	Name     string // For group blocks, otherwise empty
-	StageID  string // The stage this block belongs to
-	AspectID string // The app/element this block belongs to
+	ID              string
+	Type            string   // group, field, widget, activity_log, approvals, attachments, etc.
+	Name            string   // For group blocks, otherwise empty
+	StageID         string   // The stage this block belongs to
+	AspectID        string   // The app/element this block belongs to
+	FieldIDs        []string // UUIDs of fields/widgets within this group block
+	Icon            string
+	Color           string
+	DisplayOrder    int
+	SideNavItem     bool
+	DisplayLocation string
 }
 
 // Flow represents a flow diagram
@@ -154,6 +169,7 @@ type Automation struct {
 	WorkflowID   string // Current workflow ID (published or draft)
 	HasDraft     bool
 	HasPublished bool
+	Terminal     bool // true = stops automation chain (default); false = triggers other automations
 	Triggers     []Trigger
 	Tasks        []Task
 	Outputs      []WorkflowOutput // Outputs exposed by on-demand workflows
@@ -195,6 +211,9 @@ type Task struct {
 	FieldRefs map[string]string
 	// RawData holds the full task data from GraphQL for type-specific field extraction
 	RawData map[string]interface{}
+	// Children holds operator children data (switch cases, fork/join branches).
+	// Populated from GraphQL children field for operator tasks (switch, fork_join).
+	Children []map[string]interface{}
 
 	// AI Provider Connector info for AI tasks (ai_file_read, ai_classify, ai_summarize, etc.)
 	AiProviderConnectorID        string // UUID of the AI provider connector
@@ -210,6 +229,62 @@ type Task struct {
 	// Key: GraphQL field name (e.g., "agent", "aspect"), Value: error message.
 	// Tasks with broken required fields will get TODO comments in exported HCL.
 	BrokenFields map[string]string
+}
+
+// AgenticSkill represents a reusable agentic skill owned by an app or element.
+// Agents reference skills via `elementum_agent.skill_ids`; skills contain one
+// or more typed tools that actually do work (run an automation, search an
+// aspect, etc.).
+type AgenticSkill struct {
+	ID           string
+	Name         string
+	Description  string
+	Instructions string
+	Status       string // ACTIVE, INACTIVE
+	Type         string // CUSTOM, INTERNAL
+	OwnerID      string // Parent aspect (app/element) that owns the skill
+	OwnerType    string // APP_ASPECT, ELEMENT_ASPECT, ...
+	// Properties is the raw JSON object from the platform; usually nil.
+	Properties string
+	Tools      []AgenticSkillTool
+}
+
+// AgenticSkillTool is one typed tool belonging to an AgenticSkill. The Type
+// discriminator matches the terraform resource `elementum_agentic_skill_tool`
+// which uses a single resource with a `tool_type` attribute to cover the six
+// underlying GraphQL types (AgenticSkill*Tool).
+type AgenticSkillTool struct {
+	ID           string
+	SkillID      string
+	Name         string
+	Description  string
+	Status       string // ACTIVE, INACTIVE
+	StartMessage string
+	// Type is the `tool_type` HCL attribute: automation, create_record,
+	// search_aspect, search_table, update_record, run_agent.
+	Type string
+
+	// Type-specific fields (only a subset populated per tool type).
+	AutomationID      string              // automation tool
+	TargetAspectID    string              // create_record, search_aspect, update_record
+	SearchTableID     string              // search_table
+	TargetAgentID     string              // run_agent
+	WorkerTaskPrompt  string              // run_agent
+	QueryDescription  string              // search_aspect, search_table
+	HandleDescription string              // update_record
+	ResultLimit       int                 // search_aspect, search_table
+	Fields            []AgenticSkillField // create_record (action field list), update_record, search_aspect, search_table
+}
+
+// AgenticSkillField maps the provider's `fields = [...]` nested attribute on
+// an agentic skill tool. Used by search_aspect / search_table (as a search
+// field descriptor) and by create_record / update_record (as a field-action
+// descriptor).
+type AgenticSkillField struct {
+	FieldID     string
+	Name        string
+	Description string
+	Required    bool
 }
 
 // Agent represents an AI agent
@@ -237,6 +312,21 @@ type Agent struct {
 
 	Tools           []AgentTool
 	StartingActions []StartingAction
+	A2ASkills       []AgentA2ASkill
+}
+
+// AgentA2ASkill represents an agent-to-agent routing skill exposed on an
+// agent's AgentCard. Used by the `elementum_agent_a2a_skill` resource;
+// stored flat on the parent Agent for discovery simplicity.
+type AgentA2ASkill struct {
+	ID          string
+	AgentID     string
+	Name        string
+	Description string
+	Tags        []string
+	Examples    []string
+	InputModes  []string
+	OutputModes []string
 }
 
 // StartingAction represents a predefined prompt users can select when interacting with an agent
@@ -336,16 +426,17 @@ type ApprovalProcess struct {
 type Widget struct {
 	ID   string
 	Name string
-	Type string // __typename: DisplayWidgetRelatedAspect, DisplayWidgetRelatedLinkAction, DisplayWidgetRelatedCreateAction
+	Type string // __typename: DisplayWidgetRelatedAspect, DisplayWidgetRelatedLinkAction, DisplayWidgetRelatedCreateAction, DisplayWidgetRunAutomationAction
 
 	// Type-specific fields
-	AspectID   string   // Target aspect ID (required for all types)
-	Columns    []string // For RelatedAspect, RelatedLinkAction
-	Rows       int      // For RelatedAspect, RelatedLinkAction
-	ButtonType string   // For RelatedLinkAction, RelatedCreateAction (INLINE, PRIMARY, SECONDARY)
-	Color      string   // For RelatedLinkAction, RelatedCreateAction (hex code)
-	Icon       string   // For RelatedLinkAction, RelatedCreateAction
-	FullWidth  bool     // For RelatedLinkAction, RelatedCreateAction
+	AspectID     string   // Target aspect ID (for related widget types)
+	AutomationID string   // Target automation ID (for run_automation_action)
+	Columns      []string // For RelatedAspect, RelatedLinkAction
+	Rows         int      // For RelatedAspect, RelatedLinkAction
+	ButtonType   string   // For action widgets (INLINE, PRIMARY, SECONDARY)
+	Color        string   // For action widgets (hex code)
+	Icon         string   // For action widgets
+	FullWidth    bool     // For action widgets
 }
 
 // View represents a managed view on an aspect (App, Element, Task)
@@ -397,6 +488,7 @@ type ObjectSummary struct {
 	Name      string
 	Type      string // "App" or "Element"
 	Namespace string
+	Handle    string
 }
 
 // ObjectDetails represents detailed information about an object (App, Element, or Task)
@@ -455,18 +547,20 @@ type Element struct {
 	DatabricksTable       string
 
 	// Resource collections (same as App)
-	Fields         []Field
-	Layouts        []Layout
-	Flows          []Flow
-	Automations    []Automation
-	Approvals      []ApprovalProcess
-	Widgets        []Widget
-	Views          []View
-	AIFileReaders  []AIFileReader
-	Relationships  []Relationship
-	AccessPolicies []AccessPolicy  // Access policies for row-level security
-	Roles          []Role          // Roles for this element (managed + custom)
-	AISearchTables []AISearchTable // AI Search Tables (only Elements have these, not Apps)
+	Fields               []Field
+	Layouts              []Layout
+	Flows                []Flow
+	Automations          []Automation
+	Skills               []AgenticSkill
+	Approvals            []ApprovalProcess
+	Widgets              []Widget
+	Views                []View
+	AIFileReaders        []AIFileReader
+	Relationships        []Relationship
+	AccessPolicies       []AccessPolicy        // Access policies for row-level security
+	Roles                []Role                // Roles for this element (managed + custom)
+	AISearchTables       []AISearchTable       // AI Search Tables
+	LinkedAISearchTables []LinkedAISearchTable // Linked AI Search Tables (connect to existing Cortex services)
 
 	// Dashboards on this element (for dashboard views)
 	Dashboards []Dashboard
@@ -488,6 +582,9 @@ func (e *Element) GetAutomations() []Automation { return e.Automations }
 
 // GetAgents implements DiscoverableAspect -- Elements do NOT support agents
 func (e *Element) GetAgents() []Agent { return nil }
+
+// GetAISearchTables implements the aspectWithSearchTables capability for Element.
+func (e *Element) GetAISearchTables() []AISearchTable { return e.AISearchTables }
 
 // AspectTask represents a standalone Task (AspectTask) - distinct from automation Task
 type AspectTask struct {
@@ -831,6 +928,25 @@ func (a *App) GetUUIDMappings(resourceName string) map[string]string {
 	return m
 }
 
+// GetSystemFieldIDs returns a set of field IDs that have system semantic tags
+// (HANDLE, TITLE, STATUS, STAGE) and should not be placed in layout sections.
+func (a *App) GetSystemFieldIDs() map[string]bool {
+	systemTags := map[string]bool{
+		"HANDLE": true, "TITLE": true, "STATUS": true, "STAGE": true,
+		"ID": true,
+	}
+	result := make(map[string]bool)
+	for _, field := range a.Fields {
+		for _, tag := range field.SemanticTags {
+			if systemTags[strings.ToUpper(tag)] {
+				result[field.ID] = true
+				break
+			}
+		}
+	}
+	return result
+}
+
 // GetAspectID implements DiscoverableAspect
 func (a *App) GetAspectID() string { return a.ID }
 
@@ -842,6 +958,9 @@ func (a *App) GetAutomations() []Automation { return a.Automations }
 
 // GetAgents implements DiscoverableAspect
 func (a *App) GetAgents() []Agent { return a.Agents }
+
+// GetAISearchTables implements the aspectWithSearchTables capability for App.
+func (a *App) GetAISearchTables() []AISearchTable { return a.AISearchTables }
 
 // GetUUIDMappings returns UUID to Terraform reference mappings for a Field
 func (f *Field) GetUUIDMappings(resourceName string) map[string]string {
@@ -1393,6 +1512,36 @@ func (st *AISearchTable) GetUUIDMappings(resourceName string) map[string]string 
 }
 
 // ==============================================================================
+// Linked AI Search Table Types
+// ==============================================================================
+
+// LinkedAISearchTable represents a linked AI search table that connects to an existing
+// Snowflake Cortex Search Service (vs AISearchTable which creates a new service)
+type LinkedAISearchTable struct {
+	ID          string
+	ObjectID    string
+	CloudLinkID string
+	Database    string
+	SchemaName  string
+	ServiceName string
+	Warehouse   string
+	DisplayName string
+	Status      string
+}
+
+// GetID returns the ID for sorting purposes
+func (st LinkedAISearchTable) GetID() string {
+	return st.ID
+}
+
+// GetUUIDMappings returns UUID to Terraform reference mappings for a LinkedAISearchTable
+func (st *LinkedAISearchTable) GetUUIDMappings(resourceName string) map[string]string {
+	m := make(map[string]string)
+	m[st.ID] = "elementum_linked_ai_search_table." + resourceName + ".id"
+	return m
+}
+
+// ==============================================================================
 // Table Search Table Types
 // ==============================================================================
 
@@ -1608,10 +1757,11 @@ type RecordListResult struct {
 
 // RecordListOptions configures the records query
 type RecordListOptions struct {
-	Limit   int      // Max records per request (default 25)
-	After   string   // Pagination cursor
-	All     bool     // Auto-paginate to fetch all records
-	Columns []string // Columns to display (for table output)
+	Limit   int              // Max records per request (default 25)
+	After   string           // Pagination cursor
+	All     bool             // Auto-paginate to fetch all records
+	Columns []string         // Columns to display (for table output)
+	Filter  *json.RawMessage // Raw filter JSON for API
 }
 
 // ==============================================================================
@@ -1664,6 +1814,7 @@ func (app *App) SortForDeterministicOutput() {
 	sortByID(app.Roles)
 	sortByID(app.PhoneServices)
 	sortByID(app.AISearchTables)
+	sortByID(app.LinkedAISearchTables)
 	sortByID(app.Dashboards)
 	sortByID(app.Charts)
 	sortByID(app.DiscoveredAiProviderConnectors)
@@ -1710,10 +1861,27 @@ func (elem *Element) SortForDeterministicOutput() {
 	sortByID(elem.AccessPolicies)
 	sortByID(elem.Roles)
 	sortByID(elem.AISearchTables)
+	sortByID(elem.LinkedAISearchTables)
 	sortByID(elem.Dashboards)
 
 	for i := range elem.Automations {
 		sortByID(elem.Automations[i].Triggers)
 		sortByID(elem.Automations[i].Tasks)
 	}
+}
+
+// UserListResult contains users and pagination info
+type UserListResult struct {
+	Users       []User
+	Total       int
+	HasNextPage bool
+	EndCursor   string
+}
+
+// UserListOptions configures the users query
+type UserListOptions struct {
+	Limit int    // Max users per request (default 25)
+	After string // Pagination cursor
+	All   bool   // Auto-paginate to fetch all users
+	Query string // Optional search string (name/email); empty = no filter
 }

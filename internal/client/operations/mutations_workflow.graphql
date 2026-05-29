@@ -60,6 +60,7 @@ mutation CreateWorkflowTrigger($workflowId: ID!, $input: WorkflowTriggerInput!) 
   workflowTriggerCreate(workflowId: $workflowId, input: $input) {
     id
     __typename
+    updatedAt
     ... on WorkflowWebhookTrigger {
       url
       authenticated
@@ -86,6 +87,7 @@ mutation CreateWorkflowTask($workflowId: ID!, $input: WorkflowTaskInput!) {
     id
     __typename
     name
+    updatedAt
   }
 }
 
@@ -94,6 +96,7 @@ mutation InsertWorkflowTask($workflowId: ID!, $input: WorkflowTaskInput!) {
     id
     __typename
     name
+    updatedAt
   }
 }
 
@@ -108,24 +111,28 @@ mutation UpdateWorkflowTask($id: ID!, $input: WorkflowTaskUpdateInput!) {
     id
     __typename
     name
+    updatedAt
   }
 }
 
 mutation PublishWorkflow($workflowId: ID!) {
-  workflowUpdate(id: $workflowId, input: { status: ACTIVE }) {
-    id
-    status
-    version
-    automation {
+  workflowValidate(id: $workflowId, input: { publishOnSuccess: true }) {
+    valid
+    workflow {
       id
       status
-      current {
+      version
+      automation {
         id
-        version
-      }
-      draft {
-        id
-        version
+        status
+        current {
+          id
+          version
+        }
+        draft {
+          id
+          version
+        }
       }
     }
   }
@@ -196,6 +203,7 @@ mutation CreateWorkflowTaskChild($operatorTaskId: ID!, $input: WorkflowTaskInput
     id
     __typename
     name
+    updatedAt
   }
 }
 
@@ -207,5 +215,57 @@ mutation UpsertEmailAlias($input: EmailAliasInput!) {
   emailAliasUpsert(input: $input) {
     id
     alias
+  }
+}
+
+# Trigger Update/Delete mutations for full CRUD support
+mutation UpdateWorkflowTrigger($id: ID!, $input: WorkflowTriggerInput!) {
+  workflowTriggerUpdate(id: $id, input: $input) {
+    id
+    __typename
+    updatedAt
+    filter
+    ... on WorkflowRecordCreateTrigger {
+      changedFields { id name }
+    }
+    ... on WorkflowRecordUpdateTrigger {
+      changedFields { id name }
+    }
+    ... on WorkflowWebhookTrigger {
+      url
+      authenticated
+      customResponse {
+        success { body enabled format statusCode }
+        failure { body enabled format statusCode }
+      }
+    }
+    ... on WorkflowOnDemandTrigger {
+      showTriggeredBy
+      parameters { id name fieldType required defaultValue multiple }
+    }
+    ... on WorkflowDatamineTrigger {
+      datamine { id }
+      fireOnAlert
+      fireOnRecovery
+    }
+    ... on WorkflowApprovalChainTrigger {
+      approvalChainTemplate { id }
+      status
+    }
+    ... on WorkflowEmailIngestionTrigger {
+      emailAlias { id alias }
+    }
+    ... on WorkflowCommentAddedTrigger {
+      commentConversationType: conversationType
+    }
+    ... on WorkflowConversationEndTrigger {
+      endConversationType: conversationType
+    }
+  }
+}
+
+mutation DeleteWorkflowTrigger($id: ID!) {
+  workflowTriggerDeleteV2(id: $id) {
+    id
   }
 }

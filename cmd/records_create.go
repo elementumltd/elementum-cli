@@ -23,8 +23,8 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/elementumltd/elementum-cli/auth"
 	"github.com/elementumltd/elementum-cli/discovery"
-	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -531,4 +531,3 @@ func displayDryRunWithAspectInfo(fields []discovery.AspectFieldInfo, input *disc
 
 	return nil
 }
-

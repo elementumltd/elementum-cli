@@ -19,6 +19,12 @@ import (
 	"strings"
 )
 
+// ValueRefFragment is the standard GraphQL fragment for ValueReference fields.
+// It includes all reference types (trigger, task, template, forEach, variable)
+// so that the export pipeline can resolve value references to proper Terraform syntax.
+// This is the same pattern used by the api task type.
+const ValueRefFragment = `{ id value triggerReference { name } taskReference { name task { id } } templateReference { template parameters { ... on ValueReferenceTemplateValueParameter { name value { triggerReference { name } taskReference { name task { id } } variableReference { variableId name type } forEachReference { name forEachTask { id } } } } } } }`
+
 // TaskTypeConfig defines the configuration for a specific task type.
 // Each task type has its own GraphQL fragment and field mappings.
 // This is shared between the provider and CLI for consistent query definitions.
@@ -98,11 +104,11 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 						id
 						name
 						type
-						createValue: value { id label value }
+						createValue: value ` + ValueRefFragment + `
 					}
 					... on WorkflowVariableTaskParameterUpdate {
-						updateValue: value { id label value }
-						variable { id label value }
+						updateValue: value ` + ValueRefFragment + `
+						variable ` + ValueRefFragment + `
 					}
 				}
 			}
@@ -128,17 +134,17 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLFragment: `
 			... on WorkflowUpdateFieldTask {
 				aspect { id name }
-				recordReference { id label value }
+				recordReference ` + ValueRefFragment + `
 				workflowFields {
 					field { id name }
-					valueReference { id label value }
+					valueReference ` + ValueRefFragment + `
 				}
 			}
 		`,
 		Fields: []TaskFieldConfig{
 			{Name: "object_id", GraphQLPath: "aspect.id", Required: false, IsReference: true, ReferenceType: "object"},
-			{Name: "record_reference", GraphQLPath: "recordReference", Required: false, IsValueReference: true},
-			{Name: "fields", GraphQLPath: "workflowFields", Required: false},
+			{Name: "record_reference", GraphQLPath: "recordReference", Required: true, IsValueReference: true},
+			{Name: "fields", GraphQLPath: "workflowFields", Required: true},
 		},
 	},
 	"create_record": {
@@ -147,11 +153,11 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLFragment: `
 			... on WorkflowCreateRecordTask {
 				aspect { id name }
-				recordReference { id label value }
+				recordReference ` + ValueRefFragment + `
 				relateToRecord
 				workflowFields {
 					field { id name }
-					valueReference { id label value }
+					valueReference ` + ValueRefFragment + `
 				}
 			}
 		`,
@@ -169,8 +175,9 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 				aspect { id name }
 				limit
 				filter
+				sort
 				filterValueReferences {
-					valueReferences { id label value }
+					valueReferences ` + ValueRefFragment + `
 				}
 			}
 		`,
@@ -178,6 +185,7 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 			{Name: "object_id", GraphQLPath: "aspect.id", Required: true, IsReference: true, ReferenceType: "object"},
 			{Name: "limit", GraphQLPath: "limit", Required: false},
 			{Name: "filter", GraphQLPath: "filter", Required: false},
+			{Name: "sort", GraphQLPath: "sort", Required: false},
 		},
 	},
 	"ai_agent": {
@@ -186,13 +194,23 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLFragment: `
 			... on WorkflowAiAgentTask {
 				agent { id name }
-				agentPrompt { id label value }
+				agentPrompt ` + ValueRefFragment + `
 				outputType
+				jsonFields {
+					name
+					type
+					description
+					required
+				}
 			}
 		`,
 		Fields: []TaskFieldConfig{
 			{Name: "agent_id", GraphQLPath: "agent.id", Required: true, IsReference: true, ReferenceType: "agent"},
 			{Name: "prompt", GraphQLPath: "agentPrompt", Required: true, IsValueReference: true},
+			// outputType is a WorkflowAiAgentOutputType enum (e.g. "JSON", "TEXT").
+			// The provider expects a string scalar; the generic default-case
+			// emitter handles this as a quoted string.
+			{Name: "output_type", GraphQLPath: "outputType", Required: false},
 		},
 	},
 	"message": {
@@ -200,8 +218,8 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLTypename: "WorkflowMessageTask",
 		GraphQLFragment: `
 			... on WorkflowMessageTask {
-				contentsReference { id label value }
-				recordReference { id label value }
+				contentsReference ` + ValueRefFragment + `
+				recordReference ` + ValueRefFragment + `
 			}
 		`,
 		Fields: []TaskFieldConfig{
@@ -214,17 +232,24 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLTypename: "WorkflowSendEmailTask",
 		GraphQLFragment: `
 			... on WorkflowSendEmailTask {
-				subject { id label value }
-				messageBody { id label value }
-				emailUsers: users { id label value }
-				emailGroups: groups { id label value }
-				externalEmails { id label value }
+				subject ` + ValueRefFragment + `
+				messageBody ` + ValueRefFragment + `
+				fromPersonal
+				fromUsername
 			}
 		`,
+		// NOTE: users / groups / externalEmails / emailAttachments are
+		// `[ValueReference!]` arrays on this task. Our generic emitter
+		// doesn't yet render `[ValueReference!]` arrays (only single
+		// ValueReference). If a future export of an app that uses
+		// send_email needs them, add an IsValueReferenceList flag +
+		// dedicated emitter — <app-namespace> doesn't use send_email, so the
+		// array fields stay unfetched to avoid bloating RawData.
 		Fields: []TaskFieldConfig{
 			{Name: "subject", GraphQLPath: "subject", Required: true, IsValueReference: true},
 			{Name: "message_body", GraphQLPath: "messageBody", Required: true, IsValueReference: true},
-			{Name: "users", GraphQLPath: "emailUsers", Required: false, IsValueReference: true},
+			{Name: "from_personal", GraphQLPath: "fromPersonal", Required: false},
+			{Name: "from_username", GraphQLPath: "fromUsername", Required: false},
 		},
 	},
 	"for_each": {
@@ -232,7 +257,7 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLTypename: "WorkflowForEachTask",
 		GraphQLFragment: `
 			... on WorkflowForEachTask {
-				forEach { id label value }
+				forEach ` + ValueRefFragment + `
 				children {
 					id
 					label
@@ -255,17 +280,20 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLTypename: "WorkflowSaveAttachmentTask",
 		GraphQLFragment: `
 			... on WorkflowSaveAttachmentTask {
-				recordId { id label value }
+				recordId ` + ValueRefFragment + `
 				file {
-					... on ValueReference { id label value }
+					... on ValueReference ` + ValueRefFragment + `
 				}
-				tag { id label value }
+				tag ` + ValueRefFragment + `
+				viewState
 			}
 		`,
 		Fields: []TaskFieldConfig{
 			{Name: "record_id", GraphQLPath: "recordId", Required: true, IsValueReference: true},
 			{Name: "file", GraphQLPath: "file", Required: true, IsValueReference: true},
 			{Name: "tag", GraphQLPath: "tag", Required: false, IsValueReference: true},
+			// WorkflowSaveAttachmentViewState enum (ATTACHMENT_FIELD | FILE_FIELD).
+			{Name: "view_state", GraphQLPath: "viewState", Required: false},
 		},
 	},
 	"notification": {
@@ -273,16 +301,20 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLTypename: "WorkflowNotificationTask",
 		GraphQLFragment: `
 			... on WorkflowNotificationTask {
-				messageReference { id label value }
-				titleReference { id label value }
-				userValueReferences { id label value }
-				groupValueReferences { id label value }
+				messageReference ` + ValueRefFragment + `
+				titleReference ` + ValueRefFragment + `
+				descriptionReference ` + ValueRefFragment + `
 				notifyWatchers
 			}
 		`,
+		// userValueReferences / groupValueReferences are `[ValueReference!]`
+		// arrays; rendering them needs an IsValueReferenceList flag that
+		// doesn't exist yet. <app-namespace> doesn't use notification tasks, so
+		// we omit the array fields rather than half-implement.
 		Fields: []TaskFieldConfig{
 			{Name: "message", GraphQLPath: "messageReference", Required: true, IsValueReference: true},
 			{Name: "title", GraphQLPath: "titleReference", Required: false, IsValueReference: true},
+			{Name: "description", GraphQLPath: "descriptionReference", Required: false, IsValueReference: true},
 			{Name: "notify_watchers", GraphQLPath: "notifyWatchers", Required: false},
 		},
 	},
@@ -349,7 +381,7 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLFragment: `
 			... on WorkflowAiFileAnalysisTask {
 				documentModel { id }
-				attachment { id label value }
+				attachment ` + ValueRefFragment + `
 				aiProviderConnector { id model { name } provider { name } }
 			}
 		`,
@@ -394,13 +426,18 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLTypename: "WorkflowAddWatcherTask",
 		GraphQLFragment: `
 			... on WorkflowAddWatcherTask {
-				recordReference { id label value }
+				recordReference ` + ValueRefFragment + `
 				watcherUsers: users { id }
 				watcherGroups: groups { id }
 			}
 		`,
 		Fields: []TaskFieldConfig{
 			{Name: "record_reference", GraphQLPath: "recordReference", Required: true, IsValueReference: true},
+			// user_ids / group_ids are list-of-id attributes on the provider.
+			// The dedicated handler in hcl_task.go converts the [{id}, ...]
+			// arrays from GraphQL into `[data.elementum_user.x.id, ...]` refs.
+			{Name: "user_ids", GraphQLPath: "watcherUsers", Required: false},
+			{Name: "group_ids", GraphQLPath: "watcherGroups", Required: false},
 		},
 	},
 	"relate_records": {
@@ -408,8 +445,8 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLTypename: "WorkflowRelateRecordsTask",
 		GraphQLFragment: `
 			... on WorkflowRelateRecordsTask {
-				sourceRecordIds { id label value }
-				targetRecordId { id label value }
+				sourceRecordIds ` + ValueRefFragment + `
+				targetRecordId ` + ValueRefFragment + `
 			}
 		`,
 		Fields: []TaskFieldConfig{
@@ -422,14 +459,14 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLTypename: "WorkflowFindRelatedRecordsTask",
 		GraphQLFragment: `
 			... on WorkflowFindRelatedRecordsTask {
-				recordId { id label value }
+				recordId ` + ValueRefFragment + `
 				relatedAspect { id name }
 				limit
 			}
 		`,
 		Fields: []TaskFieldConfig{
 			{Name: "record_reference", GraphQLPath: "recordId", Required: true, IsValueReference: true},
-			{Name: "related_object_id", GraphQLPath: "relatedAspect.id", Required: true, IsReference: true, ReferenceType: "object"},
+			{Name: "object_id", GraphQLPath: "relatedAspect.id", Required: true, IsReference: true, ReferenceType: "object"},
 			{Name: "limit", GraphQLPath: "limit", Required: false},
 		},
 	},
@@ -440,7 +477,7 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 			... on WorkflowUserSearchTask {
 				filter
 				filterValueReferences {
-					valueReferences { id label value }
+					valueReferences ` + ValueRefFragment + `
 				}
 			}
 		`,
@@ -502,7 +539,7 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 						descriptionField { id name }
 						filter
 						filterValueReferences {
-							valueReferences { id label value }
+							valueReferences ` + ValueRefFragment + `
 						}
 						limit
 					}
@@ -533,8 +570,8 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLFragment: `
 			... on WorkflowAiSummarizeTask {
 				aiProviderConnector { id model { name } provider { name } }
-				textToSummarize { id label value }
-				context { id label value }
+				textToSummarize ` + ValueRefFragment + `
+				context ` + ValueRefFragment + `
 				length
 			}
 		`,
@@ -551,7 +588,7 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLFragment: `
 			... on WorkflowAiTransformTask {
 				aiProviderConnector { id model { name } provider { name } }
-				prompt { id label value }
+				prompt ` + ValueRefFragment + `
 				fieldType
 			}
 		`,
@@ -563,16 +600,24 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 	},
 	"approval_chain": {
 		TypeName:        "approval_chain",
-		GraphQLTypename: "WorkflowApprovalChainTask",
+		GraphQLTypename: "WorkflowApprovalChainTemplateTask",
 		GraphQLFragment: `
-			... on WorkflowApprovalChainTask {
-				approvers { id label value }
-				reason { id label value }
+			... on WorkflowApprovalChainTemplateTask {
+				approvalChainTemplate { id }
+				dynamicApprovers { id ` + ValueRefFragment + ` }
+				recordId ` + ValueRefFragment + `
+				requesterId ` + ValueRefFragment + `
+				reason ` + ValueRefFragment + `
+				summary ` + ValueRefFragment + `
 			}
 		`,
 		Fields: []TaskFieldConfig{
-			{Name: "approvers", GraphQLPath: "approvers", Required: false, IsValueReference: true},
+			{Name: "approvalChainTemplate", GraphQLPath: "approvalChainTemplate", Required: true},
+			{Name: "dynamicApprovers", GraphQLPath: "dynamicApprovers", Required: false, IsValueReference: true},
+			{Name: "recordId", GraphQLPath: "recordId", Required: true, IsValueReference: true},
+			{Name: "requesterId", GraphQLPath: "requesterId", Required: true, IsValueReference: true},
 			{Name: "reason", GraphQLPath: "reason", Required: false, IsValueReference: true},
+			{Name: "summary", GraphQLPath: "summary", Required: false, IsValueReference: true},
 		},
 	},
 	"approval_status_update": {
@@ -582,7 +627,7 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 			... on WorkflowApprovalStatusUpdateTask {
 				approvalChainTemplate { id }
 				status
-				reason { id label value }
+				reason ` + ValueRefFragment + `
 			}
 		`,
 		Fields: []TaskFieldConfig{
@@ -599,7 +644,7 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLFragment: `
 			... on WorkflowAspectRecordFieldLockingTask {
 				aspect { id name }
-				recordId { id label value }
+				recordId ` + ValueRefFragment + `
 				fieldsToLock { id name }
 				fieldsToUnlock { id name }
 			}
@@ -617,7 +662,7 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLFragment: `
 			... on WorkflowBulkExcelTask {
 				aspect { id name }
-				attachment { id label value }
+				attachment ` + ValueRefFragment + `
 				documentModel { id }
 				strict
 			}
@@ -635,7 +680,7 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLFragment: `
 			... on WorkflowAiSearchTableTask {
 				searchTable { id }
-				query { id label value }
+				query ` + ValueRefFragment + `
 				aiSearchFilter: filter
 				limit
 			}
@@ -655,7 +700,7 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 				storedFunction { id name }
 				parameters {
 					index
-					value { id label value }
+					value ` + ValueRefFragment + `
 				}
 			}
 		`,
@@ -671,15 +716,15 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 		GraphQLFragment: `
 			... on WorkflowRunAutomationTask {
 				automation { id name }
-				automationRef { id label value }
+				automationRef ` + ValueRefFragment + `
 				synchronous
 				inputMappings {
 					parameter { id name }
-					value { id label value }
+					value ` + ValueRefFragment + `
 				}
 				dynamicInputMappings {
 					name
-					value { id label value }
+					value ` + ValueRefFragment + `
 				}
 				outputMappings { name }
 			}
@@ -691,6 +736,107 @@ var TaskTypeRegistry = map[string]TaskTypeConfig{
 			{Name: "input_mappings", GraphQLPath: "inputMappings", Required: false, IsComplexArray: true},
 			{Name: "dynamic_input_mappings", GraphQLPath: "dynamicInputMappings", Required: false, IsComplexArray: true},
 			{Name: "output_mappings", GraphQLPath: "outputMappings", Required: false, IsComplexArray: true},
+		},
+	},
+	"execute_script": {
+		TypeName:        "execute_script",
+		GraphQLTypename: "WorkflowExecuteScriptTask",
+		GraphQLFragment: `
+			... on WorkflowExecuteScriptTask {
+				code
+				inputs {
+					name
+					value ` + ValueRefFragment + `
+					fieldMappings { alias field { id name } }
+				}
+				outputSchema {
+					__typename
+					name
+					... on JsonSchemaString { format }
+					... on JsonSchemaObject {
+						properties {
+							__typename
+							name
+							... on JsonSchemaString { format }
+							... on JsonSchemaArray {
+								item {
+									__typename
+									name
+									... on JsonSchemaString { format }
+								}
+							}
+						}
+					}
+					... on JsonSchemaArray {
+						item {
+							__typename
+							name
+							... on JsonSchemaString { format }
+							... on JsonSchemaObject {
+								properties {
+									__typename
+									name
+									... on JsonSchemaString { format }
+								}
+							}
+						}
+					}
+				}
+			}
+		`,
+		Fields: []TaskFieldConfig{
+			{Name: "code", GraphQLPath: "code", Required: true},
+			{Name: "inputs", GraphQLPath: "inputs", Required: true, IsComplexArray: true},
+			{Name: "output_schema", GraphQLPath: "outputSchema", Required: false},
+		},
+	},
+	"fork_join": {
+		TypeName:        "fork_join",
+		GraphQLTypename: "WorkflowForkJoinTask",
+		GraphQLFragment: `
+			... on WorkflowForkJoinTask {
+				children {
+					id
+					label
+					tasks {
+						id
+						__typename
+						name
+						previous { id }
+						next { id }
+					}
+				}
+			}
+		`,
+		Fields: []TaskFieldConfig{
+			// Fork/join tasks only have base fields (parent_id, name)
+			// Branches are separate resources
+		},
+	},
+	"file_reader": {
+		TypeName:        "file_reader",
+		GraphQLTypename: "WorkflowDocumentModelTask",
+		GraphQLFragment: `
+			... on WorkflowDocumentModelTask {
+				documentModelDataSource {
+					attachment ` + ValueRefFragment + `
+					attachmentId ` + ValueRefFragment + `
+					file ` + ValueRefFragment + `
+					rawText ` + ValueRefFragment + `
+				}
+				documentModel { id }
+			}
+		`,
+		Fields: []TaskFieldConfig{
+			// Input source is a union — exactly one of attachment / attachment_id
+			// / file / raw_text is populated. Emitting all four and letting the
+			// `IsValueReference` emitter skip nils keeps the registry 1:1 with
+			// the provider's schema for round-trip parity.
+			{Name: "attachment", GraphQLPath: "documentModelDataSource.attachment", Required: false, IsValueReference: true},
+			{Name: "attachment_id", GraphQLPath: "documentModelDataSource.attachmentId", Required: false, IsValueReference: true},
+			{Name: "file", GraphQLPath: "documentModelDataSource.file", Required: false, IsValueReference: true},
+			{Name: "raw_text", GraphQLPath: "documentModelDataSource.rawText", Required: false, IsValueReference: true},
+			{Name: "file_reader_id", GraphQLPath: "documentModel.id", Required: true, IsReference: true, ReferenceType: "file_reader"},
 		},
 	},
 }

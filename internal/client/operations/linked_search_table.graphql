@@ -1,0 +1,67 @@
+# Linked AI Search Table operations
+# Links to existing Snowflake Cortex Search Services (synchronous - no polling needed)
+
+# Create a linked search table (synchronous - immediately READY)
+mutation CreateLinkedSearchTable($aspectId: ID!, $input: AspectLinkedSearchTableCreateInput!) {
+  aspectLinkedSearchTableCreate(aspectId: $aspectId, input: $input) {
+    __typename
+    id
+    status
+    errorMessage
+    displayName
+    duration
+    targetLag
+    warehouse
+    field {
+      id
+      name
+    }
+    aiProviderConnector {
+      id
+    }
+    attributeFields {
+      id
+      name
+    }
+    aspect {
+      id
+    }
+  }
+}
+
+# List Cortex Search Services on a Snowflake AI Provider
+query GetSnowflakeSearchServices($providerId: ID!, $database: String!, $schema: String!) {
+  organization {
+    aiProvider(id: $providerId) {
+      ... on AiSnowflakeProvider {
+        id
+        name
+        cloudLink {
+          id
+          name
+        }
+        snowflakeSearchServices(database: $database, schema: $schema) {
+          database
+          name
+          schema
+        }
+      }
+    }
+  }
+}
+
+# List all AI providers to resolve cloudLink -> provider mapping
+query GetAiProvidersForCloudLink {
+  organization {
+    aiProviders {
+      id
+      name
+      ... on AiSnowflakeProvider {
+        cloudLink {
+          id
+          name
+        }
+      }
+    }
+  }
+}

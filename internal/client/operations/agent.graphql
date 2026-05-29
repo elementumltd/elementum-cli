@@ -435,6 +435,31 @@ query GetAgentByID($aspectId: ID!, $agentId: ID!) {
               }
             }
             app { id name }
+            agentAuthentication {
+              jwt {
+                enabled
+                emailAddressClaimName
+                headerName
+                keySource {
+                  __typename
+                  ... on AgentAuthenticationJwtPlainTextSource {
+                    plainTextKeyValuePem
+                  }
+                  ... on AgentAuthenticationJwtJwksSource {
+                    jwksUrl
+                  }
+                }
+                requiredClaims {
+                  claimName
+                  acceptableValues
+                }
+              }
+            }
+            a2aStreaming
+            a2aRecordConfig {
+              enabled
+            }
+            conversationIdleTimeout
           }
           ... on AgentSnowflake {
             instructions
@@ -471,6 +496,11 @@ query GetAgentByID($aspectId: ID!, $agentId: ID!) {
               }
             }
             app { id name }
+            a2aStreaming
+            a2aRecordConfig {
+              enabled
+            }
+            conversationIdleTimeout
           }
           ... on AgentBedrock {
             instructions
@@ -505,6 +535,11 @@ query GetAgentByID($aspectId: ID!, $agentId: ID!) {
               }
             }
             app { id name }
+            a2aStreaming
+            a2aRecordConfig {
+              enabled
+            }
+            conversationIdleTimeout
           }
           ... on AgentBrowserUse {
             instructions
@@ -541,6 +576,11 @@ query GetAgentByID($aspectId: ID!, $agentId: ID!) {
               }
             }
             app { id name }
+            a2aStreaming
+            a2aRecordConfig {
+              enabled
+            }
+            conversationIdleTimeout
           }
         }
       }

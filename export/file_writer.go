@@ -50,6 +50,7 @@ type MultiFileExport struct {
 	OutputsFile          string      // outputs.tf content (if needed)
 	LocalsFile           string      // locals.tf content (stage lookups, etc.)
 	DataSourcesFile      string      // data.tf content (related objects)
+	ImportsFile          string      // imports.tf content (Terraform 1.5+ import blocks for state import)
 }
 
 // PostProcessAll applies a transformation function to all resource strings in the multi-file export.
@@ -208,6 +209,14 @@ func WriteMultipleFiles(export *MultiFileExport, outputDir string) error {
 		}
 	}
 
+	// Write imports file if present. Users delete this after first apply.
+	if export.ImportsFile != "" {
+		importsPath := filepath.Join(outputDir, "imports.tf")
+		if err := os.WriteFile(importsPath, []byte(export.ImportsFile), 0644); err != nil {
+			return fmt.Errorf("failed to write imports.tf: %w", err)
+		}
+	}
+
 	// Write providers file if present and doesn't already exist
 	if export.ProviderFile != "" {
 		providerPath := filepath.Join(outputDir, "providers.tf")
@@ -264,6 +273,9 @@ func (e *MultiFileExport) GetFileCount() int {
 	if e.DataSourcesFile != "" {
 		count++
 	}
+	if e.ImportsFile != "" {
+		count++
+	}
 	return count
 }
 
@@ -317,6 +329,9 @@ func (e *MultiFileExport) GetFileNames() []string {
 	}
 	if e.DataSourcesFile != "" {
 		names = append(names, "data.tf")
+	}
+	if e.ImportsFile != "" {
+		names = append(names, "imports.tf")
 	}
 	return names
 }

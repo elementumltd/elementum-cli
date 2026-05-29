@@ -114,6 +114,68 @@ func (a *AgentGeneratorAdapter) CanGenerate() bool {
 }
 func (a *AgentGeneratorAdapter) Name() string { return "agents" }
 
+// SkillGeneratorAdapter wraps SkillHCLGenerator to implement ResourceGenerator.
+type SkillGeneratorAdapter struct {
+	gen *SkillHCLGenerator
+}
+
+func NewSkillGeneratorAdapter(gen *SkillHCLGenerator) *SkillGeneratorAdapter {
+	return &SkillGeneratorAdapter{gen: gen}
+}
+
+func (a *SkillGeneratorAdapter) GenerateIR() []*HCLBlock { return a.gen.GenerateAllIR() }
+func (a *SkillGeneratorAdapter) CanGenerate() bool {
+	if a.gen.app == nil {
+		return false
+	}
+	if len(a.gen.app.Skills) > 0 {
+		return true
+	}
+	for _, elem := range a.gen.app.DiscoveredElements {
+		if len(elem.Skills) > 0 {
+			return true
+		}
+	}
+	// A2A skills live on agents — check those too.
+	for _, agent := range a.gen.app.AllAgents() {
+		if len(agent.A2ASkills) > 0 {
+			return true
+		}
+	}
+	return false
+}
+func (a *SkillGeneratorAdapter) Name() string { return "skills" }
+
+// PhoneServiceGeneratorAdapter wraps PhoneServiceHCLGenerator.
+type PhoneServiceGeneratorAdapter struct {
+	gen *PhoneServiceHCLGenerator
+}
+
+func NewPhoneServiceGeneratorAdapter(gen *PhoneServiceHCLGenerator) *PhoneServiceGeneratorAdapter {
+	return &PhoneServiceGeneratorAdapter{gen: gen}
+}
+
+func (a *PhoneServiceGeneratorAdapter) GenerateIR() []*HCLBlock { return a.gen.GenerateAllIR() }
+func (a *PhoneServiceGeneratorAdapter) CanGenerate() bool {
+	return a.gen.app != nil && len(a.gen.app.PhoneServices) > 0
+}
+func (a *PhoneServiceGeneratorAdapter) Name() string { return "phone_services" }
+
+// ManagedViewOrderGeneratorAdapter wraps ManagedViewOrderHCLGenerator.
+type ManagedViewOrderGeneratorAdapter struct {
+	gen *ManagedViewOrderHCLGenerator
+}
+
+func NewManagedViewOrderGeneratorAdapter(gen *ManagedViewOrderHCLGenerator) *ManagedViewOrderGeneratorAdapter {
+	return &ManagedViewOrderGeneratorAdapter{gen: gen}
+}
+
+func (a *ManagedViewOrderGeneratorAdapter) GenerateIR() []*HCLBlock { return a.gen.GenerateAllIR() }
+func (a *ManagedViewOrderGeneratorAdapter) CanGenerate() bool {
+	return a.gen.app != nil && a.gen.app.ManagedViewOrder != nil && len(a.gen.app.ManagedViewOrder.ViewIDs) > 0
+}
+func (a *ManagedViewOrderGeneratorAdapter) Name() string { return "managed_view_order" }
+
 // RelationshipGeneratorAdapter wraps RelationshipHCLGenerator to implement ResourceGenerator.
 type RelationshipGeneratorAdapter struct {
 	gen *RelationshipHCLGenerator
@@ -272,10 +334,27 @@ func (a *TableSearchTableGeneratorAdapter) CanGenerate() bool {
 }
 func (a *TableSearchTableGeneratorAdapter) Name() string { return "table_search_tables" }
 
+// AppResourcesGeneratorAdapter wraps AppHCLGenerator to implement ResourceGenerator.
+type AppResourcesGeneratorAdapter struct {
+	gen *AppHCLGenerator
+}
+
+func NewAppResourcesGeneratorAdapter(gen *AppHCLGenerator) *AppResourcesGeneratorAdapter {
+	return &AppResourcesGeneratorAdapter{gen: gen}
+}
+
+func (a *AppResourcesGeneratorAdapter) GenerateIR() []*HCLBlock { return a.gen.GenerateAllIR() }
+func (a *AppResourcesGeneratorAdapter) CanGenerate() bool       { return a.gen.CanGenerate() }
+func (a *AppResourcesGeneratorAdapter) Name() string            { return "app_resources" }
+
 // NewAppGeneratorRegistry creates a fully-wired registry for an App export.
-// This replaces the explicit method delegation in HCLGenerator.
+// All resource types are generated via CLI IR generators (no tofu dependency).
 func NewAppGeneratorRegistry(app *discovery.App, imports []ImportBlock, uuidMap map[string]string) *GeneratorRegistry {
 	registry := NewGeneratorRegistry()
+
+	// App, fields, layouts, flows, views, tables, datamines, elements, tasks
+	appGen := NewAppHCLGenerator(app, imports, uuidMap)
+	registry.Register(NewAppResourcesGeneratorAdapter(appGen))
 
 	// Automations (includes triggers + tasks)
 	automationGen := NewAutomationHCLGenerator(app, imports, uuidMap)
@@ -284,6 +363,18 @@ func NewAppGeneratorRegistry(app *discovery.App, imports []ImportBlock, uuidMap 
 	// Agents + tools
 	agentGen := NewAgentHCLGenerator(app, imports, uuidMap)
 	registry.Register(NewAgentGeneratorAdapter(agentGen))
+
+	// Agentic skills + tools
+	skillGen := NewSkillHCLGenerator(app, imports, uuidMap)
+	registry.Register(NewSkillGeneratorAdapter(skillGen))
+
+	// Phone services
+	phoneGen := NewPhoneServiceHCLGenerator(app, imports, uuidMap)
+	registry.Register(NewPhoneServiceGeneratorAdapter(phoneGen))
+
+	// Managed view order (one per aspect, pins view ordering)
+	mvoGen := NewManagedViewOrderHCLGenerator(app, imports, uuidMap)
+	registry.Register(NewManagedViewOrderGeneratorAdapter(mvoGen))
 
 	// Relationships
 	relationshipGen := NewRelationshipHCLGenerator(app, imports, uuidMap)

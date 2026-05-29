@@ -19,23 +19,23 @@ import (
 	"fmt"
 
 	"github.com/elementumltd/elementum-cli/auth"
-	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/spf13/cobra"
 )
 
 var agentsDeleteCmd = &cobra.Command{
-	Use:   "delete <agent-name-or-id>",
+	Use:   "delete <namespace> <agent-name>",
 	Short: "Delete an agent",
-	Long: `Delete an Elementum agent by name or ID.
+	Long: `Delete an Elementum agent by name within an app.
 
 WARNING: This permanently deletes the agent and all its tools.
 
 Examples:
-  ei agents delete "Support Agent"
-  ei agents delete "Support Agent" --force
-  ei agents delete 794e1e48-73af-4760-8a1f-... --force`,
-	Args: cobra.ExactArgs(1),
+  ei agents delete support-tickets "Support Agent"
+  ei agents delete support-tickets "Support Agent" --force
+  ei agents delete clm ticket-classifier --force`,
+	Args: cobra.ExactArgs(2),
 	RunE: runAgentsDelete,
 }
 
@@ -45,21 +45,30 @@ func init() {
 
 func runAgentsDelete(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
+	namespace := args[0]
+	agentNameArg := args[1]
 
 	apiClient, err := auth.GetClientFromCmd(cmd)
 	if err != nil {
 		return err
 	}
 
-	agentID, err := resolveAgentID(ctx, cmd, apiClient, args[0])
+	// Resolve namespace to aspect ID
+	aspectID, _, err := resolveAspectByNamespace(ctx, apiClient, namespace)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to resolve app %q: %w", namespace, err)
+	}
+
+	// Find agent by name in the app
+	agentID, err := findAgentByNameInApp(ctx, apiClient, aspectID, agentNameArg)
+	if err != nil {
+		return fmt.Errorf("failed to find agent %q in app %q: %w", agentNameArg, namespace, err)
 	}
 
 	force, _ := cmd.Flags().GetBool("force")
 
 	// Get agent name for display
-	agentName := args[0]
+	agentName := agentNameArg
 	resp, err := client.GetAgentById(ctx, apiClient.Genqlient(), agentID)
 	if err == nil && resp.Organization.Agent != nil {
 		agent := *resp.Organization.Agent

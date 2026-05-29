@@ -353,7 +353,7 @@ func TestMapTaskType(t *testing.T) {
 		},
 		{
 			name:     "approval chain task",
-			typename: "WorkflowApprovalChainTask",
+			typename: "WorkflowApprovalChainTemplateTask",
 			want:     "approval_chain",
 		},
 		{

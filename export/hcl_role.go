@@ -245,8 +245,12 @@ func (g *RoleHCLGenerator) GenerateRoleIR(role *discovery.Role, userRefMap, grou
 
 // BeautifyRole applies beautification to a role resource block in HCL
 func (g *RoleHCLGenerator) BeautifyRole(hcl string) string {
-	// Replace UUID strings with terraform references
+	// Replace UUID strings with terraform references. Skip empty keys
+	// (would overwrite every empty string in the HCL with the ref).
 	for uuid, ref := range g.uuidMap {
+		if uuid == "" {
+			continue
+		}
 		hcl = strings.ReplaceAll(hcl, fmt.Sprintf("%q", uuid), ref)
 	}
 

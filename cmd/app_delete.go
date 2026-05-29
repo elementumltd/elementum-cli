@@ -20,8 +20,8 @@ import (
 
 	"github.com/elementumltd/elementum-cli/auth"
 	"github.com/elementumltd/elementum-cli/discovery"
-	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -143,47 +143,45 @@ func fetchAspectUsages(ctx context.Context, c *client.Client, aspectID string) [
 
 	usage := (*aspect).GetUsage()
 
-	// Automations
+	// Automations (Node is a value type)
 	for _, edge := range usage.Automations.Edges {
-		if edge.Node != nil {
-			usages = append(usages, fmt.Sprintf("automation: %q (id: %s)", edge.Node.Name, edge.Node.Id))
-		}
+		usages = append(usages, fmt.Sprintf("automation: %q (id: %s)", edge.Node.Name, edge.Node.Id))
 	}
 
-	// Agent Tools
+	// Agent Tools (Node is an interface)
 	for _, edge := range usage.AgentTools.Edges {
 		if edge.Node != nil {
-			usages = append(usages, fmt.Sprintf("agent tool: %q (id: %s)", (*edge.Node).GetName(), (*edge.Node).GetId()))
+			usages = append(usages, fmt.Sprintf("agent tool: %q (id: %s)", edge.Node.GetName(), edge.Node.GetId()))
 		}
 	}
 
-	// Fields
+	// Fields (Node is an interface)
 	for _, edge := range usage.Fields.Edges {
 		if edge.Node != nil {
-			usages = append(usages, fmt.Sprintf("field: %q (id: %s)", (*edge.Node).GetName(), (*edge.Node).GetId()))
+			usages = append(usages, fmt.Sprintf("field: %q (id: %s)", edge.Node.GetName(), edge.Node.GetId()))
 		}
 	}
 
-	// Relations
+	// Relations (Node is a value type)
 	for _, edge := range usage.Relations.Edges {
-		if edge.Node != nil {
-			// Aspect is an interface (not a pointer), call GetName() directly
-			aspectName := edge.Node.Aspect.GetName()
-			if aspectName != "" {
-				usages = append(usages, fmt.Sprintf("relation on %q (id: %s)", aspectName, edge.Node.Id))
-			} else {
-				usages = append(usages, fmt.Sprintf("relation: (id: %s)", edge.Node.Id))
-			}
+		// Aspect is an interface (not a pointer), call GetName() directly
+		aspectName := edge.Node.Aspect.GetName()
+		if aspectName != "" {
+			usages = append(usages, fmt.Sprintf("relation on %q (id: %s)", aspectName, edge.Node.Id))
+		} else {
+			usages = append(usages, fmt.Sprintf("relation: (id: %s)", edge.Node.Id))
 		}
 	}
 
-	// Search Tables
+	// Search Tables (Node is an interface)
 	for _, edge := range usage.SearchTables.Edges {
 		if edge.Node != nil {
-			// edge.Node is a pointer to interface, dereference and use interface methods
-			node := *edge.Node
-			fieldName := node.GetField().GetName()
-			nodeID := node.GetId()
+			var fieldName string
+			if fieldPtr := edge.Node.GetField(); fieldPtr != nil {
+				field := *fieldPtr
+				fieldName = field.GetName()
+			}
+			nodeID := edge.Node.GetId()
 			if fieldName != "" {
 				usages = append(usages, fmt.Sprintf("search table on field %q (id: %s)", fieldName, nodeID))
 			} else {
@@ -192,31 +190,27 @@ func fetchAspectUsages(ctx context.Context, c *client.Client, aspectID string) [
 		}
 	}
 
-	// Agents
+	// Agents (Node is an interface)
 	for _, edge := range usage.Agents.Edges {
 		if edge.Node != nil {
-			usages = append(usages, fmt.Sprintf("agent: %q (id: %s)", (*edge.Node).GetName(), (*edge.Node).GetId()))
+			usages = append(usages, fmt.Sprintf("agent: %q (id: %s)", edge.Node.GetName(), edge.Node.GetId()))
 		}
 	}
 
-	// Tables
+	// Tables (Node is a value type)
 	for _, edge := range usage.Tables.Edges {
-		if edge.Node != nil {
-			usages = append(usages, fmt.Sprintf("table: %q (id: %s)", edge.Node.Name, edge.Node.Id))
-		}
+		usages = append(usages, fmt.Sprintf("table: %q (id: %s)", edge.Node.Name, edge.Node.Id))
 	}
 
-	// Datamines
+	// Datamines (Node is a value type)
 	for _, edge := range usage.Datamines.Edges {
-		if edge.Node != nil {
-			usages = append(usages, fmt.Sprintf("datamine: %q (id: %s)", edge.Node.Name, edge.Node.Id))
-		}
+		usages = append(usages, fmt.Sprintf("datamine: %q (id: %s)", edge.Node.Name, edge.Node.Id))
 	}
 
-	// Display Widgets
+	// Display Widgets (Node is an interface)
 	for _, edge := range usage.DisplayWidgets.Edges {
 		if edge.Node != nil {
-			usages = append(usages, fmt.Sprintf("display widget: %q (id: %s)", (*edge.Node).GetName(), (*edge.Node).GetId()))
+			usages = append(usages, fmt.Sprintf("display widget: %q (id: %s)", edge.Node.GetName(), edge.Node.GetId()))
 		}
 	}
 

@@ -109,8 +109,12 @@ func serializeValue(sb *strings.Builder, value HCLValue, indent int) {
 		sb.WriteString("<<-")
 		sb.WriteString(delimiter)
 		sb.WriteString("\n")
-		// Heredoc content is indented to match current level
-		heredocIndent := strings.Repeat("  ", indent)
+		// Heredoc content sits one level DEEPER than the attribute itself.
+		// `<<-` strips the minimum leading whitespace, so this is cosmetic
+		// (`tofu fmt` leaves heredoc bodies alone), but the extra indent
+		// matches the hand-authored truth convention and keeps byte-diffs
+		// minimal on round-trip.
+		heredocIndent := strings.Repeat("  ", indent+1)
 		lines := strings.Split(v.Value, "\n")
 		for _, line := range lines {
 			if line == "" {
@@ -121,7 +125,8 @@ func serializeValue(sb *strings.Builder, value HCLValue, indent int) {
 				sb.WriteString("\n")
 			}
 		}
-		sb.WriteString(heredocIndent)
+		// Closing delimiter lines up with the attribute, not the body.
+		sb.WriteString(strings.Repeat("  ", indent))
 		sb.WriteString(delimiter)
 
 	case HCLNumber:

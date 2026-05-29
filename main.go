@@ -27,12 +27,9 @@ import (
 var version = "dev"
 
 var rootCmd = &cobra.Command{
-	Use:   "ei",
-	Short: "Elementum Infinity - The power to create and destroy",
-	Long: `A CLI tool for discovering and exporting Elementum resources to Terraform.
-
-Use this tool to generate import configurations for terraform plan -generate-config-out,
-making it easy to manage your Elementum apps with Infrastructure as Code.`,
+	Use:     "ei",
+	Short:   "Elementum Infinity - The power to create and destroy",
+	Long:    `A CLI tool for managing Elementum resources and configurations, deploying apps, and automating workflows.`,
 	Version: version,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		// Determine log level from flags and environment
@@ -150,6 +147,7 @@ func init() {
 	rootCmd.AddCommand(elementumcmd.GetSkillsCmd())
 	rootCmd.AddCommand(elementumcmd.GetSkillToolsCmd())
 	rootCmd.AddCommand(elementumcmd.GetAgentToolsCmd())
+	rootCmd.AddCommand(elementumcmd.GetA2ASkillsCmd())
 	rootCmd.AddCommand(elementumcmd.GetObjectsCmd())
 	rootCmd.AddCommand(elementumcmd.GetCategoriesCmd())
 	rootCmd.AddCommand(elementumcmd.GetCloudlinksCmd())
@@ -157,9 +155,11 @@ func init() {
 	rootCmd.AddCommand(elementumcmd.GetApprovalsCmd())
 	rootCmd.AddCommand(elementumcmd.GetInterventionsCmd())
 	rootCmd.AddCommand(elementumcmd.GetFileReadersCmd())
-	rootCmd.AddCommand(elementumcmd.GetTableCmd())
-	rootCmd.AddCommand(elementumcmd.GetFunctionsCmd())
-	rootCmd.AddCommand(elementumcmd.GetA2ASkillsCmd())
+	rootCmd.AddCommand(elementumcmd.GetSearchTablesCmd())
+
+	// Deployment commands
+	rootCmd.AddCommand(elementumcmd.GetEnvironmentsCmd())
+	rootCmd.AddCommand(elementumcmd.GetDeploymentsCmd())
 
 	// Infrastructure/config commands
 	rootCmd.AddCommand(elementumcmd.GetAiProvidersCmd())
@@ -167,6 +167,10 @@ func init() {
 	rootCmd.AddCommand(elementumcmd.GetFeatureFlagsCmd())
 	rootCmd.AddCommand(elementumcmd.GetPhoneProvidersCmd())
 	rootCmd.AddCommand(elementumcmd.GetPhoneServicesCmd())
+	rootCmd.AddCommand(elementumcmd.GetFunctionsCmd())
+
+	// Low-level / debugging commands
+	rootCmd.AddCommand(elementumcmd.GetGraphQLCmd())
 }
 
 func main() {

@@ -1,0 +1,123 @@
+# Draft switch operator children — align with Elementum web app:
+# - ActionsActionQuery: aspect.automation.draft { task(id:) { ... SwitchCaseOperator_Action } }
+# - useWorkflowTasks_workflow: draft.tasks { ... on WorkflowSwitchTask { children { id label } } }
+#
+# Variables: aspectId = app id, automationId = automation id.
+
+query ListAutomationDraftTasksForSwitchChildren($aspectId: ID!, $automationId: ID!) {
+  organization {
+    aspect(id: $aspectId) {
+      automation(id: $automationId) {
+        draft {
+          id
+          root {
+            id
+            __typename
+            ... on WorkflowSwitchTask {
+              id
+              name
+              valid
+              children {
+                id
+                label
+              }
+            }
+          }
+          tasks {
+            id
+            name
+            valid
+            __typename
+            ... on WorkflowSwitchTask {
+              id
+              name
+              valid
+              children {
+                id
+                label
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query ListAutomationDraftSwitchChildrenByLabel($aspectId: ID!, $automationId: ID!, $childLabel: String!) {
+  organization {
+    aspect(id: $aspectId) {
+      automation(id: $automationId) {
+        draft {
+          id
+          tasks {
+            id
+            __typename
+            name
+            valid
+            ... on WorkflowSwitchTask {
+              forLabel: children(childLabel: $childLabel) {
+                id
+                label
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Same shape as ActionsActionQuery when opening a switch in draft (SwitchCaseOperator_Action).
+query DraftSwitchTaskOperatorTask(
+  $aspectId: ID!
+  $automationId: ID!
+  $switchTaskId: ID!
+) {
+  organization {
+    aspect(id: $aspectId) {
+      automation(id: $automationId) {
+        draft {
+          task(id: $switchTaskId) {
+            __typename
+            ... on WorkflowSwitchTask {
+              id
+              name
+              valid
+              children {
+                id
+                label
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query DraftSwitchTaskChildrenByLabel(
+  $aspectId: ID!
+  $automationId: ID!
+  $switchTaskId: ID!
+  $childLabel: String!
+) {
+  organization {
+    aspect(id: $aspectId) {
+      automation(id: $automationId) {
+        draft {
+          task(id: $switchTaskId) {
+            id
+            __typename
+            ... on WorkflowSwitchTask {
+              children(childLabel: $childLabel) {
+                id
+                label
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

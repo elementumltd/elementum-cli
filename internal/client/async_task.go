@@ -147,20 +147,28 @@ func pollAsyncTask(ctx context.Context, client *Client, taskID string) (*AsyncTa
 	}
 
 	// Extract search table ID based on task type
+	// Note: Field accessors differ due to schema types:
+	// - AspectSearchTable.field returns AspectField (nullable) -> *Interface
+	// - TableSearchTable.field returns TableField! (non-nullable) -> Interface
 	switch t := task.(type) {
 	case *GetAsyncTaskMeUserAsyncTaskAsyncTaskSearchTableCreate:
-		if t.SearchTable != nil {
-			st := *t.SearchTable
+		if stPtr := t.GetAspectSearchTable(); stPtr != nil {
+			st := *stPtr
 			result.SearchTableID = st.GetId()
-			result.FieldID = st.GetField().GetId()
-			result.FieldName = st.GetField().GetName()
+			if fieldPtr := st.GetAspectField(); fieldPtr != nil {
+				field := *fieldPtr
+				result.FieldID = field.GetId()
+				result.FieldName = field.GetName()
+			}
 		}
 	case *GetAsyncTaskMeUserAsyncTaskAsyncTaskTableSearchTableCreate:
-		if t.SearchTable != nil {
-			st := *t.SearchTable
+		if stPtr := t.GetTableSearchTable(); stPtr != nil {
+			st := *stPtr
 			result.SearchTableID = st.GetId()
-			result.FieldID = st.GetField().GetId()
-			result.FieldName = st.GetField().GetName()
+			// TableSearchTable returns interface directly (not pointer)
+			field := st.GetTableField()
+			result.FieldID = field.GetId()
+			result.FieldName = field.GetName()
 		}
 	}
 

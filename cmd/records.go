@@ -16,14 +16,15 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/elementumltd/elementum-cli/auth"
 	"github.com/elementumltd/elementum-cli/discovery"
+	"github.com/elementumltd/elementum-cli/internal/client"
 	"github.com/elementumltd/elementum-cli/logger"
 	"github.com/elementumltd/elementum-cli/ui"
-	"github.com/elementumltd/elementum-cli/internal/client"
 	"github.com/spf13/cobra"
 )
 
@@ -78,6 +79,11 @@ func init() {
 	recordsListCmd.Flags().Bool("all", false, "Fetch all records (auto-paginate)")
 	recordsListCmd.Flags().StringSlice("columns", nil, "Columns to display (comma-separated field names)")
 
+	// Filter flags
+	recordsListCmd.Flags().String("filter", "", `Raw filter JSON (e.g., '{"type":"EQUALS","field":"Status","value":{"type":"TEXT","value":"Open"}}')`)
+	recordsListCmd.Flags().StringArray("where", nil, `Field equals filter: "FieldName=Value" (repeatable)`)
+	recordsListCmd.Flags().String("status", "", "Filter by status label")
+
 	// Delete subcommand flags
 	recordsDeleteCmd.Flags().String("id", "", "Full record ID to delete (format: aspectID:handle)")
 	recordsDeleteCmd.Flags().Bool("all", false, "Delete all records in the aspect (dangerous!)")
@@ -129,11 +135,23 @@ func runRecordsList(cmd *cobra.Command, args []string) error {
 	fetchAll, _ := cmd.Flags().GetBool("all")
 	columns, _ := cmd.Flags().GetStringSlice("columns")
 
+	// Get filter flags
+	filterJSON, _ := cmd.Flags().GetString("filter")
+	whereFlags, _ := cmd.Flags().GetStringArray("where")
+	status, _ := cmd.Flags().GetString("status")
+
+	// Parse and build filter
+	filter, err := parseRecordFilterFlags(filterJSON, whereFlags, status)
+	if err != nil {
+		return err
+	}
+
 	opts := discovery.RecordListOptions{
 		Limit:   limit,
 		After:   after,
 		All:     fetchAll,
 		Columns: columns,
+		Filter:  filter,
 	}
 
 	// Show loading message (skip for JSON output)
@@ -390,4 +408,97 @@ func runRecordsDelete(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(ui.SuccessStyle.Render(fmt.Sprintf("✓ Deleted record: %s", handle)))
 	return nil
+}
+
+// parseRecordFilterFlags builds a filter from the various filter flags
+func parseRecordFilterFlags(filterJSON string, whereFlags []string, status string) (*json.RawMessage, error) {
+	// Check for mutually exclusive flags
+	hasConvenienceFlags := len(whereFlags) > 0 || status != ""
+	if filterJSON != "" && hasConvenienceFlags {
+		return nil, fmt.Errorf("cannot use --filter with --where or --status")
+	}
+
+	// If raw filter provided, validate and return it
+	if filterJSON != "" {
+		var obj map[string]any
+		if err := json.Unmarshal([]byte(filterJSON), &obj); err != nil {
+			return nil, fmt.Errorf("invalid --filter JSON: %w", err)
+		}
+		raw := json.RawMessage(filterJSON)
+		return &raw, nil
+	}
+
+	// Build filters from convenience flags
+	var filters []map[string]any
+
+	// --status: filter by status label
+	if status != "" {
+		filters = append(filters, buildEqualsFilter("Status", status))
+	}
+
+	// --where: field equals filters
+	for _, w := range whereFlags {
+		field, value, err := parseWhereFlag(w)
+		if err != nil {
+			return nil, err
+		}
+		filters = append(filters, buildEqualsFilter(field, value))
+	}
+
+	// No filters specified
+	if len(filters) == 0 {
+		return nil, nil
+	}
+
+	// Single filter - return directly
+	if len(filters) == 1 {
+		return marshalFilter(filters[0])
+	}
+
+	// Multiple filters - combine with AND
+	return marshalFilter(combineFiltersWithAnd(filters))
+}
+
+// buildEqualsFilter creates an EQUALS filter for a field
+func buildEqualsFilter(field, value string) map[string]any {
+	return map[string]any{
+		"type":  "EQUALS",
+		"field": field,
+		"value": map[string]any{
+			"type":  "TEXT",
+			"value": value,
+		},
+	}
+}
+
+// combineFiltersWithAnd wraps multiple filters in an AND filter
+func combineFiltersWithAnd(filters []map[string]any) map[string]any {
+	return map[string]any{
+		"type":     "AND",
+		"children": filters,
+	}
+}
+
+// parseWhereFlag parses a "FieldName=Value" string
+func parseWhereFlag(w string) (field, value string, err error) {
+	parts := strings.SplitN(w, "=", 2)
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("invalid --where format: expected 'FieldName=Value', got %q", w)
+	}
+	field = strings.TrimSpace(parts[0])
+	value = strings.TrimSpace(parts[1])
+	if field == "" {
+		return "", "", fmt.Errorf("invalid --where format: field name cannot be empty in %q", w)
+	}
+	return field, value, nil
+}
+
+// marshalFilter converts a filter map to json.RawMessage
+func marshalFilter(filter map[string]any) (*json.RawMessage, error) {
+	data, err := json.Marshal(filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal filter: %w", err)
+	}
+	raw := json.RawMessage(data)
+	return &raw, nil
 }

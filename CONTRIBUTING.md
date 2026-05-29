@@ -7,6 +7,17 @@ Thank you for your interest in contributing to the Elementum CLI! We welcome con
 
 Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md) in all interactions with the project.
 
+## Toolchain
+- Go 1.26 toolchain
+- Make
+   - On Windows install [make](https://gnuwin32.sourceforge.net/packages/make.htm) binaries and dependencies
+   - On MacOS install Homebrew [make](https://formulae.brew.sh/formula/make) 
+   - On Linux install `make` package or use homebrew
+- lint with [golangci-lint](https://golangci-lint.run/docs/welcome/install/local/)
+- Install [Goreleaser](https://goreleaser.com/getting-started/install/)
+- Keyring
+   - On Linux install `gnome-keyring` and `libsecret-tools` and create at least one default keychain
+
 ## How to Report Bugs
 
 If you find a bug, please [open a GitHub Issue](https://github.com/elementumltd/elementum-cli/issues/new) and include:
@@ -43,8 +54,10 @@ Feature requests are welcome! [Open a GitHub Issue](https://github.com/elementum
    - `chore: update dependencies`
 5. **Verify your changes** before submitting:
    ```bash
-   go build ./...
-   go test ./...
+   make fmt
+   make tidy
+   make build
+   make lint
    ```
 6. **Open a PR** with a clear description of what the change does and why
 7. PRs require review from a code owner before merging
@@ -65,7 +78,7 @@ The bot will record your signature and update the PR status automatically.
 
 ### Prerequisites
 
-- Go 1.25.5 or later (see `go.mod` for the exact version)
+- Go 1.26 or later (see `go.mod` for the exact version)
 
 ### Clone and Build
 

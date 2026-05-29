@@ -20,8 +20,8 @@ import (
 	"strings"
 
 	"github.com/elementumltd/elementum-cli/discovery"
-	"github.com/elementumltd/elementum-cli/logger"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/logger"
 )
 
 // TaskHCLGenerator generates HCL for task resources
@@ -72,6 +72,18 @@ func NewTaskHCLGenerator(app *discovery.App, imports []ImportBlock, uuidMap map[
 	return g
 }
 
+// addTODOWithWarning adds a TODO comment to an attribute and also registers a warning
+func addTODOWithWarning(b *HCLBlock, fieldName string, value HCLValue, todoComment string, warningMsg string, rawRef string) {
+	b.SetAttrComment(fieldName, value, todoComment)
+	// Extract resource name from block labels
+	resourceName := ""
+	if len(b.Labels) >= 2 {
+		resourceName = b.Labels[0] + "." + b.Labels[1]
+	}
+	AddWarningWithRef(resourceName, fieldName, warningMsg,
+		"Review the TODO comment in the generated file", rawRef)
+}
+
 // buildReferenceMaps builds mappings for trigger, task, and parent references
 func (g *TaskHCLGenerator) buildReferenceMaps() {
 	buildReferenceMapsFromAutomations(
@@ -101,9 +113,13 @@ func (g *TaskHCLGenerator) buildFieldRefMaps() {
 			if trigger.FieldRefs != nil {
 				g.triggerFieldRefs[trigger.ID] = trigger.FieldRefs
 				// Debug: log trigger FieldRefs
-				logger.Debug("Trigger %s FieldRefs (%d entries):", trigger.ID[:8], len(trigger.FieldRefs))
+				triggerIDShort := trigger.ID
+				if len(triggerIDShort) > 8 {
+					triggerIDShort = triggerIDShort[:8]
+				}
+				logger.Debug("Trigger FieldRefs loaded", "triggerID", triggerIDShort, "count", len(trigger.FieldRefs))
 				for k, v := range trigger.FieldRefs {
-					logger.Debug("  %q -> %q", k, v)
+					logger.Debug("  FieldRef entry", "key", k, "value", v)
 				}
 			}
 
@@ -130,9 +146,13 @@ func (g *TaskHCLGenerator) buildFieldRefMaps() {
 			if len(task.FieldRefs) > 0 {
 				g.taskFieldRefs[task.ID] = task.FieldRefs
 				// Debug: log task FieldRefs
-				logger.Debug("Task %s (%s) FieldRefs (%d entries):", task.ID[:8], task.Name, len(task.FieldRefs))
+				taskIDShort := task.ID
+				if len(taskIDShort) > 8 {
+					taskIDShort = taskIDShort[:8]
+				}
+				logger.Debug("Task FieldRefs loaded", "taskID", taskIDShort, "taskName", task.Name, "count", len(task.FieldRefs))
 				for k, v := range task.FieldRefs {
-					logger.Debug("  %q -> %q", k, v)
+					logger.Debug("  FieldRef entry", "key", k, "value", v)
 				}
 			}
 
@@ -150,7 +170,7 @@ func (g *TaskHCLGenerator) buildFieldRefMaps() {
 					if len(taskIDShort) > 8 {
 						taskIDShort = taskIDShort[:8]
 					}
-					logger.Debug("Task %s defines variable %q", taskIDShort, varName)
+					logger.Debug("Variable task defines", "taskID", taskIDShort, "varName", varName)
 				}
 			}
 		}
@@ -187,8 +207,8 @@ func (g *TaskHCLGenerator) GenerateAll() string {
 
 // convertToRefsSyntax converts a value reference to terraform refs syntax
 func (g *TaskHCLGenerator) convertToRefsSyntax(task *discovery.Task, ref map[string]interface{}) string {
-	// Case -1: Handle wrapped value references like {id, label, value: "{\"variableReference\":{\"name\":\"myVar\"}}"}
-	// This is common for update_variable_task's variable_reference field
+	// Case -1a: Handle wrapped value references where value is a JSON string
+	// like {id, label, value: "{\"variableReference\":{\"name\":\"myVar\"}}"}
 	if valueStr, ok := ref["value"].(string); ok && valueStr != "" && strings.HasPrefix(valueStr, "{") {
 		// Try to parse the value as JSON to extract the actual reference
 		var parsedValue map[string]interface{}
@@ -197,6 +217,15 @@ func (g *TaskHCLGenerator) convertToRefsSyntax(task *discovery.Task, ref map[str
 			if result := g.convertToRefsSyntax(task, parsedValue); result != "" {
 				return result
 			}
+		}
+	}
+
+	// Case -1b: Handle wrapped value references where value is already a map
+	// like {id, label, value: {triggerReference: {name: "..."}}}
+	if valueMap, ok := ref["value"].(map[string]interface{}); ok && len(valueMap) > 0 {
+		// Recursively convert the nested value
+		if result := g.convertToRefsSyntax(task, valueMap); result != "" {
+			return result
 		}
 	}
 
@@ -223,7 +252,17 @@ func (g *TaskHCLGenerator) convertToRefsSyntax(task *discovery.Task, ref map[str
 		if name, ok := triggerRef["name"].(string); ok && name != "" {
 			result := g.lookupTriggerRef(task, name)
 			if result == "" {
-				fmt.Printf("[DEBUG] lookupTriggerRef failed for task=%s, path=%s\n", task.Name, name)
+				// Log available keys to help debug
+				triggerID := g.taskToTrigger[task.ID]
+				if fieldRefs, ok := g.triggerFieldRefs[triggerID]; ok && len(fieldRefs) > 0 {
+					keys := make([]string, 0, len(fieldRefs))
+					for k := range fieldRefs {
+						keys = append(keys, k)
+					}
+					logger.Debug("lookupTriggerRef failed", "task", task.Name, "path", name, "triggerID", triggerID[:8], "availableKeys", keys)
+				} else {
+					logger.Debug("lookupTriggerRef failed - no FieldRefs", "task", task.Name, "path", name, "triggerID", triggerID)
+				}
 			}
 			return result
 		}
@@ -242,7 +281,7 @@ func (g *TaskHCLGenerator) convertToRefsSyntax(task *discovery.Task, ref map[str
 			// If no task ID, log a warning. The caller will fall back to raw JSON output.
 			// We do NOT use lookupTaskRefByName because it can match the wrong task
 			// (e.g., a task that comes LATER in the workflow), which creates cycles.
-			fmt.Printf("[WARN] Could not resolve taskReference: task ID not available for ref name=%s, task=%s\n", name, task.Name)
+			logger.Warn("Could not resolve taskReference: task ID not available", "refName", name, "task", task.Name)
 		}
 	}
 
@@ -266,7 +305,7 @@ func (g *TaskHCLGenerator) convertToRefsSyntax(task *discovery.Task, ref map[str
 					return result
 				}
 			}
-			fmt.Printf("[WARN] Could not resolve forEachReference: name=%s, task=%s\n", name, task.Name)
+			logger.Warn("Could not resolve forEachReference", "name", name, "task", task.Name)
 		}
 	}
 
@@ -277,7 +316,7 @@ func (g *TaskHCLGenerator) convertToRefsSyntax(task *discovery.Task, ref map[str
 			if result := g.lookupVariableRef(name); result != "" {
 				return result
 			}
-			fmt.Printf("[WARN] Could not resolve variableReference: name=%s, task=%s\n", name, task.Name)
+			logger.Warn("Could not resolve variableReference", "name", name, "task", task.Name)
 		}
 	}
 
@@ -386,6 +425,12 @@ func (g *TaskHCLGenerator) lookupByRefID(task *discovery.Task, refID string) str
 					return fmt.Sprintf(`%s.refs["%s"]`, resourceRef, propName)
 				}
 			}
+			// Log when ID isn't found in trigger refs
+			shortRefID := refID
+			if len(shortRefID) > 8 {
+				shortRefID = shortRefID[:8]
+			}
+			logger.Debug("lookupByRefID: ID not in trigger FieldRefs", "refID", shortRefID, "task", task.Name, "triggerRefCount", len(fieldRefs))
 		}
 	}
 
@@ -428,6 +473,41 @@ func (g *TaskHCLGenerator) lookupFieldName(fieldRefs map[string]string, internal
 	// Try with "record." prefix added
 	if name, ok := fieldRefs["record."+internalPath]; ok {
 		return name
+	}
+
+	// Try without "requestBody." prefix (for on-demand trigger parameters)
+	if strings.HasPrefix(internalPath, "requestBody.") {
+		path := strings.TrimPrefix(internalPath, "requestBody.")
+		if name, ok := fieldRefs[path]; ok {
+			return name
+		}
+		// Also try with requestBody prefix in fieldRefs
+		if name, ok := fieldRefs["requestBody."+path]; ok {
+			return name
+		}
+	}
+
+	// Try matching by just the last path component (field name)
+	// This handles cases where paths differ by prefix but refer to same field
+	parts := strings.Split(internalPath, ".")
+	if len(parts) > 1 {
+		lastPart := parts[len(parts)-1]
+		// Search for any key ending with this part
+		for key, name := range fieldRefs {
+			keyParts := strings.Split(key, ".")
+			if len(keyParts) > 0 && keyParts[len(keyParts)-1] == lastPart {
+				return name
+			}
+		}
+	}
+
+	// Debug: log failed lookup with available keys
+	if len(fieldRefs) > 0 {
+		keys := make([]string, 0, len(fieldRefs))
+		for k := range fieldRefs {
+			keys = append(keys, k)
+		}
+		logger.Debug("lookupFieldName failed", "path", internalPath, "availableKeys", keys)
 	}
 
 	return ""
@@ -665,6 +745,12 @@ func (g *TaskHCLGenerator) GenerateAllIR() []*HCLBlock {
 			if b != nil {
 				blocks = append(blocks, b)
 			}
+
+			// Generate child resource blocks for operator tasks (switch cases, fork/join branches)
+			if len(task.Children) > 0 {
+				childBlocks := g.GenerateOperatorChildrenIR(&task)
+				blocks = append(blocks, childBlocks...)
+			}
 		}
 	}
 	return blocks
@@ -687,14 +773,115 @@ func (g *TaskHCLGenerator) GenerateTaskIR(task *discovery.Task, automation disco
 	b := NewResourceBlock(taskType, resourceName)
 
 	if parentRef, ok := g.parentMap[task.ID]; ok {
-		b.SetAttr("parent_id", Raw(parentRef))
+		// Strip .id suffix - provider expects whole resource reference for parent
+		parentRefWithoutID := strings.TrimSuffix(parentRef, ".id")
+		b.SetAttr("parent", Raw(parentRefWithoutID))
 	}
 	if task.Name != "" {
 		b.SetAttr("name", Str(task.Name))
 	}
 
 	g.generateTaskSpecificAttributesIR(b, task)
+
+	// For run_automation tasks, add an explicit depends_on pointing at the
+	// target automation's workflow_publish. Truth author convention: this
+	// ensures Terraform publishes the called workflow BEFORE applying the
+	// task that calls it (otherwise the call could be made against an
+	// unpublished workflow during initial apply). The workflow_publish on
+	// the calling automation already carries this in its own depends_on,
+	// but truth declares it here too for local readability.
+	if task.Type == "run_automation" && task.RawData != nil {
+		if autoMap, ok := task.RawData["automation"].(map[string]interface{}); ok {
+			if targetID, _ := autoMap["id"].(string); targetID != "" {
+				for _, imp := range g.imports {
+					if imp.ResourceType == "elementum_workflow_publish" && imp.ID == targetID {
+						b.SetAttr("depends_on", List(Ref("elementum_workflow_publish."+imp.ResourceName)))
+						break
+					}
+				}
+			}
+		}
+	}
+
 	return b
+}
+
+// GenerateOperatorChildrenIR generates IR blocks for operator task children
+// (switch cases, fork/join branches).
+func (g *TaskHCLGenerator) GenerateOperatorChildrenIR(task *discovery.Task) []*HCLBlock {
+	childResourceType := getOperatorChildResourceType(task.Type)
+	if childResourceType == "" {
+		return nil
+	}
+
+	// Resolve parent task reference (whole resource, no .id suffix)
+	parentTaskRef := ""
+	if ref, ok := g.taskRefMap[task.ID]; ok {
+		parentTaskRef = strings.TrimSuffix(ref, ".id")
+	}
+
+	var blocks []*HCLBlock
+	var prevCaseResourceRef string
+
+	for _, child := range task.Children {
+		childID, _ := child["id"].(string)
+		if childID == "" {
+			continue
+		}
+
+		// Find matching import block for resource name
+		var resourceName string
+		for _, imp := range g.imports {
+			if imp.ResourceType == childResourceType && imp.ID == childID {
+				resourceName = imp.ResourceName
+				break
+			}
+		}
+		if resourceName == "" {
+			continue
+		}
+
+		b := NewResourceBlock(childResourceType, resourceName)
+
+		// Set parent reference (switch_task or fork_join_task as whole resource ref)
+		if parentTaskRef != "" {
+			switch task.Type {
+			case "switch":
+				b.SetAttr("switch_task", Raw(parentTaskRef))
+			case "fork_join":
+				b.SetAttr("fork_join_task", Raw(parentTaskRef))
+			}
+		}
+
+		// Label
+		label := getChildLabel(child)
+		if label != "" {
+			b.SetAttr("label", Str(label))
+		}
+
+		// Filter and is_default (switch cases only)
+		if task.Type == "switch" {
+			filterData, hasFilter := child["filter"].(map[string]interface{})
+			if hasFilter && filterData != nil {
+				filterVal := GenerateFilterIR(filterData, g.uuidMap)
+				b.SetAttr("filter", filterVal)
+			} else {
+				// Default case (filter is null)
+				b.SetAttr("is_default", Bool(true))
+			}
+		}
+
+		// Chain cases with previous_case_id for ordering
+		if prevCaseResourceRef != "" {
+			b.SetAttr("previous_case_id", Raw(prevCaseResourceRef+".id"))
+		}
+
+		prevCaseResourceRef = childResourceType + "." + resourceName
+
+		blocks = append(blocks, b)
+	}
+
+	return blocks
 }
 
 // generateTaskSpecificAttributesIR generates IR attributes for task-type-specific fields
@@ -720,6 +907,19 @@ func (g *TaskHCLGenerator) generateFieldAttributeIR(b *HCLBlock, task *discovery
 			objectRef := g.resolveObjectRef(task.ObjectID)
 			b.SetAttr("object_id", refOrStr(objectRef))
 		}
+		// Generate required fields with placeholders even when RawData is nil
+		if field.Required {
+			switch field.Name {
+			case "record_reference":
+				addTODOWithWarning(b, field.Name, Str(""), "# TODO: Add value reference (e.g., trigger.refs[\"ID\"])",
+					WarningUnresolvedRef+" (no raw data)", "")
+			case "fields":
+				addTODOWithWarning(b, field.Name, List(), "# TODO: Add field updates",
+					"Fields list is empty (no raw data)", "")
+			default:
+				b.SetAttr(field.Name, Str(""))
+			}
+		}
 		return
 	}
 
@@ -737,11 +937,22 @@ func (g *TaskHCLGenerator) generateFieldAttributeIR(b *HCLBlock, task *discovery
 					topField = topField[:bracketIdx]
 				}
 				if _, broken := task.BrokenFields[topField]; broken {
-					b.SetAttrComment(field.Name, Str(""), "# TODO: server error, fix manually after import")
+					addTODOWithWarning(b, field.Name, Str(""), "# TODO: server error, fix manually after import",
+						"Server error prevented data fetch", "")
 					return
 				}
 			}
-			b.SetAttr(field.Name, Str(""))
+			// Generate appropriate placeholder based on field type
+			switch field.Name {
+			case "record_reference":
+				addTODOWithWarning(b, field.Name, Str(""), "# TODO: Add value reference (e.g., trigger.refs[\"ID\"])",
+					WarningUnresolvedRef, "")
+			case "fields":
+				addTODOWithWarning(b, field.Name, List(), "# TODO: Add field updates",
+					"Fields list is empty", "")
+			default:
+				b.SetAttr(field.Name, Str(""))
+			}
 		}
 		return
 	}
@@ -757,40 +968,127 @@ func (g *TaskHCLGenerator) generateFieldAttributeIR(b *HCLBlock, task *discovery
 		}
 
 	case field.IsValueReference:
+		// Debug: log full value structure for value references
+		if valueMap, ok := value.(map[string]interface{}); ok {
+			if rawBytes, err := json.Marshal(valueMap); err == nil {
+				logger.Debug("Processing value reference", "task", task.Name, "field", field.Name, "fullValue", string(rawBytes))
+			}
+		}
 		val := g.generateValueRefIR(task, value, field.Name)
 		if val != nil {
 			b.SetAttr(field.Name, val)
 		} else if field.Required {
-			b.SetAttr(field.Name, Str(""))
+			// Generate with TODO comment for required value references that couldn't be resolved
+			var rawRef string
+			var refID string
+			if valueMap, ok := value.(map[string]interface{}); ok {
+				if rawBytes, err := json.Marshal(valueMap); err == nil {
+					rawRef = string(rawBytes)
+				}
+				if id, ok := valueMap["id"].(string); ok && id != "" {
+					refID = id
+				}
+			}
+			todoComment := "# TODO: Add value reference (e.g., trigger.refs[\"ID\"])"
+			if refID != "" {
+				// Include first 8 chars of ref ID for easier debugging
+				shortID := refID
+				if len(shortID) > 8 {
+					shortID = shortID[:8] + "..."
+				}
+				todoComment = fmt.Sprintf("# TODO: Add value reference - unresolved ref ID: %s", shortID)
+			}
+			addTODOWithWarning(b, field.Name, Str(""), todoComment,
+				WarningUnresolvedRef, rawRef)
 		}
 
 	case field.IsArray:
 		g.generateArrayFieldIR(b, field.Name, value, field.ArrayElementPath)
 
 	case field.IsComplexArray:
+		handled := false
 		switch field.Name {
 		case "headers":
 			g.generateHeadersIR(b, task.RawData)
+			handled = true
 		case "parameters":
 			if task.Type == "procedure" {
 				g.generateProcedureParametersIR(b, task)
+				handled = true
 			}
 		case "input_mappings":
 			if task.Type == "run_automation" {
 				g.generateRunAutomationInputMappingsIR(b, task)
+				handled = true
 			}
 		case "dynamic_input_mappings":
 			if task.Type == "run_automation" {
 				g.generateRunAutomationDynamicInputMappingsIR(b, task)
+				handled = true
 			}
 		case "output_mappings":
 			if task.Type == "run_automation" {
 				g.generateRunAutomationOutputMappingsIR(b, task)
+				handled = true
 			}
+		case "inputs":
+			if task.Type == "execute_script" {
+				g.generateScriptInputsIR(b, task)
+				handled = true
+			}
+		}
+		// For required complex arrays that weren't handled, generate empty list with TODO
+		if !handled && field.Required {
+			addTODOWithWarning(b, field.Name, List(), "# TODO: Add "+field.Name,
+				"Required complex field not generated", "")
 		}
 
 	case field.Name == "category_source" && task.Type == "ai_classify":
 		g.generateCategorySourceIR(b, task.RawData)
+
+	case (field.Name == "user_ids" || field.Name == "group_ids") && task.Type == "add_watcher":
+		// Convert [{id: "..."}, ...] into a list of data-source refs.
+		// The watcher task's users/groups come back as {id, name} structs;
+		// our uuidMap carries the user/group data-source references.
+		arr, ok := value.([]interface{})
+		if !ok || len(arr) == 0 {
+			return
+		}
+		var items []HCLValue
+		for _, item := range arr {
+			m, ok := item.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			id, _ := m["id"].(string)
+			if id == "" {
+				continue
+			}
+			if ref, ok := g.uuidMap[id]; ok {
+				items = append(items, Raw(ref))
+			} else {
+				items = append(items, Str(id))
+			}
+		}
+		if len(items) > 0 {
+			b.SetAttr(field.Name, HCLList{Values: items})
+		}
+
+	case field.Name == "output_schema" && task.Type == "execute_script":
+		// outputSchema comes back as a polymorphic JsonSchema* object. Truth
+		// emits `output_schema = jsonencode({ object = { properties = [...] } })`
+		// with the JsonSchema __typename as the outer key and typed property
+		// descriptors beneath. Reshape the raw data into the tagged-union
+		// shape, then render as inline HCL (same pattern as json_file_reader
+		// structure).
+		if schemaMap, ok := value.(map[string]interface{}); ok && len(schemaMap) > 0 {
+			reshaped := reshapeJSONSchema(schemaMap)
+			if reshaped != nil {
+				if raw, err := jsonMarshalSorted(reshaped); err == nil {
+					b.SetAttr("output_schema", Raw("jsonencode("+renderJSONAsHCL(raw, 1)+")"))
+				}
+			}
+		}
 
 	case field.Name == "body" && task.Type == "api":
 		g.generateApiBodyIR(b, task, task.RawData)
@@ -845,7 +1143,7 @@ func (g *TaskHCLGenerator) generateFieldAttributeIR(b *HCLBlock, task *discovery
 
 	case field.Name == "status":
 		if strVal, ok := value.(string); ok && strVal != "" {
-			b.SetAttr(field.Name, Str(strings.ToLower(strVal)))
+			b.SetAttr(field.Name, Str(strings.ToUpper(strVal)))
 		}
 
 	case field.Name == "field_type":
@@ -868,11 +1166,21 @@ func (g *TaskHCLGenerator) generateFieldAttributeIR(b *HCLBlock, task *discovery
 			b.SetAttr(field.Name, Bool(boolVal))
 		}
 
+	case field.Name == "code":
+		if strVal, ok := value.(string); ok && strVal != "" {
+			escaped := escapeTemplateInterpolation(strVal)
+			b.SetAttr(field.Name, formatHCLStringIR(escaped))
+		}
+
 	default:
 		switch v := value.(type) {
 		case string:
 			if v != "" {
-				b.SetAttr(field.Name, Str(v))
+				// formatHCLStringIR promotes any string containing a newline
+				// to a <<-EOT heredoc, which matches truth for multi-line
+				// scripts / prompts / bodies and stays a normal quoted
+				// string otherwise.
+				b.SetAttr(field.Name, formatHCLStringIR(v))
 			}
 		case float64:
 			b.SetAttr(field.Name, Num(v))
@@ -971,6 +1279,9 @@ func (g *TaskHCLGenerator) generateArrayFieldIR(b *HCLBlock, fieldName string, v
 func (g *TaskHCLGenerator) generateWorkflowFieldsIR(b *HCLBlock, task *discovery.Task, data map[string]interface{}) {
 	wfFields, ok := data["workflowFields"].([]interface{})
 	if !ok || len(wfFields) == 0 {
+		// Fields is required for update_field tasks - generate empty list with TODO
+		addTODOWithWarning(b, "fields", List(), "# TODO: Add field updates",
+			"Required fields attribute not found in workflow data", "")
 		return
 	}
 
@@ -995,15 +1306,35 @@ func (g *TaskHCLGenerator) generateWorkflowFieldsIR(b *HCLBlock, task *discovery
 			Attr("field_id", refOrStr(fieldRef)),
 		}
 
+		valueAdded := false
+		var rawRefForWarning string
 		if valueRef, ok := wf["valueReference"].(map[string]interface{}); ok {
 			if refsExpr := g.convertToRefsSyntax(task, valueRef); refsExpr != "" {
 				attrs = append(attrs, Attr("value", Raw(refsExpr)))
+				valueAdded = true
 			} else {
 				decoded := decodeValueReference(valueRef)
 				if decoded != "" {
 					attrs = append(attrs, Attr("value", Str(decoded)))
+					valueAdded = true
+				} else {
+					// Capture the raw ref for warning
+					if rawBytes, err := json.Marshal(valueRef); err == nil {
+						rawRefForWarning = string(rawBytes)
+					}
 				}
 			}
+		}
+		// Value is required - add empty string placeholder if not set
+		if !valueAdded {
+			attrs = append(attrs, AttrComment("value", Str(""), "# TODO: Add value"))
+			// Add warning
+			resourceName := ""
+			if len(b.Labels) >= 2 {
+				resourceName = b.Labels[0] + "." + b.Labels[1]
+			}
+			AddWarningWithRef(resourceName, "fields[].value", WarningUnresolvedRef,
+				"Add trigger.refs[\"FieldName\"] or task.refs[\"output\"]", rawRefForWarning)
 		}
 
 		fieldObjs = append(fieldObjs, Obj(attrs...))
@@ -1185,6 +1516,88 @@ func (g *TaskHCLGenerator) generateHeadersIR(b *HCLBlock, data map[string]interf
 
 	if len(headerObjs) > 0 {
 		b.SetAttr("headers", HCLList{Values: headerObjs})
+	}
+}
+
+// generateScriptInputsIR generates IR for execute_script task inputs
+func (g *TaskHCLGenerator) generateScriptInputsIR(b *HCLBlock, task *discovery.Task) {
+	inputs, ok := task.RawData["inputs"].([]interface{})
+	if !ok || len(inputs) == 0 {
+		// inputs is required - generate empty list with TODO
+		addTODOWithWarning(b, "inputs", List(), "# TODO: Add script inputs",
+			"Required inputs attribute not found in script task data", "")
+		return
+	}
+
+	var inputObjs []HCLValue
+	for _, inputInterface := range inputs {
+		input, ok := inputInterface.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		name := getStringValue(input, "name")
+		if name == "" {
+			continue
+		}
+
+		attrs := []*HCLAttribute{
+			Attr("name", Str(name)),
+		}
+
+		// Handle value reference
+		if valueRef, ok := input["value"].(map[string]interface{}); ok {
+			if refsExpr := g.convertToRefsSyntax(task, valueRef); refsExpr != "" {
+				attrs = append(attrs, Attr("value", Raw(refsExpr)))
+			} else {
+				decoded := decodeValueReference(valueRef)
+				if decoded != "" {
+					attrs = append(attrs, Attr("value", Str(decoded)))
+				}
+			}
+		}
+
+		// Handle field mappings
+		if fieldMappings, ok := input["fieldMappings"].([]interface{}); ok && len(fieldMappings) > 0 {
+			var mappingObjs []HCLValue
+			for _, mappingInterface := range fieldMappings {
+				mapping, ok := mappingInterface.(map[string]interface{})
+				if !ok {
+					continue
+				}
+
+				alias := getStringValue(mapping, "alias")
+				if alias == "" {
+					continue
+				}
+
+				mapAttrs := []*HCLAttribute{
+					Attr("alias", Str(alias)),
+				}
+
+				if field, ok := mapping["field"].(map[string]interface{}); ok {
+					fieldID := getStringValue(field, "id")
+					if fieldID != "" {
+						fieldRef := g.resolveFieldRef(fieldID)
+						mapAttrs = append(mapAttrs, Attr("field_id", refOrStr(fieldRef)))
+					}
+				}
+
+				mappingObjs = append(mappingObjs, Obj(mapAttrs...))
+			}
+			if len(mappingObjs) > 0 {
+				attrs = append(attrs, Attr("field_mappings", HCLList{Values: mappingObjs}))
+			}
+		}
+
+		inputObjs = append(inputObjs, Obj(attrs...))
+	}
+
+	if len(inputObjs) > 0 {
+		b.SetAttr("inputs", HCLList{Values: inputObjs})
+	} else {
+		// inputs is required - generate empty list with TODO
+		b.SetAttrComment("inputs", List(), "# TODO: Add script inputs")
 	}
 }
 
@@ -1471,7 +1884,7 @@ func (g *TaskHCLGenerator) generateOauthIR(b *HCLBlock, task *discovery.Task, au
 		attrs = append(attrs, Attr("url", Str(url)))
 	}
 	if requestType, ok := auth["requestType"].(string); ok && requestType != "" {
-		attrs = append(attrs, Attr("request_type", Str(strings.ToLower(requestType))))
+		attrs = append(attrs, Attr("request_type", Str(strings.ToUpper(requestType))))
 	}
 
 	if headers, ok := auth["headers"].([]interface{}); ok && len(headers) > 0 {
@@ -1697,11 +2110,102 @@ func formatHCLStringIR(s string) HCLValue {
 	return Str(s)
 }
 
+// reshapeJSONSchema converts a GraphQL JsonSchema* polymorphic node into the
+// tagged-union shape that terraform's execute_script_task.output_schema
+// expects. The __typename discriminator maps to a lowercase bare key; the
+// body of the key is the type-specific payload (name, format, nested
+// properties / items).
+//
+// Example input (from GraphQL):
+//
+//	{ "__typename": "JsonSchemaObject", "name": "result",
+//	  "properties": [
+//	    {"__typename": "JsonSchemaBoolean", "name": "ok"},
+//	    {"__typename": "JsonSchemaString", "name": "msg"},
+//	  ] }
+//
+// Output (rendered as HCL inside jsonencode()):
+//
+//	{ object = { properties = [
+//	    { bool = { name = "ok" } },
+//	    { string = { name = "msg" } },
+//	  ] } }
+func reshapeJSONSchema(node map[string]interface{}) map[string]interface{} {
+	tn, _ := node["__typename"].(string)
+	tag, ok := jsonSchemaTypename2Tag(tn)
+	if !ok {
+		return nil
+	}
+	inner := map[string]interface{}{}
+	if name, ok := node["name"].(string); ok && name != "" {
+		inner["name"] = name
+	}
+	if format, ok := node["format"].(string); ok && format != "" {
+		inner["format"] = format
+	}
+	// Object types have a nested `properties` array of polymorphic members.
+	if props, ok := node["properties"].([]interface{}); ok && len(props) > 0 {
+		reshaped := make([]map[string]interface{}, 0, len(props))
+		for _, p := range props {
+			if pm, ok := p.(map[string]interface{}); ok {
+				if r := reshapeJSONSchema(pm); r != nil {
+					reshaped = append(reshaped, r)
+				}
+			}
+		}
+		if len(reshaped) > 0 {
+			inner["properties"] = reshaped
+		}
+	}
+	// Array types have an `item` that is itself a polymorphic JsonSchema.
+	if item, ok := node["item"].(map[string]interface{}); ok {
+		if r := reshapeJSONSchema(item); r != nil {
+			inner["item"] = r
+		}
+	}
+	return map[string]interface{}{tag: inner}
+}
+
+// jsonSchemaTypename2Tag maps the GraphQL JsonSchema* typename to the
+// lowercase bare-HCL-identifier tag that terraform's output_schema expects.
+// Returns false for unknown types so reshapeJSONSchema skips them cleanly
+// rather than emitting "unknown = { ... }".
+func jsonSchemaTypename2Tag(typename string) (string, bool) {
+	switch typename {
+	case "JsonSchemaString":
+		return "string", true
+	case "JsonSchemaNumber":
+		return "number", true
+	case "JsonSchemaBoolean":
+		return "bool", true
+	case "JsonSchemaObject":
+		return "object", true
+	case "JsonSchemaArray":
+		return "array", true
+	}
+	return "", false
+}
+
+// jsonMarshalSorted marshals a value to JSON with deterministic key order.
+// The standard library already sorts map keys alphabetically, so a plain
+// json.Marshal suffices here — this helper exists as a named function so
+// the call sites read intent-fully (JSON output fed into renderJSONAsHCL
+// needs to be deterministic).
+func jsonMarshalSorted(v interface{}) (string, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
 // BeautifyTask applies beautification to a single task resource block in HCL
 func (g *TaskHCLGenerator) BeautifyTask(hcl string, task *discovery.Task) string {
-	// Replace UUID strings with terraform references
+	// Replace UUID strings with terraform references. Skip empty keys.
 	for uuid, ref := range g.uuidMap {
-		// Replace quoted UUIDs
+		if uuid == "" {
+			continue
+		}
 		hcl = strings.ReplaceAll(hcl, fmt.Sprintf("%q", uuid), ref)
 	}
 

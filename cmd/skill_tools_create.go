@@ -20,15 +20,15 @@ import (
 	"strings"
 
 	"github.com/elementumltd/elementum-cli/auth"
-	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/spf13/cobra"
 )
 
 var skillToolsCreateCmd = &cobra.Command{
-	Use:   "create <skill-id-or-name>",
+	Use:   "create <namespace> <skill-name>",
 	Short: "Create a tool on an agentic skill",
-	Long: `Create a new tool on an agentic skill.
+	Long: `Create a new tool on an agentic skill within an app.
 
 Tool types:
   automation       - Execute an automation (requires --automation-id)
@@ -40,30 +40,30 @@ Tool types:
 
 Examples:
   # Create an automation tool
-  ei skill-tools create "Ticket Triage" --type automation \
+  ei skill-tools create support-tickets "ticket-triage" --type automation \
     --name "Classify Ticket" --description "Runs classification" \
     --automation-id <automation-id>
 
   # Create a search records tool
-  ei skill-tools create <skill-id> --type search-records \
+  ei skill-tools create support-tickets "ticket-triage" --type search-records \
     --name "Find Tickets" --description "Search support tickets" \
     --target-id <app-id> --query-description "Search for tickets matching criteria"
 
   # Create a create-record tool
-  ei skill-tools create <skill-id> --type create-record \
+  ei skill-tools create support-tickets "ticket-triage" --type create-record \
     --name "Create Ticket" --description "Creates a new ticket" \
     --target-id <app-id>
 
   # Create an update-record tool
-  ei skill-tools create <skill-id> --type update-record \
+  ei skill-tools create support-tickets "ticket-triage" --type update-record \
     --name "Update Ticket" --description "Updates a ticket" \
     --target-id <app-id> --handle-description "Update the ticket record"
 
   # Create a run-agent tool
-  ei skill-tools create <skill-id> --type run-agent \
+  ei skill-tools create support-tickets "ticket-triage" --type run-agent \
     --name "Delegate to Specialist" --description "Runs specialist agent" \
     --target-agent-id <agent-id> --worker-task-prompt "Handle this request"`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.ExactArgs(2),
 	RunE: runSkillToolsCreate,
 }
 
@@ -88,23 +88,29 @@ func init() {
 
 func runSkillToolsCreate(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
+	namespace := args[0]
+	skillName := args[1]
 
 	apiClient, err := auth.GetClientFromCmd(cmd)
 	if err != nil {
 		return err
 	}
 
-	skillIDOrName := args[0]
-	skillID := skillIDOrName
-	if !isUUID(skillIDOrName) {
-		skill, err := findSkillByName(ctx, apiClient, skillIDOrName)
-		if err != nil {
-			return fmt.Errorf("failed to find skill %q: %w", skillIDOrName, err)
-		}
-		skillID = skill.ID
-		if !isJSONOutput(cmd) {
-			fmt.Println(ui.InfoStyle.Render(fmt.Sprintf("Found skill: %s (%s)", skill.Name, skill.ID)))
-		}
+	// Resolve namespace to aspect ID
+	aspectID, _, err := resolveAspectByNamespace(ctx, apiClient, namespace)
+	if err != nil {
+		return fmt.Errorf("failed to resolve app %q: %w", namespace, err)
+	}
+
+	// Find skill by name in the app
+	skill, err := findSkillByNameInApp(ctx, apiClient, aspectID, skillName)
+	if err != nil {
+		return fmt.Errorf("failed to find skill %q in app %q: %w", skillName, namespace, err)
+	}
+	skillID := skill.ID
+
+	if !isJSONOutput(cmd) {
+		fmt.Println(ui.InfoStyle.Render(fmt.Sprintf("Found skill: %s (%s)", skill.Name, skill.ID)))
 	}
 
 	toolType, _ := cmd.Flags().GetString("type")

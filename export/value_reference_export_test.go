@@ -792,7 +792,7 @@ func TestBuildUUIDMap_CategoryAndCloudlink(t *testing.T) {
 	assert.Contains(t, uuidMap["55555555-5555-5555-5555-555555555555"], "data.elementum_category.my_category.id")
 
 	assert.Contains(t, uuidMap, "66666666-6666-6666-6666-666666666666")
-	assert.Contains(t, uuidMap["66666666-6666-6666-6666-666666666666"], "data.elementum_cloudlink.my_cloudlink.id")
+	assert.Contains(t, uuidMap["66666666-6666-6666-6666-666666666666"], "data.elementum_cloudlink.my_cloud_link.id")
 }
 
 // =============================================================================

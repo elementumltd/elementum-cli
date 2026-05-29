@@ -19,20 +19,20 @@ import (
 	"fmt"
 
 	"github.com/elementumltd/elementum-cli/auth"
-	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/elementumltd/elementum-cli/internal/client"
+	"github.com/elementumltd/elementum-cli/ui"
 	"github.com/spf13/cobra"
 )
 
 var skillsShowCmd = &cobra.Command{
-	Use:   "show <skill-id-or-name>",
+	Use:   "show <namespace> <skill-name>",
 	Short: "Show skill details",
-	Long: `Display detailed information about an agentic skill.
+	Long: `Display detailed information about an agentic skill within an app.
 
 Examples:
-  ei skills show "Ticket Triage"
-  ei skills show 7e8f1234-...`,
-	Args: cobra.ExactArgs(1),
+  ei skills show support-tickets "Ticket Triage"
+  ei skills show clm escalation-handler --json`,
+	Args: cobra.ExactArgs(2),
 	RunE: runSkillsShow,
 }
 
@@ -42,23 +42,27 @@ func init() {
 
 func runSkillsShow(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
+	namespace := args[0]
+	skillName := args[1]
 
 	apiClient, err := auth.GetClientFromCmd(cmd)
 	if err != nil {
 		return err
 	}
 
-	skillIDOrName := args[0]
-	skillID := skillIDOrName
-	if !isUUID(skillIDOrName) {
-		skill, err := findSkillByName(ctx, apiClient, skillIDOrName)
-		if err != nil {
-			return fmt.Errorf("failed to find skill %q: %w", skillIDOrName, err)
-		}
-		skillID = skill.ID
+	// Resolve namespace to aspect ID
+	aspectID, _, err := resolveAspectByNamespace(ctx, apiClient, namespace)
+	if err != nil {
+		return fmt.Errorf("failed to resolve app %q: %w", namespace, err)
 	}
 
-	detail, err := getSkillFull(ctx, apiClient, skillID)
+	// Find skill by name in the app
+	skill, err := findSkillByNameInApp(ctx, apiClient, aspectID, skillName)
+	if err != nil {
+		return fmt.Errorf("failed to find skill %q in app %q: %w", skillName, namespace, err)
+	}
+
+	detail, err := getSkillFull(ctx, apiClient, skill.ID)
 	if err != nil {
 		return err
 	}

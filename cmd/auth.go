@@ -98,6 +98,8 @@ func init() {
 	authCmd.AddCommand(authListCmd)
 	authCmd.AddCommand(authRenameCmd)
 	authCmd.AddCommand(authEnvCmd)
+	authCmd.AddCommand(authExportCmd)
+	authCmd.AddCommand(authImportCmd)
 }
 
 // GetAuthCmd returns the auth command for registration
